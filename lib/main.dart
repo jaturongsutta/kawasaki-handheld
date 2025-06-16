@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -5,10 +7,15 @@ import 'package:get/get.dart';
 import 'package:kmt/modules/alert/controllers/alert_controller.dart';
 import 'package:kmt/routes/app_pages.dart';
 import 'package:kmt/routes/app_routes.dart';
+import 'package:kmt/services/inject.dart';
+import 'package:kmt/widgets/customLog.dart';
+import 'package:kmt/widgets/setupDialogUi.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  await setupLogger();
+  configureInjection();
+  setupDialogUi();
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -27,12 +34,18 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   static const MethodChannel _methodChannel = MethodChannel('factory_alert_service');
   static const EventChannel _eventChannel = EventChannel('factory_alert_event');
+  final MethodChannel methodChannel = const MethodChannel('KeyenceChannel');
 
   @override
   void initState() {
     super.initState();
+    initSensorReader();
     _startService();
     _listenForAlerts();
+  }
+
+  Future<void> initSensorReader() async {
+    return await methodChannel.invokeMethod('initializeSensor');
   }
 
   void _startService() async {
@@ -52,6 +65,24 @@ class _MyAppState extends State<MyApp> {
     }, onError: (err) {
       print("❌ รับข้อความผิดพลาด: $err");
     });
+  }
+
+  Future<void> setupLoggerAndErrorHandling() async {
+    FlutterError.onError = (FlutterErrorDetails details) {
+      logger.e('Flutter Error', error: details.exception, stackTrace: details.stack);
+      FlutterError.presentError(details);
+    };
+
+    runZonedGuarded(() {
+      // ไม่ต้องทำอะไร เพราะ runApp เรียกไปแล้ว
+    }, (error, stackTrace) {
+      logger.e('Zone Error', error: error, stackTrace: stackTrace);
+    }, zoneSpecification: ZoneSpecification(
+      print: (self, parent, zone, line) {
+        logger.i(line);
+        parent.print(zone, line);
+      },
+    ));
   }
 
   @override
