@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:kmt/global_widgets/header_kmt.dart';
 import 'package:kmt/modules/menu_two/controllers/menu_two_controller.dart';
 
 class MenuTwoView extends GetView<MenuTwoController> {
