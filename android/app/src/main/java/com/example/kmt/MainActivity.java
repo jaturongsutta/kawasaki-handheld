@@ -37,6 +37,9 @@ public class MainActivity extends FlutterActivity {
            if (call.method.equals("initializeSensor")) {
                scanKeyence.initialize(getApplicationContext());
                result.success(true);
+           } else if (call.method.equals("stopSensor")) {
+            scanKeyence.stopListening();
+            result.success(true);
            } else {
                result.notImplemented();
            }

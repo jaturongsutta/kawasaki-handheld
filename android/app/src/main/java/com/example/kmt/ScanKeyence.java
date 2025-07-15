@@ -38,6 +38,13 @@ public class ScanKeyence implements EventChannel.StreamHandler, ScanManager.Data
         }
     }
 
+    public void stopListening() {
+        if (sensorEventSink != null) {
+            sensorEventSink.endOfStream();
+            sensorEventSink = null;
+        }
+    }
+
     public void dispose() {
         if (mScanManager != null && isDataListenerAdded) {
             mScanManager.removeDataListener(this);

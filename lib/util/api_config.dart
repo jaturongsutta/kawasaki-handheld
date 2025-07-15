@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 class ApiConfig {
   static const ApiConfig local = ApiConfig._(
-    endpoint: "http://192.168.1.5:85/api",
+    // endpoint: "http://172.20.10.13:85/api",
+    endpoint: "http://192.168.1.10:84/api",
     endpointDownloadApk: "https://bas-zeus.ftcs.in.th:86/api",
     endpointName: "Local",
     colors: [

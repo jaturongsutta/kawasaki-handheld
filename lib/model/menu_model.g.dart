@@ -1,0 +1,19 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'menu_model.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+MenuModel _$MenuModelFromJson(Map<String, dynamic> json) => MenuModel(
+      menuNo: json['menuNo'] as String,
+      menuNameTH: json['menuNameTH'] as String,
+      url: json['url'] as String,
+    );
+
+Map<String, dynamic> _$MenuModelToJson(MenuModel instance) => <String, dynamic>{
+      'menuNo': instance.menuNo,
+      'menuNameTH': instance.menuNameTH,
+      'url': instance.url,
+    };

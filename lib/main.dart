@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:kmt/modules/alert/controllers/alert_controller.dart';
+import 'package:kmt/modules/login/controllers/login_controller.dart';
 import 'package:kmt/routes/app_pages.dart';
 import 'package:kmt/routes/app_routes.dart';
 import 'package:kmt/services/inject.dart';
@@ -20,7 +22,9 @@ void main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-
+  await GetStorage.init();
+  Get.put(GetStorage());
+  Get.put(LoginController());
   runApp(const MyApp());
 }
 
@@ -39,13 +43,9 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    initSensorReader();
     _startService();
     _listenForAlerts();
-  }
-
-  Future<void> initSensorReader() async {
-    return await methodChannel.invokeMethod('initializeSensor');
+    initSensorReader();
   }
 
   void _startService() async {
@@ -55,6 +55,10 @@ class _MyAppState extends State<MyApp> {
     } on PlatformException catch (e) {
       print("❌ ไม่สามารถเริ่ม Service: ${e.message}");
     }
+  }
+
+  Future<void> initSensorReader() async {
+    return await methodChannel.invokeMethod('initializeSensor');
   }
 
   void _listenForAlerts() {
@@ -89,9 +93,10 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       builder: EasyLoading.init(),
-      title: 'KMT GetX App',
+      title: 'KMT',
       debugShowCheckedModeBanner: false,
-      initialRoute: AppRoutes.menuTwo,
+      // initialRoute: AppRoutes.menuTwo,
+      initialRoute: AppRoutes.splash,
       getPages: AppPages.routes,
       theme: ThemeData(
         scaffoldBackgroundColor: Colors.white,

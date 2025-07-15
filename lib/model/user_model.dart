@@ -4,26 +4,35 @@ part 'user_model.g.dart';
 
 @JsonSerializable(fieldRename: FieldRename.snake)
 class UserModel {
-  @JsonKey(name: 'User_ID')
-  final int? UserID;
-  @JsonKey(name: 'Username')
-  final String Username;
-  @JsonKey(name: 'First_Name')
-  final String? FirstName;
-  @JsonKey(name: 'Last_Name')
-  final String? LastName;
-  @JsonKey(name: 'Role_ID')
-  final int? RoleID;
-  @JsonKey(name: 'Is_Active')
-  final String IsActive;
+  @JsonKey(name: 'userId')
+  final int? userId;
+
+  @JsonKey(name: 'username')
+  final String username;
+
+  @JsonKey(name: 'firstName')
+  final String? firstName;
+
+  @JsonKey(name: 'lastName')
+  final String? lastName;
+
+  // @JsonKey(name: 'Role_ID')
+  // final int? RoleID;
+
+  // @JsonKey(name: 'Is_Active')
+  // final String IsActive;
+
+  @JsonKey(name: 'lineOptions')
+  final List<String>? lineOptions;
 
   UserModel({
-    required this.UserID,
-    required this.Username,
-    this.FirstName,
-    this.LastName,
-    required this.RoleID,
-    required this.IsActive,
+    required this.userId,
+    required this.username,
+    this.firstName,
+    this.lastName,
+    // required this.RoleID,
+    // required this.IsActive,
+    this.lineOptions,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);

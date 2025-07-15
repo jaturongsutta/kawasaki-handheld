@@ -1,0 +1,33 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'ng_record_request.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+NgRecordRequest _$NgRecordRequestFromJson(Map<String, dynamic> json) =>
+    NgRecordRequest(
+      planId: (json['planId'] as num).toInt(),
+      lineCd: json['lineCd'] as String,
+      processCd: json['processCd'] as String,
+      ngDate: json['ngDate'] as String,
+      ngTime: json['ngTime'] as String,
+      quantity: (json['quantity'] as num).toInt(),
+      reason: json['reason'] as String,
+      comment: json['comment'] as String,
+      createdBy: (json['createdBy'] as num).toInt(),
+    );
+
+Map<String, dynamic> _$NgRecordRequestToJson(NgRecordRequest instance) =>
+    <String, dynamic>{
+      'planId': instance.planId,
+      'lineCd': instance.lineCd,
+      'processCd': instance.processCd,
+      'ngDate': instance.ngDate,
+      'ngTime': instance.ngTime,
+      'quantity': instance.quantity,
+      'reason': instance.reason,
+      'comment': instance.comment,
+      'createdBy': instance.createdBy,
+    };
