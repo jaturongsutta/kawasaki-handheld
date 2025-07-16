@@ -1,0 +1,31 @@
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+LineStopRecordRequest _$LineStopRecordRequestFromJson(
+        Map<String, dynamic> json) =>
+    LineStopRecordRequest(
+      planId: (json['planId'] as num).toInt(),
+      lineCd: json['lineCd'] as String,
+      processCd: json['processCd'] as String,
+      lineStopDate: json['lineStopDate'] as String,
+      lineStopTime: json['lineStopTime'] as String,
+      lossTime: (json['lossTime'] as num).toInt(),
+      reason: json['reason'] as String,
+      comment: json['comment'] as String,
+      createdBy: (json['createdBy'] as num).toInt(),
+    );
+
+Map<String, dynamic> _$LineStopRecordRequestToJson(
+        LineStopRecordRequest instance) =>
+    <String, dynamic>{
+      'planId': instance.planId,
+      'lineCd': instance.lineCd,
+      'processCd': instance.processCd,
+      'lineStopDate': instance.lineStopDate,
+      'lineStopTime': instance.lineStopTime,
+      'lossTime': instance.lossTime,
+      'reason': instance.reason,
+      'comment': instance.comment,
+      'createdBy': instance.createdBy,
+    };

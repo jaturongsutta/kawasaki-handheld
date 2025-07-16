@@ -1,0 +1,87 @@
+pipeline {
+    agent { label "WinNode" }
+    
+    environment {
+        GIT_URL = "https://github.com/jaturongsutta/kawasaki-handheld-backend.git"
+        DEPLOY_PATH = "D:\\IIS_Share\\kawasaki\\"
+        JOB_NAME = "kmt_prod_kawasaki-handheld-backend"
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                // Clean Workspace
+                cleanWs()
+                 
+                // Checkout the repository
+                script {
+                    git branch: 'main', 
+                        url: GIT_URL
+                    
+                    // Retrieve last commit info
+                    def cmd = 'git log -1 --pretty="Last Commit: %%cd , Message : %%s" --date=iso'
+                    
+                    def commitMessage = bat(script: cmd, returnStdout: true).trim()
+                    // Parse the commit message to remove unnecessary parts
+                    def parsedMessage = commitMessage.substring(commitMessage.indexOf('>') + cmd.length()).trim()
+                    
+                    // Save the last commit info to an environment variable
+                    env.LAST_COMMIT = parsedMessage 
+                } 
+            }
+        }
+        stage('Install Dependencies') {
+            steps {
+                // change nodejs version
+                bat 'nvm list'
+                bat 'nvm use 22.2.0'
+                bat 'node -v '
+                
+                // Install dependencies using pnpm
+                bat 'npm install --prefer-offline'
+            }
+        } 
+        stage('Build') {
+            steps {
+                // Build the project using pnpm
+                bat 'npm run build'
+                
+                bat '''
+                @echo off
+                    (
+                        echo ENV=production
+                        echo APP_PORT=82
+                        echo DB_HOST=192.168.1.23
+                        echo DB_PORT=1433
+                        echo DB_USERNAME=sa
+                        echo DB_PASSWORD=P@ssw0rd
+                        echo DB_NAME=KAWASAKI_DB
+                        echo ENV_DEVELOP_DIR=D:\\ApplicationFile\\Log\\KAWASAKI
+                        echo GIT_COMMIT_LOG=%LAST_COMMIT%
+                    ) >> dist\\.env
+                '''
+            }
+         
+        }
+        
+        stage('.Zip and backup') {
+            steps {
+                bat ''' echo %DEPLOY_PATH%  '''
+                
+                      bat '''
+                    if exist "%DEPLOY_PATH%%JOB_NAME%*.zip" (
+                        move /Y "%DEPLOY_PATH%%JOB_NAME%*.zip" "%DEPLOY_PATH%backup\\"
+                    )
+                '''
+                bat '''
+                    @echo on
+                    powershell -Command "$date = Get-Date -Format yyyyMMdd_HHmmss; $zipName = \\""%DEPLOY_PATH%%JOB_NAME%_$date.zip\\"; Compress-Archive -Path dist, package.json, package-lock.json -DestinationPath $zipName"
+                '''
+ 
+                
+
+            }
+        }
+      
+    }
+}

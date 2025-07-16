@@ -1,0 +1,37 @@
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+LineStopHistoricalRecordModel _$LineStopHistoricalRecordModelFromJson(
+        Map<String, dynamic> json) =>
+    LineStopHistoricalRecordModel(
+      lineCd: json['Line_CD'] as String,
+      planDate: json['Plan_Date'] as String,
+      planStartTime: json['Plan_Start_Time'] as String,
+      teamName: json['Team_Name'] as String?,
+      modelCd: json['Model_CD'] as String?,
+      processCd: json['Process_CD'] as String?,
+      ngDate: json['NG_Date'] as String,
+      ngTime: json['NG_Time'] as String,
+      quantity: (json['quantity'] as num).toInt(),
+      reasonName: json['Reason_name'] as String?,
+      comment: json['comment'] as String?,
+      statusName: json['Status_Name'] as String?,
+    );
+
+Map<String, dynamic> _$LineStopHistoricalRecordModelToJson(
+        LineStopHistoricalRecordModel instance) =>
+    <String, dynamic>{
+      'Line_CD': instance.lineCd,
+      'Plan_Date': instance.planDate,
+      'Plan_Start_Time': instance.planStartTime,
+      'Team_Name': instance.teamName,
+      'Model_CD': instance.modelCd,
+      'Process_CD': instance.processCd,
+      'NG_Date': instance.ngDate,
+      'NG_Time': instance.ngTime,
+      'quantity': instance.quantity,
+      'Reason_name': instance.reasonName,
+      'comment': instance.comment,
+      'Status_Name': instance.statusName,
+    };
