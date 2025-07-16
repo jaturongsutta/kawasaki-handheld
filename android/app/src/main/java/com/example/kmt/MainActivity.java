@@ -1,0 +1,64 @@
+package com.example.kmt;
+
+import android.content.Intent;
+import io.flutter.embedding.android.FlutterActivity;
+import io.flutter.embedding.engine.FlutterEngine;
+import io.flutter.plugin.common.MethodChannel;
+import io.flutter.plugin.common.EventChannel;
+
+import com.example.kmt.MyForegroundService;
+import com.example.kmt.ScanKeyence;
+
+public class MainActivity extends FlutterActivity {
+    private static final String CHANNEL = "factory_alert_service";
+    private static final String KEYENCE_CHANNEL = "KeyenceChannel";
+    private static final String SENSOR_READER_CHANNEL = "SensorReader";
+    private static final String ENTER_KEY_CHANNEL = "EnterkeyChannel";
+    private ScanKeyence scanKeyence; 
+    private MethodChannel enterKeyChannel;
+    @Override
+    public void configureFlutterEngine(FlutterEngine flutterEngine) {
+        super.configureFlutterEngine(flutterEngine);
+        scanKeyence = new ScanKeyence();  // สร้าง object
+        new MethodChannel(flutterEngine.getDartExecutor(), CHANNEL)
+            .setMethodCallHandler((call, result) -> {
+                if (call.method.equals("startService")) {
+                    Intent serviceIntent = new Intent(this, MyForegroundService.class);
+                    startForegroundService(serviceIntent);
+                    result.success("started");
+                } else {
+                    result.notImplemented();
+                }
+            });
+
+       // สำหรับ Keyence Scanner
+       new MethodChannel(flutterEngine.getDartExecutor(), KEYENCE_CHANNEL)
+       .setMethodCallHandler((call, result) -> {
+           if (call.method.equals("initializeSensor")) {
+               scanKeyence.initialize(getApplicationContext());
+               result.success(true);
+           } else if (call.method.equals("stopSensor")) {
+            scanKeyence.stopListening();
+            result.success(true);
+           } else {
+               result.notImplemented();
+           }
+       });
+
+        // EventChannel สำหรับส่งข้อมูล barcode ไป Flutter
+        new EventChannel(flutterEngine.getDartExecutor(), SENSOR_READER_CHANNEL)
+            .setStreamHandler(scanKeyence);
+
+        // สำหรับ key event
+        enterKeyChannel = new MethodChannel(flutterEngine.getDartExecutor(), ENTER_KEY_CHANNEL);
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (scanKeyence != null) {
+            scanKeyence.dispose();
+        }
+    }
+}
