@@ -1,0 +1,1 @@
+ /Users/admin/Documents/dev/KMT_Handheld/kmt/.dart_tool/flutter_build/b8b9941c5f1c2afa43346a18f69b26e2/native_assets.yaml: 
