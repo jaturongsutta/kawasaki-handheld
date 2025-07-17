@@ -49,20 +49,20 @@ class BaseService {
       endpoint ??= EndpointConfig.currentEndpoint.endpoint;
 
       apiRequestTimer?.cancel();
-      apiRequestTimer = Timer(const Duration(minutes: 60), () async {
-        UserService userService = UserService();
-        await userService.bindLogout();
-        if (EasyLoading.isShow) {
-          await EasyLoading.dismiss();
-        }
-        await dialogService.showCustomDialog(
-          variant: DialogType.icon,
-          description: 'Session Expired',
-          imageUrl: "assets/svg_images/error.svg",
-        );
-        // await Get.offAll(const LoginScreen());
-        return;
-      });
+      // apiRequestTimer = Timer(const Duration(minutes: 60), () async {
+      //   UserService userService = UserService();
+      //   await userService.bindLogout();
+      //   if (EasyLoading.isShow) {
+      //     await EasyLoading.dismiss();
+      //   }
+      //   await dialogService.showCustomDialog(
+      //     variant: DialogType.icon,
+      //     description: 'Session Expired',
+      //     imageUrl: "assets/svg_images/error.svg",
+      //   );
+      //   // await Get.offAll(const LoginScreen());
+      //   return;
+      // });
       if (token != null) {
         // bool hasExpired = JwtDecoder.isExpired(token);
         // if (hasExpired) {

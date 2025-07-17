@@ -14,7 +14,7 @@ class LineStopHistoricalRecordModel {
   final String planStartTime;
 
   @JsonKey(name: 'Team_Name')
-  final String? teamName; // เปลี่ยนเป็น nullable
+  final String? teamName;
 
   @JsonKey(name: 'Model_CD')
   final String? modelCd;
@@ -23,20 +23,21 @@ class LineStopHistoricalRecordModel {
   final String? processCd;
 
   @JsonKey(name: 'NG_Date')
-  final String ngDate;
+  final String? ngDate; // ✅ แก้ตรงนี้
 
   @JsonKey(name: 'NG_Time')
-  final String ngTime;
+  final String? ngTime; // ✅ แก้ตรงนี้
 
+  @JsonKey(defaultValue: 0)
   final int quantity;
 
   @JsonKey(name: 'Reason_name')
-  final String? reasonName; // เปลี่ยนเป็น nullable
+  final String? reasonName;
 
-  final String? comment; // เปลี่ยนเป็น nullable
+  final String? comment;
 
   @JsonKey(name: 'Status_Name')
-  final String? statusName; // เปลี่ยนเป็น nullable
+  final String? statusName;
 
   LineStopHistoricalRecordModel({
     required this.lineCd,
@@ -45,8 +46,8 @@ class LineStopHistoricalRecordModel {
     this.teamName,
     this.modelCd,
     this.processCd,
-    required this.ngDate,
-    required this.ngTime,
+    this.ngDate, // ✅ nullable
+    this.ngTime, // ✅ nullable
     required this.quantity,
     this.reasonName,
     this.comment,

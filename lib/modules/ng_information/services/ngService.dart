@@ -34,7 +34,7 @@ class NgInformationService {
         data: record.toJson(),
         queryType: QueryType.post,
       );
-
+      print('ress===$response');
       if (response['result'] == true) {
         return true;
       }
