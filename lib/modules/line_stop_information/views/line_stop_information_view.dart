@@ -331,7 +331,7 @@ class _ListRecord extends StatelessWidget {
       return Stack(
         children: [
           Scaffold(
-            appBar: AppBar(title: const Text('NG Record List')),
+            appBar: AppBar(title: const Text('Production Status')),
             body: controller.isLoading.value
                 ? const SizedBox()
                 : Column(
@@ -590,8 +590,8 @@ class _HistoryTab extends StatelessWidget {
                                           _row('Shift', record.teamName ?? '-'),
                                           _row('Model', record.modelCd ?? '-'),
                                           _row('Process', record.processCd ?? '-'),
-                                          _row('Stop Date', formatDate(record.ngDate)),
-                                          _row('Stop Time', formatTime(record.ngTime)),
+                                          _row('Stop Date', formatDate(record.ngDate ?? '')),
+                                          _row('Stop Time', formatTime(record.ngTime ?? '')),
                                           _row('Lost Time', '${record.quantity}'),
                                           _row('Reason', record.reasonName ?? '-'),
                                           _row('Comment', record.comment ?? '-'),

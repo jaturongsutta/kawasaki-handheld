@@ -19,6 +19,9 @@ class LoginController extends GetxController {
   final baseService = getIt<BaseService>();
 
   void login() async {
+    // Get.offAllNamed('/menu');
+    // return;
+
     if (usernameController.text.isEmpty ||
         passwordController.text.isEmpty ||
         selectedLine.value.isEmpty) {
@@ -40,7 +43,7 @@ class LoginController extends GetxController {
 
       final result = response;
 
-      if (result['status'] == 0) {
+      if (result['result']) {
         final user = UserModel.fromJson(result['data']);
 
         box.write('isLoggedIn', true);

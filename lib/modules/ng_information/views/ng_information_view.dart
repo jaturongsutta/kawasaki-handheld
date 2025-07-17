@@ -328,7 +328,7 @@ class _ListRecord extends StatelessWidget {
       return Stack(
         children: [
           Scaffold(
-            appBar: AppBar(title: const Text('NG Record List')),
+            appBar: AppBar(title: const Text('Production Status')),
             body: controller.isLoading.value
                 ? const SizedBox()
                 : Column(
