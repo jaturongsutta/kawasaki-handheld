@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 class ApiConfig {
   static const ApiConfig local = ApiConfig._(
     endpoint: "http://192.168.1.10:84/api", //local
-    endpointDownloadApk: "https://bas-zeus.ftcs.in.th:86/api",
     endpointName: "Local",
     colors: [
       Color(0xFF11CDEF),
@@ -13,7 +12,6 @@ class ApiConfig {
 
   static const ApiConfig sandbox = ApiConfig._(
     endpoint: "http://27.254.253.176:82/api", // sandbox
-    endpointDownloadApk: "https://bas-zeus.ftcs.in.th:86/api",
     endpointName: "Sandbox",
     colors: [
       Color(0xFF11CDEF),
@@ -21,10 +19,18 @@ class ApiConfig {
     ],
   );
 
-  static const ApiConfig customer = ApiConfig._(
-    endpoint: "http://192.168.1.15:83/api", // customer
-    endpointDownloadApk: "https://bas-zeus.ftcs.in.th:86/api",
-    endpointName: "Customer",
+  static const ApiConfig kmtDev = ApiConfig._(
+    endpoint: "[backend Url]", // kmtDev
+    endpointName: "Development",
+    colors: [
+      Color(0xFF11CDEF),
+      Color.fromARGB(255, 180, 74, 194),
+    ],
+  );
+
+  static const ApiConfig kmtProd = ApiConfig._(
+    endpoint: "[backend Url]", // kmtProd
+    endpointName: "Production",
     colors: [
       Color(0xFF11CDEF),
       Color(0xFF6CC24A),
@@ -32,20 +38,18 @@ class ApiConfig {
   );
 
   final String endpoint;
-  final String endpointDownloadApk;
   final String endpointName;
   final List<Color> colors;
 
   const ApiConfig._({
     required this.endpoint,
-    required this.endpointDownloadApk,
     required this.endpointName,
     required this.colors,
   });
 }
 
 class EndpointConfig {
-  static const ApiConfig currentEndpoint = ApiConfig.customer;
+  static const ApiConfig currentEndpoint = ApiConfig.kmtDev;
 }
 
 // const String appVersion = "250616-1";
