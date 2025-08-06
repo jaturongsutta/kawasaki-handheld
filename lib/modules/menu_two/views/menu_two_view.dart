@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:kmt/global_widgets/header_kmt.dart';
@@ -7,6 +8,7 @@ import 'package:kmt/modules/line_stop_information/controllers/line_stop_informat
 import 'package:kmt/modules/menu_two/controllers/menu_two_controller.dart';
 import 'package:kmt/modules/ng_information/controllers/ng_information_controller.dart';
 import 'package:kmt/modules/production_status_list/controllers/production_status_list_controller.dart';
+import 'package:kmt/routes/app_routes.dart';
 import 'package:kmt/widgets/KeyenceScanner.dart';
 import 'package:kmt/widgets/controller/loadingcontroller.dart';
 import 'package:kmt/widgets/globalLoading.dart';
@@ -23,11 +25,20 @@ class _MenuTwoViewState extends State<MenuTwoView> {
   final loadingController = Get.put(LoadingController());
   final controller = Get.find<MenuTwoController>();
   final notificationController = Get.find<NotificationController>();
+  static const MethodChannel _navigateChannel = MethodChannel('navigate_channel');
 
   @override
   void initState() {
     super.initState();
     notificationController.loadNotifications(reset: true);
+    _navigateChannel.setMethodCallHandler((call) async {
+      print('object ==> ${call.method}');
+      if (call.method == 'goToNotification') {
+        Get.toNamed(AppRoutes.alert); // ✅ route ที่เปิด Notification List
+      } else if (call.method == 'navigateTo') {
+        Get.toNamed(AppRoutes.alert); // ✅ route ที่เปิด Notification List
+      }
+    });
   }
 
   @override

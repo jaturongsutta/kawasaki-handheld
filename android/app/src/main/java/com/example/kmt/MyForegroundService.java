@@ -24,6 +24,8 @@ import java.net.Socket;
 import java.net.URL;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.nio.charset.StandardCharsets;
+import org.json.JSONObject;
 
 public class MyForegroundService extends Service {
 
@@ -53,9 +55,12 @@ public class MyForegroundService extends Service {
                     byte[] buffer = new byte[1024];
                     int read = in.read(buffer);
                     if (read > 0) {
-                        String message = new String(buffer, 0, read);
-                        Log.d("MyService", "รับข้อความ: " + message);
-                        showAlertNotification(message);
+                        String message = new String(buffer, 0, read, StandardCharsets.UTF_8); 
+                        JSONObject json = new JSONObject(message); 
+                        String title = json.getString("title");
+                        String description = json.getString("description");
+        
+                        showAlertNotification(title, description);
                     }
                     socket.close();
                 }
@@ -63,6 +68,7 @@ public class MyForegroundService extends Service {
                 e.printStackTrace();
             }
         }).start();
+        
 
         return START_STICKY;
     }
@@ -131,12 +137,12 @@ public class MyForegroundService extends Service {
         return null;
     }
 
-    private void showAlertNotification(String message) {
+    private void showAlertNotification(String title, String description) {
         createNotificationChannel();
     
         // ✅ Intent ไปยัง MainActivity
         Intent intent = new Intent(this, MainActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         intent.putExtra("navigateTo", "notification");
     
         // ✅ PendingIntent
@@ -149,10 +155,10 @@ public class MyForegroundService extends Service {
     
         // ✅ สร้าง Notification พร้อม action
         Notification notification = new Notification.Builder(this, CHANNEL_ID)
-                .setContentTitle("แจ้งเตือนใหม่")
-                .setContentText(message)
+                .setContentTitle(title)
+                .setContentText(description)
                 .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentIntent(pendingIntent) // 🔑 ตรงนี้!
+                .setContentIntent(pendingIntent) 
                 .setAutoCancel(true)
                 .build();
     
