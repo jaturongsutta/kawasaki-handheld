@@ -39,17 +39,12 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   static const EventChannel _eventChannel = EventChannel('factory_alert_event');
   final MethodChannel methodChannel = const MethodChannel('KeyenceChannel');
-  static const MethodChannel _navigateChannel = MethodChannel('navigate_channel');
 
   @override
   void initState() {
     super.initState();
     _listenForAlerts();
-    _navigateChannel.setMethodCallHandler((call) async {
-      if (call.method == 'goToNotification') {
-        Get.toNamed(AppRoutes.alert); // ✅ route ที่เปิด Notification List
-      }
-    });
+    // _listenForNotificationTap();
     initSensorReader();
   }
 

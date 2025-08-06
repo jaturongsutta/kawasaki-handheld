@@ -14,20 +14,20 @@ class ApiConfig {
   static const ApiConfig sandbox = ApiConfig._(
     endpoint: "http://27.254.253.176:82/api", // sandbox
     endpointDownloadApk: "https://bas-zeus.ftcs.in.th:86/api",
-    endpointName: "Local",
+    endpointName: "Sandbox",
     colors: [
       Color(0xFF11CDEF),
-      Color(0xFF1171EF),
+      Color.fromARGB(255, 239, 150, 17),
     ],
   );
 
   static const ApiConfig customer = ApiConfig._(
     endpoint: "http://192.168.1.15:83/api", // customer
     endpointDownloadApk: "https://bas-zeus.ftcs.in.th:86/api",
-    endpointName: "Local",
+    endpointName: "Customer",
     colors: [
       Color(0xFF11CDEF),
-      Color(0xFF1171EF),
+      Color(0xFF6CC24A),
     ],
   );
 

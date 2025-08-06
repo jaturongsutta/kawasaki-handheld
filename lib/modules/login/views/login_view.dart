@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kmt/global_widgets/header_kmt.dart';
 import 'package:kmt/modules/login/controllers/login_controller.dart';
+import 'package:kmt/util/api_config.dart';
 
 class LoginView extends StatelessWidget {
   final controller = Get.put(LoginController());
@@ -159,6 +160,23 @@ class LoginView extends StatelessWidget {
                           child: Obx(() => controller.isLoading.value
                               ? const CircularProgressIndicator(color: Colors.white)
                               : const Text('Login')),
+                        ),
+                      ),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            EndpointConfig.currentEndpoint.endpointName,
+                            style: TextStyle(
+                              fontSize: 9,
+                              foreground: Paint()
+                                ..shader = LinearGradient(
+                                  colors: EndpointConfig.currentEndpoint.colors,
+                                ).createShader(const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0)),
+                            ),
+                          ),
                         ),
                       ),
                     ],
