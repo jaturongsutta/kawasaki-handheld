@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:kmt/modules/alert/controllers/alert_controller.dart';
+import 'package:kmt/modules/alert/controllers/notification_controller.dart';
 import 'package:kmt/modules/login/controllers/login_controller.dart';
 import 'package:kmt/routes/app_pages.dart';
 import 'package:kmt/routes/app_routes.dart';
@@ -25,6 +25,7 @@ void main() async {
   await GetStorage.init();
   Get.put(GetStorage());
   Get.put(LoginController());
+  Get.put(NotificationController(), permanent: true);
   runApp(const MyApp());
 }
 
@@ -36,25 +37,20 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  static const MethodChannel _methodChannel = MethodChannel('factory_alert_service');
   static const EventChannel _eventChannel = EventChannel('factory_alert_event');
   final MethodChannel methodChannel = const MethodChannel('KeyenceChannel');
+  static const MethodChannel _navigateChannel = MethodChannel('navigate_channel');
 
   @override
   void initState() {
     super.initState();
-    _startService();
     _listenForAlerts();
+    _navigateChannel.setMethodCallHandler((call) async {
+      if (call.method == 'goToNotification') {
+        Get.toNamed(AppRoutes.alert); // ✅ route ที่เปิด Notification List
+      }
+    });
     initSensorReader();
-  }
-
-  void _startService() async {
-    try {
-      await _methodChannel.invokeMethod('startService');
-      print("✅ Service started");
-    } on PlatformException catch (e) {
-      print("❌ ไม่สามารถเริ่ม Service: ${e.message}");
-    }
   }
 
   Future<void> initSensorReader() async {
@@ -63,8 +59,8 @@ class _MyAppState extends State<MyApp> {
 
   void _listenForAlerts() {
     _eventChannel.receiveBroadcastStream().listen((event) {
-      final alertController = Get.put(AlertController(), permanent: true);
-      alertController.addAlert(event.toString());
+      // final alertController = Get.put(NotificationController(), permanent: true);
+      // alertController.addAlert(event.toString());
       print("📥 รับแจ้งเตือน: $event");
     }, onError: (err) {
       print("❌ รับข้อความผิดพลาด: $err");

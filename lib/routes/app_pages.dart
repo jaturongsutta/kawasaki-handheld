@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
-import 'package:kmt/modules/alert/bindings/alert_binding.dart';
-import 'package:kmt/modules/alert/views/alert_view.dart';
+import 'package:kmt/modules/alert/bindings/notification_binding.dart';
+import 'package:kmt/modules/alert/views/notification_screen.dart';
 import 'package:kmt/modules/line_stop_information/bindings/line_stop_bindings.dart';
 import 'package:kmt/modules/line_stop_information/views/line_stop_information_view.dart';
 import 'package:kmt/modules/login/views/login_view.dart';
@@ -27,7 +27,7 @@ class AppPages {
     // ),
     GetPage(name: AppRoutes.splash, page: () => const SplashScreen()),
     GetPage(name: AppRoutes.login, page: () => LoginView()),
-    GetPage(name: AppRoutes.test, page: () => KeyenceScannerTestPage()),
+    GetPage(name: AppRoutes.test, page: () => const KeyenceScannerTestPage()),
 
     GetPage(
       name: AppRoutes.menu,
@@ -36,7 +36,7 @@ class AppPages {
     ),
     GetPage(
       name: AppRoutes.productionStatusListView,
-      page: () => const ProductionStatusListView(),
+      page: () => const ProductionStatusView(),
       binding: ProductionStatusListBinding(),
     ),
     GetPage(
@@ -56,7 +56,7 @@ class AppPages {
     ),
     GetPage(
       name: AppRoutes.alert,
-      page: () => AlertView(),
+      page: () => const NotificationScreen(),
       binding: AlertBinding(),
     ),
   ];

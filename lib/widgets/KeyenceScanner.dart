@@ -24,7 +24,7 @@ class KeyenceScannerState extends State<KeyenceScanner> {
   @override
   void initState() {
     super.initState();
-    _initializeMethodChannel();
+    initSensorReader();
   }
 
   @override
@@ -34,8 +34,13 @@ class KeyenceScannerState extends State<KeyenceScanner> {
   }
 
   void disposeStream() {
-    streamSubscription?.cancel();
-    print("🧹 Scanner stream cancelled");
+    if (streamSubscription != null) {
+      streamSubscription?.cancel();
+      streamSubscription = null;
+      print("🧹 Scanner stream cancelled");
+    } else {
+      print("⚠️ No active stream to cancel");
+    }
   }
 
   Future<void> stopSensorReader() async {
@@ -47,20 +52,22 @@ class KeyenceScannerState extends State<KeyenceScanner> {
     }
   }
 
+  /// ✅ เรียกเพื่อเปิด stream ใหม่
   Future<void> initSensorReader() async {
-    return await methodChannel.invokeMethod('initializeSensor');
-  }
+    disposeStream(); // ป้องกัน subscribe ซ้ำซ้อน
 
-  Future<void> _initializeMethodChannel() async {
+    print('🎬 Scanner stream subscribing...');
+    streamSubscription = eventChannel.receiveBroadcastStream().listen((event) {
+      final String data = event.toString();
+      print('📡 event ===> $event');
+      widget.onBarcodeScanned(data);
+    });
+
+    // เปิด hardware scanner
     try {
-      print('initializeMethodChannel');
-      streamSubscription = eventChannel.receiveBroadcastStream().listen((event) {
-        final String data = event.toString();
-        print('event ===>$event');
-        widget.onBarcodeScanned(data);
-      });
-    } on PlatformException catch (e) {
-      print('Failed to invoke method: ${e.message}');
+      await methodChannel.invokeMethod('initializeSensor');
+    } catch (e) {
+      print('❌ Failed to initialize sensor: $e');
     }
   }
 

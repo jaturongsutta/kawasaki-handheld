@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:kmt/enum/dio_type.dart';
@@ -13,6 +14,8 @@ class LoginController extends GetxController {
   final passwordController = TextEditingController();
   final isLoading = false.obs;
   final selectedLine = ''.obs;
+  final MethodChannel _channel = const MethodChannel('factory_alert_channel');
+  static const MethodChannel _methodChannel = MethodChannel('factory_alert_service');
 
   final box = GetStorage();
   final lineList = <String>[].obs;
@@ -49,6 +52,8 @@ class LoginController extends GetxController {
         box.write('isLoggedIn', true);
         box.write('user', user.toJson());
         box.write('selectedLine', selectedLine.value);
+        await sendLineCDToNative(selectedLine.value, user.username); // ✅ ส่งไป Native
+        await _startService(); // ✅ สั่งเปิด Service บนอุปกรณ์
 
         Get.offAllNamed('/menu');
       } else {
@@ -78,6 +83,27 @@ class LoginController extends GetxController {
       logger.i('error ===> $e');
 
       Get.snackbar('Error', 'Cannot load line list: $e');
+    }
+  }
+
+  Future<void> sendLineCDToNative(String lineCd, String username) async {
+    try {
+      await _channel.invokeMethod('setLineCD', {
+        'lineCd': lineCd,
+        'username': username, // ✅ เพิ่ม username ไปด้วย
+      });
+      print("✅ ส่ง lineCD ไปยัง Native สำเร็จ: $lineCd");
+    } catch (e) {
+      print("❌ ไม่สามารถส่ง lineCD ไป Native ได้: $e");
+    }
+  }
+
+  Future<void> _startService() async {
+    try {
+      await _methodChannel.invokeMethod('startService');
+      print("✅ Service started");
+    } on PlatformException catch (e) {
+      print("❌ ไม่สามารถเริ่ม Service: ${e.message}");
     }
   }
 }
