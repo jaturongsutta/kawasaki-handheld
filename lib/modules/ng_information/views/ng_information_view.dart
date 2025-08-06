@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:kmt/model/ng_historical_model.dart';
 import 'package:kmt/modules/login/controllers/login_controller.dart';
 import 'package:kmt/widgets/KeyenceScanner.dart';
+import 'package:kmt/widgets/timeformat.dart';
 import '../controllers/ng_information_controller.dart';
 
 class NgInformationView extends GetView<NgInformationController> {
@@ -11,40 +14,37 @@ class NgInformationView extends GetView<NgInformationController> {
 
   @override
   Widget build(BuildContext context) {
-    return KeyenceScanner(
-      onBarcodeScanned: (String) {
-        print('replace2');
-      },
-      child: ValueListenableBuilder(
-        valueListenable: controller.step,
-        builder: (context, pageValue, child) {
-          if (pageValue == 0) {
-            return DefaultTabController(
-              length: 2,
-              child: Scaffold(
-                appBar: AppBar(
-                  title: const Text('NG records'), // ✅ แสดงค่าใน Title
-                  bottom: const TabBar(
-                    tabs: [
-                      Tab(text: 'Records'),
-                      Tab(text: 'Historical'),
-                    ],
-                  ),
-                ),
-                body: TabBarView(
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: [
-                    _RecordTab(),
-                    _HistoryTab(),
+    return ValueListenableBuilder(
+      valueListenable: controller.step,
+      builder: (context, pageValue, child) {
+        if (pageValue == 0) {
+          return DefaultTabController(
+            length: 2,
+            child: Scaffold(
+              appBar: AppBar(
+                title: const Text('NG records'), // ✅ แสดงค่าใน Title
+                bottom: TabBar(
+                  controller: controller.tabController,
+                  tabs: const [
+                    Tab(text: 'Records'),
+                    Tab(text: 'Historical'),
                   ],
                 ),
               ),
-            );
-          } else {
-            return const _ListRecord();
-          }
-        },
-      ),
+              body: TabBarView(
+                controller: controller.tabController,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  _RecordTab(),
+                  _HistoryTab(),
+                ],
+              ),
+            ),
+          );
+        } else {
+          return const _ListRecord();
+        }
+      },
     );
   }
 }
@@ -52,7 +52,8 @@ class NgInformationView extends GetView<NgInformationController> {
 class _RecordTab extends StatelessWidget {
   final controller = Get.find<NgInformationController>();
   final loginController = Get.find<LoginController>();
-
+  final _formKey = GlobalKey<FormState>();
+  final box = GetStorage();
   _RecordTab({super.key});
 
   @override
@@ -66,94 +67,173 @@ class _RecordTab extends StatelessWidget {
 
       final plan = data.plan;
 
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Line',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-                ),
-                Text(
-                  loginController.selectedLine.value,
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-                ),
-              ],
-            ),
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.black12),
-                  borderRadius: BorderRadius.circular(16),
-                  color: Colors.white,
-                ),
-                child: ListView(
-                  shrinkWrap: true,
-                  children: [
-                    if (plan != null) ...[
-                      _buildInfoRow('Plan Date', formatDateTime(plan.planDate)),
-                      _buildInfoRow('Shift', plan.teamName),
-                      _buildInfoRow('Shift Time', plan.shiftPeriodName),
-                      _buildInfoRow('Model', plan.modelCd),
-                      _buildInfoRow('Part No', plan.partNo),
-                      _buildInfoRow('Part 1', plan.part1),
-                      _buildInfoRow('Part 2', plan.part2),
-                    ] else
-                      const Center(child: Text('No production plan available')),
-                    const SizedBox(height: 8),
-                    _buildDropdown('Process', data.process, controller.selectedProcess),
-                    const SizedBox(height: 8),
-                    _buildDatePicker('NG Date', controller.ngDate),
-                    const SizedBox(height: 8),
-                    _buildTextField('NG Time', controller.ngTimeController),
-                    const SizedBox(height: 8),
-                    _buildTextField('Quantity', controller.quantityController,
-                        keyboardType: TextInputType.number),
-                    const SizedBox(height: 8),
-                    _buildDropdown(
-                      'Reason',
-                      data.reason.map((e) => e.label).toList(),
-                      controller.selectedReason,
-                    ),
-                    const SizedBox(height: 8),
-                    _buildCommentField('Comment', controller.commentController),
-                    const Spacer(),
-                    Row(
+      return KeyenceScanner(
+        onBarcodeScanned: (String scannedCode) {
+          print('ng page');
+          String codeToCheck;
+          if (scannedCode.contains('|')) {
+            final parts = scannedCode.split('|');
+            if (parts.length >= 2) {
+              codeToCheck = parts[1];
+              final reasonLabel = controller.initData.value!.reason
+                  .firstWhere(
+                    (ele) => ele.code == parts[2],
+                  )
+                  .label;
+              controller.selectedReason.value = reasonLabel;
+            } else {
+              codeToCheck = scannedCode;
+            }
+          } else {
+            codeToCheck = scannedCode;
+          }
+
+          if (data.process.contains(codeToCheck)) {
+            controller.selectedProcess.value = codeToCheck;
+          } else {
+            Get.snackbar('ไม่พบข้อมูล', 'ไม่พบ Process ที่ตรงกับรหัส: $codeToCheck');
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Line',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                  ),
+                  Text(
+                    box.read('selectedLine'),
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                  ),
+                ],
+              ),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.black12),
+                    borderRadius: BorderRadius.circular(16),
+                    color: Colors.white,
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: ListView(
+                      shrinkWrap: true,
                       children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: controller.save,
-                            child: const Text('Save'),
+                        if (plan != null) ...[
+                          _buildInfoRowClickable(
+                            'Plan Date',
+                            formatDateTime(plan.planDate, plan.planStartTime),
+                            () {
+                              controller.selectedDate.value = DateTime.parse(plan.planDate);
+                              controller.reloadRecords();
+                              controller.step.value = 1;
+                            },
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: Get.back,
-                            child: const Text('Back'),
+                          _buildInfoRow('Shift', plan.teamName),
+                          _buildInfoRow('Shift Time', plan.shiftPeriodName),
+                          _buildInfoRow('Model', plan.modelCd),
+                          _buildInfoRow('Part No', plan.partNo),
+                          _buildInfoRow('Part 1', plan.part1),
+                          _buildInfoRow('Part 2', plan.part2),
+                          const SizedBox(height: 8),
+                          _buildDropdown(
+                            'Process',
+                            data.process,
+                            controller.selectedProcess,
+                            isRequired: true,
                           ),
-                        ),
+                          const SizedBox(height: 8),
+                          _buildDatePicker('NG Date', controller.ngDate, isRequired: true),
+                          const SizedBox(height: 8),
+                          _buildTextFormField(
+                            'NG Time',
+                            controller.ngTimeController,
+                            isRequired: true,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(4),
+                              TimeTextInputFormatter(),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          _buildTextFormField(
+                            'Quantity',
+                            controller.quantityController,
+                            keyboardType: TextInputType.number,
+                            isRequired: true,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(3),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          _buildDropdown(
+                            'Reason',
+                            data.reason.map((e) => e.label).toList(),
+                            controller.selectedReason,
+                            isRequired: true,
+                          ),
+                          const SizedBox(height: 8),
+                          _buildCommentField('Comment', controller.commentController),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    if (_formKey.currentState?.validate() ?? false) {
+                                      controller.save();
+                                    }
+                                  },
+                                  child: const Text('Save'),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: Get.back,
+                                  child: const Text('Back'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ] else ...[
+                          const Center(child: Text('No production plan available')),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: Get.back,
+                                  child: const Text('Back'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
     });
   }
 
-  String formatDateTime(String dateStr) {
+  String formatDateTime(String dateStr, String timeStr) {
     try {
-      final date = DateTime.parse(dateStr).toLocal();
-      final combined = DateTime(date.year, date.month, date.day, date.hour, date.minute);
-      return DateFormat('yy/MM/dd HH:mm').format(combined);
+      final date = DateTime.parse(dateStr);
+      final time = DateTime.parse(timeStr);
+
+      final combined = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+      return DateFormat('dd/MM/yy HH:mm').format(combined);
     } catch (e) {
       return '-';
     }
@@ -161,7 +241,7 @@ class _RecordTab extends StatelessWidget {
 
   Widget _buildInfoRow(String label, String value) {
     return SizedBox(
-      height: 45, // ✅ กำหนดความสูงคงที่
+      height: 45,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -181,7 +261,7 @@ class _RecordTab extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis, // ✅ ตัดข้อความกรณียาวเกินไป
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ),
@@ -190,110 +270,189 @@ class _RecordTab extends StatelessWidget {
     );
   }
 
-  Widget _buildDropdown(String label, List<String> items, RxString selectedValue) {
+  Widget _buildTextFormField(
+    String label,
+    TextEditingController controller, {
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    bool isRequired = false,
+  }) {
     return SizedBox(
-      height: 45,
+      height: 60,
       child: Row(
         children: [
           SizedBox(
             width: 100,
-            child: Text(
-              label,
-              style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.grey),
-            ),
+            child: Text(label,
+                style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.grey)),
           ),
           Expanded(
-            child: Obx(() => DropdownButtonFormField<String>(
-                  value: selectedValue.value.isEmpty ? null : selectedValue.value,
-                  items: items
-                      .map((item) => DropdownMenuItem(value: item, child: Text(item)))
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) selectedValue.value = value;
-                  },
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    isDense: true, // ✅ ลดความสูงช่องเลือก
-                    contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-                  ),
-                )),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDatePicker(String label, Rx<DateTime> selectedDate) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 100,
-          child: Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.grey),
-          ),
-        ),
-        Expanded(
-          child: Obx(() {
-            final dateText = DateFormat('dd/MM/yy').format(selectedDate.value);
-            return InkWell(
-              onTap: () async {
-                final picked = await showDatePicker(
-                  context: Get.context!,
-                  initialDate: selectedDate.value,
-                  firstDate: DateTime(2000),
-                  lastDate: DateTime(2100),
-                );
-                if (picked != null) selectedDate.value = picked;
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                decoration: BoxDecoration(
-                  color: const Color(0xF2EAF1FC),
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(dateText),
-                    const Icon(Icons.calendar_today, size: 18),
-                  ],
-                ),
-              ),
-            );
-          }),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTextField(String label, TextEditingController controller,
-      {TextInputType? keyboardType}) {
-    return SizedBox(
-      height: 45, // ✅ กำหนดความสูงเท่ากัน
-      child: Row(
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              label,
-              style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.grey),
-            ),
-          ),
-          Expanded(
-            child: TextField(
+            child: TextFormField(
               controller: controller,
               keyboardType: keyboardType,
-              textInputAction: TextInputAction.done,
+              inputFormatters: inputFormatters,
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
-                isDense: true, // ✅ ลดความสูงช่องกรอก
+                isDense: true,
                 contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 8),
               ),
+              validator: isRequired
+                  ? (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'กรุณากรอก $label';
+                      }
+                      return null;
+                    }
+                  : null,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildDropdown(
+    String label,
+    List<String> items,
+    RxString selectedValue, {
+    bool isRequired = false,
+  }) {
+    final dropdownItems = [
+      '-- กรุณาเลือก --',
+      ...items,
+    ];
+
+    return Obx(() {
+      return SizedBox(
+        height: 60,
+        child: Row(
+          children: [
+            SizedBox(
+              width: 100,
+              child: Text(
+                label,
+                style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.grey),
+              ),
+            ),
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                isExpanded: true,
+                value: dropdownItems.contains(selectedValue.value) && selectedValue.value.isNotEmpty
+                    ? selectedValue.value
+                    : '-- กรุณาเลือก --',
+                items: dropdownItems.map((item) {
+                  return DropdownMenuItem<String>(
+                    value: item,
+                    child: Text(
+                      item,
+                      style: TextStyle(
+                        color: item == '-- กรุณาเลือก --' ? Colors.grey : Colors.black,
+                      ),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    selectedValue.value = value == '-- กรุณาเลือก --' ? '' : value;
+                  }
+                },
+                validator: isRequired
+                    ? (value) {
+                        if (value == null || value.isEmpty || value == '-- กรุณาเลือก --') {
+                          return 'กรุณาเลือก $label';
+                        }
+                        return null;
+                      }
+                    : null,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                  contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildDatePicker(String label, Rx<DateTime?> selectedDate, {bool isRequired = false}) {
+    return FormField<DateTime>(
+      validator: isRequired
+          ? (_) {
+              if (selectedDate.value == null) {
+                return 'กรุณาเลือก $label';
+              }
+              return null;
+            }
+          : null,
+      builder: (formFieldState) {
+        return Obx(() {
+          final dateText =
+              selectedDate.value != null ? DateFormat('dd/MM/yy').format(selectedDate.value!) : '';
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  SizedBox(
+                    width: 100,
+                    child: Text(label,
+                        style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.grey)),
+                  ),
+                  Expanded(
+                    child: InkWell(
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: Get.context!,
+                          initialDate: selectedDate.value ?? DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                        );
+                        if (picked != null) {
+                          selectedDate.value = picked;
+                          formFieldState.didChange(picked);
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xF2EAF1FC),
+                          borderRadius: BorderRadius.circular(24),
+                          border:
+                              Border.all(color: formFieldState.hasError ? Colors.red : Colors.grey),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              dateText.isNotEmpty ? dateText : 'เลือกวันที่',
+                              style: TextStyle(
+                                color: dateText.isNotEmpty ? Colors.black : Colors.grey,
+                              ),
+                            ),
+                            const Icon(Icons.calendar_today, size: 18),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (formFieldState.hasError)
+                Padding(
+                  padding: const EdgeInsets.only(left: 100, top: 4),
+                  child: Text(
+                    formFieldState.errorText!,
+                    style: const TextStyle(color: Colors.red, fontSize: 12),
+                  ),
+                ),
+            ],
+          );
+        });
+      },
     );
   }
 
@@ -313,6 +472,44 @@ class _RecordTab extends StatelessWidget {
           decoration: const InputDecoration(border: OutlineInputBorder()),
         ),
       ],
+    );
+  }
+
+  Widget _buildInfoRowClickable(String label, String value, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: SizedBox(
+        height: 45,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 100,
+              child: Text(
+                label,
+                style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.grey),
+              ),
+            ),
+            Expanded(
+              child: Container(
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      value,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Icon(Icons.calendar_today, size: 18),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -357,7 +554,7 @@ class _ListRecord extends StatelessWidget {
                             ),
                             child: Obx(() {
                               final dateStr =
-                                  DateFormat('yyyy-MM-dd').format(controller.selectedDate.value);
+                                  DateFormat('dd/MM/yy').format(controller.selectedDate.value);
                               return Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
@@ -389,40 +586,46 @@ class _ListRecord extends StatelessWidget {
                                 itemCount: controller.ngRecordList.length,
                                 itemBuilder: (context, index) {
                                   final record = controller.ngRecordList[index];
-                                  return Card(
-                                    margin: const EdgeInsets.all(8),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(12),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          _row(
-                                              'Plan',
-                                              formatDateTime(
-                                                  record.planDate, record.planStartTime)),
-                                          _row('Shift', record.teamName),
-                                          _row('Shift Time', record.shiftPeriodName),
-                                          _row('OT', record.ot == 'Y' ? 'Yes OT' : '-'),
-                                          _row('Model', record.modelCd),
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(vertical: 2),
-                                            child: Row(
-                                              children: [
-                                                const SizedBox(width: 80, child: Text('Status')),
-                                                Expanded(
-                                                  child: Text(
-                                                    record.statusName,
-                                                    style: const TextStyle(
-                                                      color: Colors.purple,
-                                                      fontWeight: FontWeight.bold,
-                                                      decoration: TextDecoration.underline,
+                                  return InkWell(
+                                    onTap: () {
+                                      controller.setRecordFromList(record);
+                                      controller.step.value = 0;
+                                    },
+                                    child: Card(
+                                      margin: const EdgeInsets.all(8),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(12),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            _row(
+                                                'Plan',
+                                                formatDateTime(
+                                                    record.planDate, record.planStartTime)),
+                                            _row('Shift', record.teamName),
+                                            _row('Shift Time', record.shiftPeriodName),
+                                            _row('OT', record.ot == 'Y' ? 'Yes OT' : '-'),
+                                            _row('Model', record.modelCd),
+                                            Padding(
+                                              padding: const EdgeInsets.symmetric(vertical: 2),
+                                              child: Row(
+                                                children: [
+                                                  const SizedBox(width: 80, child: Text('Status')),
+                                                  Expanded(
+                                                    child: Text(
+                                                      record.statusName,
+                                                      style: const TextStyle(
+                                                        color: Colors.purple,
+                                                        fontWeight: FontWeight.bold,
+                                                        decoration: TextDecoration.underline,
+                                                      ),
                                                     ),
                                                   ),
-                                                ),
-                                              ],
+                                                ],
+                                              ),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   );
@@ -444,10 +647,10 @@ class _ListRecord extends StatelessWidget {
 
   String formatDateTime(String dateStr, String timeStr) {
     try {
-      final date = DateTime.parse(dateStr).toLocal();
-      final time = DateTime.parse(timeStr).toLocal();
+      final date = DateTime.parse(dateStr);
+      final time = DateTime.parse(timeStr);
       final combined = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-      return DateFormat('yy/MM/dd HH:mm').format(combined);
+      return DateFormat('dd/MM/yy HH:mm').format(combined);
     } catch (e) {
       return '-';
     }
@@ -467,12 +670,11 @@ class _ListRecord extends StatelessWidget {
 }
 
 class _HistoryTab extends StatelessWidget {
-  const _HistoryTab();
-
+  _HistoryTab();
+  final box = GetStorage();
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<NgInformationController>();
-    final loginController = Get.find<LoginController>();
 
     return Obx(() {
       return Padding(
@@ -507,7 +709,7 @@ class _HistoryTab extends StatelessWidget {
                             ),
                             child: Obx(() {
                               final dateStr =
-                                  DateFormat('yyyy-MM-dd').format(controller.selectedDate.value);
+                                  DateFormat('dd/MM/yy').format(controller.selectedDate.value);
                               return Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
@@ -529,7 +731,7 @@ class _HistoryTab extends StatelessWidget {
                               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                             ),
                             Text(
-                              loginController.selectedLine.value,
+                              box.read('selectedLine'),
                               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                             ),
                           ],
@@ -615,20 +817,29 @@ class _HistoryTab extends StatelessWidget {
 
   String formatDateTime(String dateStr, String timeStr) {
     try {
-      final date = DateTime.parse(dateStr).toLocal();
-      final time = DateTime.parse(timeStr).toLocal();
+      final date = DateTime.parse(dateStr);
+      final time = DateTime.parse(timeStr);
       final combined = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-      return DateFormat('yy/MM/dd HH:mm').format(combined);
+      return DateFormat('dd/MM/yy HH:mm').format(combined);
     } catch (e) {
       return '-';
     }
   }
 
+  // String formatDate(String dateStr) {
+  //   try {
+  //     final date = DateTime.parse(dateStr).toLocal();
+  //     final combined = DateTime(date.year, date.month, date.day);
+  //     return DateFormat('yy/MM/dd').format(combined);
+  //   } catch (e) {
+  //     return '-';
+  //   }
+  // }
+
   String formatDate(String dateStr) {
     try {
-      final date = DateTime.parse(dateStr).toLocal();
-      final combined = DateTime(date.year, date.month, date.day);
-      return DateFormat('yy/MM/dd').format(combined);
+      final date = DateTime.parse(dateStr);
+      return DateFormat('dd/MM/yy').format(date); // ✅ ปรับตามนี้
     } catch (e) {
       return '-';
     }
@@ -636,9 +847,8 @@ class _HistoryTab extends StatelessWidget {
 
   String formatTime(String timeStr) {
     try {
-      final time = DateTime.parse(timeStr).toLocal();
-      final combined = DateTime(time.hour, time.minute);
-      return DateFormat('HH:mm').format(combined);
+      final time = DateTime.parse(timeStr);
+      return DateFormat('HH:mm').format(time);
     } catch (e) {
       return '-';
     }

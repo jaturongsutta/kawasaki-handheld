@@ -6,14 +6,16 @@ import 'dart:io';
 // import 'package:bmt_mobile/services/user_service/user_service.dart';
 // import 'package:dio/dio.dart' as dio;
 
-import 'package:dio/dio.dart';
+import 'package:dio/dio.dart' as dio;
 import 'package:dio/io.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 // import 'package:get/get.dart';
 import 'package:injectable/injectable.dart';
 import 'package:kmt/enum/dialog_type.dart';
 import 'package:kmt/enum/dio_type.dart';
-import 'package:kmt/services/user_service/user_service.dart';
 import 'package:kmt/util/api_config.dart';
 import 'package:kmt/util/local_storage_util.dart';
 import 'package:kmt/widgets/customLog.dart';
@@ -26,7 +28,35 @@ final baseService = getIt<BaseService>();
 
 @lazySingleton
 class BaseService {
-  Timer? apiRequestTimer; // Timer variable to keep track of the timeout
+  Timer? _idleTimer;
+  static const Duration idleTimeout = Duration(minutes: 60);
+
+  void _startIdleTimer() {
+    _idleTimer?.cancel(); // ยกเลิกตัวเดิมก่อน
+    _idleTimer = Timer(idleTimeout, _onSessionExpired);
+  }
+
+  void _onSessionExpired() async {
+    final box = Get.find<GetStorage>();
+    if (EasyLoading.isShow) {
+      await EasyLoading.dismiss();
+    }
+
+    await dialogService.showCustomDialog(
+      variant: DialogType.icon,
+      data: {
+        'icon': const Icon(
+          Icons.warning,
+          color: Colors.red,
+          size: 52,
+        ),
+      },
+      description: 'Session Expired',
+    );
+
+    await box.erase();
+    Get.offAllNamed('/login');
+  }
 
   Future<dynamic> apiRequest(
     String apiPath, {
@@ -36,105 +66,54 @@ class BaseService {
     String? title,
     QueryType queryType = QueryType.get,
   }) async {
-    try {
-      final dio = Dio();
+    final box = GetStorage();
+    final user = box.read('user');
+    if (user != null) {
+      _startIdleTimer();
+    }
 
-      (dio.httpClientAdapter as DefaultHttpClientAdapter).onHttpClientCreate = (HttpClient client) {
+    try {
+      final dio.Dio dioClient = dio.Dio();
+
+      (dioClient.httpClientAdapter as DefaultHttpClientAdapter).onHttpClientCreate =
+          (HttpClient client) {
         client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
         return client;
       };
 
       String? token = await LocalStorage.getLocalStorage(key: 'token');
-
       endpoint ??= EndpointConfig.currentEndpoint.endpoint;
 
-      apiRequestTimer?.cancel();
-      // apiRequestTimer = Timer(const Duration(minutes: 60), () async {
-      //   UserService userService = UserService();
-      //   await userService.bindLogout();
-      //   if (EasyLoading.isShow) {
-      //     await EasyLoading.dismiss();
-      //   }
-      //   await dialogService.showCustomDialog(
-      //     variant: DialogType.icon,
-      //     description: 'Session Expired',
-      //     imageUrl: "assets/svg_images/error.svg",
-      //   );
-      //   // await Get.offAll(const LoginScreen());
-      //   return;
-      // });
-      if (token != null) {
-        // bool hasExpired = JwtDecoder.isExpired(token);
-        // if (hasExpired) {
-        //   UserService userService = UserService();
-        //   await userService.bindLogout();
-        //   if (EasyLoading.isShow) {
-        //     await EasyLoading.dismiss();
-        //     await dialogService.showCustomDialog(
-        //       variant: DialogType.icon,
-        //       description: 'Error',
-        //       imageUrl: "assets/svg_images/error.svg",
-        //     );
-        //   }
-        //   await Get.offAll(const LoginScreen());
-        //   return;
-        // } else {
-        //   headers ??= {
-        //     'Content-Type': 'application/json',
-        //     'accept': '*/*',
-        //     'Authorization': 'Bearer $token',
-        //   };
-        // }
+      headers ??= {
+        'Content-Type': 'application/json',
+        'accept': '*/*',
+        if (token != null) 'Authorization': 'Bearer $token',
+      };
 
-        headers ??= {
-          'Content-Type': 'application/json',
-          'accept': '*/*',
-          'Authorization': 'Bearer $token',
-        };
-      } else {
-        headers ??= {
-          'Content-Type': 'application/json',
-          'accept': '*/*',
-        };
-      }
-
-      print(endpoint + apiPath);
-
-      print("token ===> $token");
       logger.i('api ==> ${endpoint + apiPath}');
       logger.i('data ==> $data');
 
-      var response;
+      dio.Response response;
       switch (queryType) {
         case QueryType.get:
-          response = await dio.get(
+          response = await dioClient.get(
             endpoint + apiPath,
-            data: data,
-            options: Options(
-              headers: headers,
-            ),
+            queryParameters: data, // ⚠️ สำหรับ GET ใช้ queryParameters
+            options: dio.Options(headers: headers),
           );
           break;
         case QueryType.post:
-          response = await dio.post(
+          response = await dioClient.post(
             endpoint + apiPath,
             data: data,
-            options: Options(
-              headers: headers,
-            ),
+            options: dio.Options(headers: headers),
           );
           break;
       }
-      logger.i(response);
-      print('response ===> ${response} ');
-      if (response.statusCode == 401) {
-        // Handle 401 Unauthoriz   Navigator.of(context).pushReplacement(
-        print('Unauthorized: Token may be invalid or expired. 401');
-        // MaterialPageRoute(
-        //   builder: (context) => const LoginScreen(),
-        // );
 
+      if (response.statusCode == 401) {
         print('Unauthorized: Token may be invalid or expired.');
+        // อาจเรียก logout() ได้ที่นี่
       } else if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.toString());
       } else {
@@ -142,7 +121,6 @@ class BaseService {
       }
     } catch (e) {
       print('catch base_service ===> $e');
-
       EasyLoading.dismiss();
     }
   }

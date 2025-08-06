@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:kmt/model/ng_historical_model.dart';
 import 'package:kmt/model/ng_init_data_model.dart';
@@ -7,15 +8,18 @@ import 'package:kmt/model/ng_production_model.dart';
 import 'package:kmt/model/ng_record_model.dart';
 import 'package:kmt/model/ng_record_request.dart';
 import 'package:kmt/modules/login/controllers/login_controller.dart';
+import 'package:kmt/modules/menu_two/controllers/menu_two_controller.dart';
 import 'package:kmt/modules/ng_information/services/ngService.dart';
 
-class NgInformationController extends GetxController {
+class NgInformationController extends GetxController with GetSingleTickerProviderStateMixin {
   final NgInformationService service;
   NgInformationController(this.service);
   final LoginController loginController = Get.find<LoginController>();
+  final menuController = Get.find<MenuTwoController>();
+
   final ngRecordList = <NgRecordModel>[].obs;
   final historicalRecordList = <HistoricalRecordModel>[].obs;
-
+  late TabController tabController;
   final isLoading = false.obs;
   final step = ValueNotifier<int>(0);
   final selectedDate = DateTime.now().obs;
@@ -25,26 +29,34 @@ class NgInformationController extends GetxController {
   final partUpperController = TextEditingController(text: '1000003-00475');
   final partLowerController = TextEditingController(text: '1000013-08985');
   final ngDate = DateTime.now().obs;
-  final ngTimeController = TextEditingController(text: '10:35');
+  final ngTimeController = TextEditingController(
+    text: DateFormat('HH:mm').format(DateTime.now()),
+  );
   final quantityController = TextEditingController(text: '1');
   final commentController = TextEditingController();
   Rxn<NGProductionPlanModel> runningPlan = Rxn<NGProductionPlanModel>();
   Rxn<NgInitDataModel> initData = Rxn<NgInitDataModel>();
-
+  final box = GetStorage();
   var reasonOptions = ['Blow Hole', 'Crack', 'Scratch', 'Other'];
-  var selectedReason = 'Blow Hole'.obs;
+  var selectedReason = ''.obs;
 
   @override
   void onInit() {
+    print('============ onInit ============');
     super.onInit();
-    loadNgInitialData(); // ✅ โหลดแผนเมื่อเปิดหน้า
-    reloadHistoricalRecords(); // ✅ โหลดแผนเมื่อเปิดหน้า
+    tabController = TabController(length: 2, vsync: this);
+    loadNgInitialData();
+    reloadHistoricalRecords();
+  }
+
+  void changeTab(int index) {
+    tabController.animateTo(index);
   }
 
   Future<void> loadNgInitialData() async {
     isLoading.value = true;
     try {
-      final result = await service.fetchNgInitialData(loginController.selectedLine.value);
+      final result = await service.fetchNgInitialData(box.read('selectedLine'));
       if (result != null) {
         initData.value = result;
 
@@ -55,10 +67,25 @@ class NgInformationController extends GetxController {
           ngTimeController.text = defaults.ngTime;
           quantityController.text = defaults.quantity.toString();
         }
+        print('######### ===>###### ');
+
+        if (menuController.selectedNGTempReason.value.isNotEmpty ||
+            menuController.selectedNGTempProcess.value.isNotEmpty) {
+          final reasonLabel = initData.value!.reason
+              .firstWhere(
+                (ele) => ele.code == menuController.selectedNGTempReason.value,
+              )
+              .label;
+          print('reasonLabel ===> $reasonLabel');
+
+          selectedReason.value = reasonLabel;
+          selectedProcess.value = menuController.selectedNGTempProcess.value;
+        }
       } else {
         Get.snackbar('Error', 'ไม่พบข้อมูลเริ่มต้น');
       }
     } catch (e) {
+      print('eeeee=== > $e');
       Get.snackbar('Error', 'ไม่พบข้อมูลเริ่มต้น');
     } finally {
       isLoading.value = false;
@@ -75,6 +102,10 @@ class NgInformationController extends GetxController {
 
   void save() async {
     final plan = initData.value?.plan;
+    final box = GetStorage();
+    final user = box.read('user');
+    final createdBy = user?['userId'] ?? '';
+
     if (plan == null) {
       Get.snackbar('Error', 'ไม่มีข้อมูลแผนการผลิต');
       return;
@@ -87,16 +118,18 @@ class NgInformationController extends GetxController {
         )
         .code;
 
+    print('create by ===>$createdBy');
+
     final request = NgRecordRequest(
       planId: plan.id,
-      lineCd: loginController.selectedLine.value,
+      lineCd: box.read('selectedLine'),
       processCd: selectedProcess.value,
       ngDate: DateFormat('yyyy-MM-dd').format(ngDate.value),
       ngTime: ngTimeController.text,
       quantity: int.tryParse(quantityController.text) ?? 0,
       reason: reason,
       comment: commentController.text,
-      createdBy: 1,
+      createdBy: createdBy,
     );
 
     try {
@@ -108,10 +141,11 @@ class NgInformationController extends GetxController {
         final dateStr = DateFormat('yyyy-MM-dd').format(selectedDate.value);
 
         // ✅ โหลดรายการข้อมูล NG Record
-        final resRecordList =
-            await service.fetchNgRecordList(loginController.selectedLine.value, dateStr);
+        final resRecordList = await service.fetchNgRecordList(box.read('selectedLine'), dateStr);
         ngRecordList.assignAll(resRecordList);
-        step.value = 1;
+        // step.value = 1;
+        reloadHistoricalRecords();
+        changeTab(1);
       } else {
         Get.snackbar('ไม่สำเร็จ', 'บันทึกข้อมูลไม่สำเร็จ');
       }
@@ -130,8 +164,7 @@ class NgInformationController extends GetxController {
     isLoading.value = true;
     try {
       final dateStr = DateFormat('yyyy-MM-dd').format(selectedDate.value);
-      final resRecordList =
-          await service.fetchNgRecordList(loginController.selectedLine.value, dateStr);
+      final resRecordList = await service.fetchNgRecordList(box.read('selectedLine'), dateStr);
       ngRecordList.assignAll(resRecordList);
     } catch (e) {
       Get.snackbar('ผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้');
@@ -146,7 +179,7 @@ class NgInformationController extends GetxController {
       final dateStr = DateFormat('yyyy-MM-dd').format(selectedDate.value);
 
       final res = await service.fetchHistoricalList(
-        lineCd: loginController.selectedLine.value,
+        lineCd: box.read('selectedLine'),
         dateFrom: dateStr,
         dateTo: dateStr, // ใช้วันเดียวกันทั้ง dateFrom และ dateTo ในกรณีค้นหาวันเดียว
       );
@@ -159,6 +192,41 @@ class NgInformationController extends GetxController {
     }
   }
 
+  void setRecordFromList(NgRecordModel record) {
+    final oldInitData = initData.value;
+    if (oldInitData == null) return;
+
+    initData.value = NgInitDataModel(
+      process: oldInitData.process,
+      reason: oldInitData.reason,
+      defaults: oldInitData.defaults,
+      plan: NGProductionPlanModel(
+        statusName: record.statusName,
+        lineCd: record.lineCd,
+        lineName: '-', // หรือดึงจากข้อมูลอื่น
+        planDate: record.planDate,
+        planStartTime: record.planStartTime,
+        teamName: record.teamName,
+        shiftPeriodName: record.shiftPeriodName,
+        b1: record.b1,
+        b2: record.b2,
+        b3: record.b3,
+        b4: record.b4,
+        ot: record.ot,
+        modelCd: record.modelCd,
+        cycleTimes: record.cycleTimes,
+        planTotalTime: record.planTotalTime,
+        planFgAmt: record.planFgAmt,
+        actualFgAmt: record.actualFgAmt ?? 0,
+        status: record.status,
+        id: record.id,
+        partNo: record.partNo,
+        part1: record.partUpper,
+        part2: record.partLower ?? '',
+      ),
+    );
+  }
+
   @override
   void onClose() {
     partNoController.dispose();
@@ -167,6 +235,22 @@ class NgInformationController extends GetxController {
     ngTimeController.dispose();
     quantityController.dispose();
     commentController.dispose();
+    tabController.dispose();
+
+    // ❗️ปิด Rx และ Rxn
+    step.dispose();
+    selectedDate.close();
+    selectedProcess.close();
+    selectedReason.close();
+    ngDate.close();
+    isLoading.close();
+    totalRecords.close();
+
+    ngRecordList.close();
+    historicalRecordList.close();
+    initData.close();
+    runningPlan.close();
+
     super.onClose();
   }
 }
