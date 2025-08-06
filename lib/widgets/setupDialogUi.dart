@@ -168,11 +168,13 @@ class IconDialogBox extends StatefulWidget {
 class _IconDialogBoxState extends State<IconDialogBox> {
   late Timer _timer;
   int? counter;
+  Widget? icon;
 
   @override
   void initState() {
     super.initState();
     counter = widget.request.data?['counter'] ?? 3;
+    icon = widget.request.data?['icons'];
   }
 
   @override
@@ -224,11 +226,12 @@ class _IconDialogBoxState extends State<IconDialogBox> {
               height: 15,
             ),
           ],
-          SvgPicture.asset(
-            widget.request.imageUrl ?? "",
-            height: 52,
-            width: 52,
-          ),
+          widget.request.data['icon'] ?? Container(),
+          // SvgPicture.asset(
+          //   widget.request.imageUrl ?? "",
+          //   height: 52,
+          //   width: 52,
+          // ),
           const SizedBox(
             height: 15,
           ),

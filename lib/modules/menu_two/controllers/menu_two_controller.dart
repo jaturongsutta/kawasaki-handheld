@@ -6,6 +6,10 @@ class MenuTwoController extends GetxController {
   final lineOptions = <String>[].obs;
   final selectedLine = ''.obs;
   final menuList = <MenuModel>[].obs;
+  final selectedNGTempReason = ''.obs;
+  final selectedNGTempProcess = ''.obs;
+  final selectedLineTempReason = ''.obs;
+  final selectedLineTempProcess = ''.obs;
 
   @override
   void onInit() {
