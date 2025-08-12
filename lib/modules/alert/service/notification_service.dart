@@ -12,12 +12,14 @@ class NotificationService {
     required int to,
   }) async {
     final lineCd = box.read('selectedLine') ?? '';
-
+    final user = box.read('user');
+    final createdBy = user?['userId'] ?? '';
     final response = await _baseService.apiRequest(
       '/alert/info-alert',
       queryType: QueryType.post,
       data: {
         'Line_CD': lineCd,
+        'userID': createdBy,
         'Row_No_From': from,
         'Row_No_To': to,
       },
