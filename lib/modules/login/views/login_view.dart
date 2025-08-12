@@ -24,7 +24,8 @@ class LoginView extends StatelessWidget {
             child: Column(
               children: [
                 const KawasakiHeader(
-                  notificationCount: 10,
+                  notificationCount: 0,
+                  isShowNoti: false,
                 ),
                 Container(
                   padding: const EdgeInsets.all(20),
