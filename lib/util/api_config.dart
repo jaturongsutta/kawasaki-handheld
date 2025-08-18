@@ -49,7 +49,7 @@ class ApiConfig {
 }
 
 class EndpointConfig {
-  static const ApiConfig currentEndpoint = ApiConfig.local;
+  static const ApiConfig currentEndpoint = ApiConfig.kmtDev;
 }
 
 // const String appVersion = "250616-1";
