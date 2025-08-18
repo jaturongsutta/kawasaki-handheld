@@ -118,12 +118,17 @@ class _ProductionstatusTab extends StatelessWidget {
                   _infoRow('Plan', formatDateTime(data.planDate, data.planStartTime)),
                   _infoRow('Shift', data.teamName),
                   _infoRow('ShiftTime', data.shiftPeriodName),
+                  _breakRow('Break 1', controller.isBreak1Checked, () => controller.setBreak(1)),
+                  _breakRow(
+                      'Lunch Break', controller.isBreak2Checked, () => controller.setBreak(2)),
+                  _breakRow('Break 2', controller.isBreak3Checked, () => controller.setBreak(3)),
+                  _breakRow('Break OT', controller.isBreak4Checked, () => controller.setBreak(4)),
                   _otRow(data),
                   _infoRow('Model', data.modelCd),
                   _infoRow('Cycle Time', '${formatTime(data.cycleTime)} mins'),
                   _infoRow('Part No', data.partNo),
                   _infoRow('Part 1', data.partUpper),
-                  _infoRow('Part 2', data.partLower),
+                  _infoRow('Part 2', data.partLower ?? '-'),
                   _infoRow('AS400', data.productCd),
                   _infoRow('Product Code', data.pkCd),
                   const SizedBox(height: 16),
@@ -154,6 +159,17 @@ class _ProductionstatusTab extends StatelessWidget {
                           ),
                         ),
                       ],
+                    ),
+                  if (data.status != "20" && data.status != "10")
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          controller.step.value = 0;
+                          controller.selectedPlanDetail.value = null;
+                        },
+                        child: const Text('Back'),
+                      ),
                     ),
                 ],
               ),
@@ -218,7 +234,7 @@ class _ProductionstatusTab extends StatelessWidget {
                   foregroundColor: Colors.black,
                 ),
                 child: const Text(
-                  'SET OT',
+                  'Save',
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -238,6 +254,37 @@ class _ProductionstatusTab extends StatelessWidget {
     } catch (e) {
       return '-';
     }
+  }
+
+  Widget _breakRow(String label, RxBool rxValue, Future<bool> Function() onSet) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 0),
+      child: Obx(() {
+        final isChecked = rxValue.value;
+
+        return Row(
+          children: [
+            SizedBox(
+              width: 120,
+              child: Text('$label :', style: const TextStyle(color: Colors.grey)),
+            ),
+            Switch(
+              value: isChecked,
+              onChanged: (val) {
+                rxValue.value = val;
+                // onSet(val);
+                onSet();
+              },
+              activeColor: Colors.green,
+              activeTrackColor: Colors.green.shade200,
+              inactiveThumbColor: Colors.red,
+              inactiveTrackColor: Colors.red.shade200,
+            ),
+            const SizedBox(width: 8),
+          ],
+        );
+      }),
+    );
   }
 
   String formatTime(String timeStr) {
@@ -586,13 +633,22 @@ class _OtherProductionstatusTab extends StatelessWidget {
                   _infoRow('Plan', formatDateTime(data.planDate, data.planStartTime)),
                   _infoRow('Shift', data.teamName),
                   _infoRow('ShiftTime', data.shiftPeriodName),
+                  _breakRow(
+                      'Break 1', controller.isBreak1Checked, () => controller.setBreakOther(1)),
+                  _breakRow(
+                      'Lunch Break', controller.isBreak2Checked, () => controller.setBreakOther(2)),
+                  _breakRow(
+                      'Break 2', controller.isBreak3Checked, () => controller.setBreakOther(3)),
+                  _breakRow(
+                      'Break OT', controller.isBreak4Checked, () => controller.setBreakOther(4)),
                   _otRow(data),
                   _infoRow('Model', data.modelCd),
                   _infoRow('Cycle Time', '${formatTime(data.cycleTime)} mins'),
                   _infoRow('Part No', data.partNo),
                   _infoRow('Part 1', data.partUpper),
-                  _infoRow('Part 2', data.partLower),
-                  _infoRow('AS400 Product Code', data.as400ProductCD),
+                  _infoRow('Part 2', data.partLower ?? '-'),
+                  _infoRow('AS400', data.productCd),
+                  _infoRow('Product Code', data.pkCd),
                   const SizedBox(height: 16),
                   Row(
                     children: [
@@ -674,6 +730,37 @@ class _OtherProductionstatusTab extends StatelessWidget {
                 ),
               ),
             ),
+          ],
+        );
+      }),
+    );
+  }
+
+  Widget _breakRow(String label, RxBool rxValue, Future<bool> Function() onSet) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 0),
+      child: Obx(() {
+        final isChecked = rxValue.value;
+
+        return Row(
+          children: [
+            SizedBox(
+              width: 120,
+              child: Text('$label :', style: const TextStyle(color: Colors.grey)),
+            ),
+            Switch(
+              value: isChecked,
+              onChanged: (val) {
+                rxValue.value = val;
+                // onSet(val);
+                onSet();
+              },
+              activeColor: Colors.green,
+              activeTrackColor: Colors.green.shade200,
+              inactiveThumbColor: Colors.red,
+              inactiveTrackColor: Colors.red.shade200,
+            ),
+            const SizedBox(width: 8),
           ],
         );
       }),

@@ -27,7 +27,7 @@ class LineStopInformationService {
     return null;
   }
 
-  Future<bool> saveLineStopRecord(LineStopRecordRequest record) async {
+  Future<String> saveLineStopRecord(LineStopRecordRequest record) async {
     try {
       final response = await baseService.apiRequest(
         '/line-stop/save-record',
@@ -36,12 +36,14 @@ class LineStopInformationService {
       );
 
       if (response['result'] == true) {
-        return true;
+        return '';
+      } else {
+        return response['message'];
       }
     } catch (e) {
       print('Save NG Record Error: $e');
+      return 'Save NG Record Error: $e';
     }
-    return false;
   }
 
   Future<List<LineStopRecordModel>> fetchLineStopRecordList(String lineCd, String planDate) async {

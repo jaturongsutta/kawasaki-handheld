@@ -53,7 +53,8 @@ class ProductionStatusService {
   Future<bool> updateOT({
     required int planId,
     required bool isOT,
-    required num timeMins,
+    required dynamic data,
+    required dynamic cycleTime,
     required num updatedBy,
   }) async {
     final res = await baseService.apiRequest(
@@ -61,7 +62,8 @@ class ProductionStatusService {
       data: {
         'plan_id': planId,
         'is_ot': isOT,
-        'time_mins': timeMins,
+        'data': data,
+        'cycleTime': cycleTime,
         'updated_by': updatedBy,
       },
       queryType: QueryType.post,
@@ -70,17 +72,19 @@ class ProductionStatusService {
     return res['result'] == true;
   }
 
-  Future<Map<String, dynamic>?> fetchOTData(int planId) async {
+  Future<String> fetchOTData(var data) async {
     final res = await baseService.apiRequest(
       '/production-status/check-ot',
-      data: {'plan_id': planId},
+      data: data,
       queryType: QueryType.post,
     );
+    logger.i(data);
 
-    if (res['result'] == true && res['data'] != null && res['data'].isNotEmpty) {
-      return res['data'][0];
+    if (res['result']) {
+      return '';
+    } else {
+      return res['message'];
     }
-    return null;
   }
 
   Future<bool> stopPlan(int planId, num updatedBy) async {
@@ -160,7 +164,8 @@ class ProductionStatusService {
   Future<bool> updateOTOther({
     required int planId,
     required bool isOT,
-    required num timeMins,
+    required dynamic data,
+    required dynamic cycleTime,
     required num updatedBy,
   }) async {
     final res = await baseService.apiRequest(
@@ -168,7 +173,8 @@ class ProductionStatusService {
       data: {
         'plan_id': planId,
         'is_ot': isOT,
-        'time_mins': timeMins,
+        'data': data,
+        'cycleTime': cycleTime,
         'updated_by': updatedBy,
       },
       queryType: QueryType.post,
@@ -177,16 +183,18 @@ class ProductionStatusService {
     return res['result'] == true;
   }
 
-  Future<Map<String, dynamic>?> fetchOTDataOther(int planId) async {
+  Future<String> fetchOTDataOther(var data) async {
     final res = await baseService.apiRequest(
       '/production-status/check-ot',
-      data: {'plan_id': planId},
+      data: data,
       queryType: QueryType.post,
     );
+    logger.i(data);
 
-    if (res['result'] == true && res['data'] != null && res['data'].isNotEmpty) {
-      return res['data'][0];
+    if (res['result']) {
+      return '';
+    } else {
+      return res['message'];
     }
-    return null;
   }
 }

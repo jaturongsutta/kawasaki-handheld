@@ -26,7 +26,10 @@ class LineStopInformationController extends GetxController with GetSingleTickerP
   final selectedDate = DateTime.now().obs;
   final selectedProcess = ''.obs;
   final totalRecords = 0.obs;
-  final ngDate = DateTime.now().obs;
+  var ngDate = DateTime.now().obs;
+  var timeDefault = ''.obs;
+  var tempTimeDefault = ''.obs;
+
   final ngTimeController = TextEditingController(text: DateFormat('HH:mm').format(DateTime.now()));
   final quantityController = TextEditingController(text: '1');
   final commentController = TextEditingController();
@@ -61,6 +64,8 @@ class LineStopInformationController extends GetxController with GetSingleTickerP
         if (defaults != null) {
           ngDate.value = DateTime.parse(defaults.ngDate);
           ngTimeController.text = defaults.ngTime;
+          timeDefault.value = defaults.ngTime;
+          tempTimeDefault.value = defaults.ngTime;
           quantityController.text = defaults.quantity.toString();
         }
         if (menuController.selectedLineTempReason.value.isNotEmpty ||
@@ -124,21 +129,19 @@ class LineStopInformationController extends GetxController with GetSingleTickerP
 
     try {
       final result = await service.saveLineStopRecord(request);
-      if (result) {
+      if (result.isEmpty) {
         Get.snackbar('สำเร็จ', 'บันทึกข้อมูลสำเร็จ');
 
-        // ✅ เปลี่ยนหน้าไปแสดงรายการหลังบันทึก
         final dateStr = DateFormat('yyyy-MM-dd').format(selectedDate.value);
 
-        // ✅ โหลดรายการข้อมูล NG Record
         final resRecordList =
             await service.fetchLineStopRecordList(box.read('selectedLine'), dateStr);
         ngRecordList.assignAll(resRecordList);
-        // step.value = 1;
         reloadHistoricalRecords();
+        resetFormToDefaults();
         changeTab(1);
       } else {
-        Get.snackbar('ไม่สำเร็จ', 'บันทึกข้อมูลไม่สำเร็จ');
+        Get.snackbar('ไม่สำเร็จ', result);
       }
     } catch (e) {
       Get.snackbar('ผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้');
@@ -219,6 +222,42 @@ class LineStopInformationController extends GetxController with GetSingleTickerP
         part2: record.partLower ?? '',
       ),
     );
+  }
+
+  void resetFormToDefaults() {
+    // ล้างตัวเลือก
+    selectedProcess.value = '';
+    selectedReason.value = '';
+    selectedTempReason.value = '';
+    timeDefault.value = tempTimeDefault.value;
+
+    // ถ้ามี defaults จาก API ให้ใช้ก่อน
+    final defaults = initData.value?.defaults;
+    if (defaults != null) {
+      try {
+        ngDate.value = DateTime.parse(defaults.ngDate);
+      } catch (_) {
+        ngDate.value = DateTime.now();
+      }
+      ngTimeController.text = defaults.ngTime;
+      quantityController.text = defaults.quantity.toString();
+    } else {
+      // ถ้าไม่มี defaults ให้ลองอิงจากแผน
+      final plan = initData.value?.plan;
+      if (plan != null) {
+        try {
+          ngDate.value = DateTime.parse(plan.planDate);
+        } catch (_) {
+          ngDate.value = DateTime.now();
+        }
+      } else {
+        ngDate.value = DateTime.now();
+      }
+      ngTimeController.text = DateFormat('HH:mm').format(DateTime.now());
+      quantityController.text = '1';
+    }
+
+    commentController.clear();
   }
 
   @override

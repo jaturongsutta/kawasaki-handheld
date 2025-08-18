@@ -53,6 +53,11 @@ class ProductionStatusController extends GetxController with GetSingleTickerProv
   Rxn<ProductionDetailModel> selectedPlanDetail = Rxn<ProductionDetailModel>();
   Rxn<ProductionDetailModel> selectedOtherPlanDetail = Rxn<ProductionDetailModel>();
 
+  final isBreak1Checked = false.obs;
+  final isBreak2Checked = false.obs;
+  final isBreak3Checked = false.obs;
+  final isBreak4Checked = false.obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -132,16 +137,29 @@ class ProductionStatusController extends GetxController with GetSingleTickerProv
       final plan = selectedPlanDetail.value;
       if (plan == null) return false;
 
-      final otData = await service.fetchOTData(plan.id);
-      if (otData == null) {
+      plan.ot = isOTChecked.value ? 'Y' : 'N';
+      final data = {
+        'Line_CD': plan.lineCd,
+        'Plan_Start_DT': plan.startDT!.toIso8601String(),
+        'Plan_Stop_DT': plan.endDT!.toIso8601String(),
+        'B1': plan.b1,
+        'B2': plan.b2,
+        'B3': plan.b3,
+        'B4': plan.b4,
+        'OT': plan.ot,
+        'Shift_Period': plan.shiftPeriod,
+        'id': plan.id,
+      };
+
+      final otData = await service.fetchOTData(data);
+      print('object===> $otData');
+      if (otData.isNotEmpty) {
         dialogService.showDialog(
           title: 'ไม่สามารถแก้ไขได้',
-          description: 'แผนนี้เลยเวลาที่กำหนดแล้ว ไม่สามารถอัปเดต OT ได้',
+          description: otData,
         );
         return false;
       }
-
-      final timeMins = otData['Time_Mins'] ?? 0;
 
       final confirm = await dialogService.showConfirmationDialog(
         title: 'ยืนยันการอัปเดต OT',
@@ -149,12 +167,11 @@ class ProductionStatusController extends GetxController with GetSingleTickerProv
       );
 
       if (confirm?.confirmed == true) {
-        final newTotalTime = timeMins;
-
         final success = await service.updateOT(
           planId: plan.id,
           isOT: isOT,
-          timeMins: newTotalTime,
+          data: data,
+          cycleTime: plan.cycleTime,
           updatedBy: createdBy,
         );
 
@@ -170,11 +187,14 @@ class ProductionStatusController extends GetxController with GetSingleTickerProv
       } else {
         return false;
       }
-    } catch (e) {
+    } catch (e, s) {
+      print('eee ==> $e');
+      print('sss ==> $s');
+
       EasyLoading.showError('เกิดข้อผิดพลาด');
       return false;
     } finally {
-      isLoading.value = false; // ✅ หยุด loading ไม่ว่า success หรือ error
+      isLoading.value = false;
     }
   }
 
@@ -262,16 +282,27 @@ class ProductionStatusController extends GetxController with GetSingleTickerProv
       final plan = selectedOtherPlanDetail.value;
       if (plan == null) return false;
 
-      final otData = await service.fetchOTData(plan.id);
-      if (otData == null) {
+      plan.ot = isOTChecked.value ? 'Y' : 'N';
+      final data = {
+        'Line_CD': plan.lineCd,
+        'Plan_Start_DT': plan.startDT!.toIso8601String(),
+        'Plan_Stop_DT': plan.endDT!.toIso8601String(),
+        'B1': plan.b1,
+        'B2': plan.b2,
+        'B3': plan.b3,
+        'B4': plan.b4,
+        'OT': plan.ot,
+        'Shift_Period': plan.shiftPeriod,
+        'id': plan.id,
+      };
+      final otData = await service.fetchOTData(data);
+      if (otData.isNotEmpty) {
         dialogService.showDialog(
           title: 'ไม่สามารถแก้ไขได้',
-          description: 'แผนนี้เลยเวลาที่กำหนดแล้ว ไม่สามารถอัปเดต OT ได้',
+          description: otData,
         );
         return false;
       }
-
-      final timeMins = otData['Time_Mins'] ?? 0;
 
       final confirm = await dialogService.showConfirmationDialog(
         title: 'ยืนยันการอัปเดต OT',
@@ -279,12 +310,11 @@ class ProductionStatusController extends GetxController with GetSingleTickerProv
       );
 
       if (confirm?.confirmed == true) {
-        final newTotalTime = timeMins;
-
         final success = await service.updateOT(
           planId: plan.id,
           isOT: isOT,
-          timeMins: newTotalTime,
+          data: data,
+          cycleTime: plan.cycleTime,
           updatedBy: createdBy,
         );
 
@@ -319,6 +349,79 @@ class ProductionStatusController extends GetxController with GetSingleTickerProv
     }
   }
 
+  void initBreaksFromModel(ProductionDetailModel m) {
+    isBreak1Checked.value = m.b1 == 'Y';
+    isBreak2Checked.value = m.b2 == 'Y';
+    isBreak3Checked.value = m.b3 == 'Y';
+    isBreak4Checked.value = m.b4 == 'Y';
+  }
+
+  Future<bool> setBreak(int breakNo) async {
+    final plan = selectedPlanDetail.value;
+    switch (breakNo) {
+      case 1:
+        plan!.b1 = isBreak1Checked.value ? 'Y' : 'N';
+
+        break;
+      case 2:
+        plan!.b2 = isBreak2Checked.value ? 'Y' : 'N';
+
+        break;
+      case 3:
+        plan!.b3 = isBreak3Checked.value ? 'Y' : 'N';
+
+        break;
+      case 4:
+        plan!.b4 = isBreak4Checked.value ? 'Y' : 'N';
+
+        break;
+    }
+    return true;
+  }
+
+  Future<bool> setBreakOther(int breakNo) async {
+    final plan = selectedOtherPlanDetail.value;
+    switch (breakNo) {
+      case 1:
+        plan!.b1 = isBreak1Checked.value ? 'Y' : 'N';
+
+        break;
+      case 2:
+        plan!.b2 = isBreak2Checked.value ? 'Y' : 'N';
+
+        break;
+      case 3:
+        plan!.b3 = isBreak3Checked.value ? 'Y' : 'N';
+
+        break;
+      case 4:
+        plan!.b4 = isBreak4Checked.value ? 'Y' : 'N';
+
+        break;
+    }
+    return true;
+  }
+
+  DateTime _combineDateAndTime(String planDateIso, String timeIso) {
+    final date = DateTime.parse(planDateIso); // แปลงเป็น local
+    final time = DateTime.parse(timeIso); // แปลงเป็น local
+
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+      time.second,
+    );
+  }
+
+  String _fmt(DateTime dt) {
+    String two(int v) => v.toString().padLeft(2, '0');
+    final d = dt.toLocal();
+    return '${d.year}-${two(d.month)}-${two(d.day)} ${two(d.hour)}:${two(d.minute)}:${two(d.second)}';
+  }
+
   @override
   void onClose() {
     // Dispose controllers
@@ -351,7 +454,10 @@ class ProductionStatusController extends GetxController with GetSingleTickerProv
     isOTSetOther.value = false;
     selectedPlanDetail.value = null;
     selectedOtherPlanDetail.value = null;
-
+    isBreak1Checked.value = false;
+    isBreak2Checked.value = false;
+    isBreak3Checked.value = false;
+    isBreak4Checked.value = false;
     super.onClose();
   }
 }

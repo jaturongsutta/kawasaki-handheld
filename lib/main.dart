@@ -9,6 +9,7 @@ import 'package:kmt/modules/alert/controllers/notification_controller.dart';
 import 'package:kmt/modules/login/controllers/login_controller.dart';
 import 'package:kmt/routes/app_pages.dart';
 import 'package:kmt/routes/app_routes.dart';
+import 'package:kmt/services/base_service.dart';
 import 'package:kmt/services/inject.dart';
 import 'package:kmt/widgets/customLog.dart';
 import 'package:kmt/widgets/setupDialogUi.dart';
@@ -83,7 +84,22 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      builder: EasyLoading.init(),
+      builder: (context, child) {
+        final easy = EasyLoading.init()(context, child);
+        return Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (_) => baseService.bumpIdle(),
+          onPointerMove: (_) => baseService.bumpIdle(),
+          onPointerUp: (_) => baseService.bumpIdle(),
+          child: easy,
+        );
+      },
+      navigatorObservers: [
+        GetObserver((routing) {
+          baseService.bumpIdle();
+        }),
+      ],
+
       title: 'KMT',
       debugShowCheckedModeBanner: false,
       // initialRoute: AppRoutes.menuTwo,
