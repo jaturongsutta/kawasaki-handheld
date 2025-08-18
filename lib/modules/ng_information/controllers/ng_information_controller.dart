@@ -29,6 +29,8 @@ class NgInformationController extends GetxController with GetSingleTickerProvide
   final partUpperController = TextEditingController(text: '1000003-00475');
   final partLowerController = TextEditingController(text: '1000013-08985');
   final ngDate = DateTime.now().obs;
+  var tempTimeDefault = ''.obs;
+  var timeDefault = ''.obs;
   final ngTimeController = TextEditingController(
     text: DateFormat('HH:mm').format(DateTime.now()),
   );
@@ -65,6 +67,8 @@ class NgInformationController extends GetxController with GetSingleTickerProvide
         if (defaults != null) {
           ngDate.value = DateTime.parse(defaults.ngDate);
           ngTimeController.text = defaults.ngTime;
+          timeDefault.value = defaults.ngTime;
+          tempTimeDefault.value = defaults.ngTime;
           quantityController.text = defaults.quantity.toString();
         }
         print('######### ===>###### ');
@@ -145,6 +149,7 @@ class NgInformationController extends GetxController with GetSingleTickerProvide
         ngRecordList.assignAll(resRecordList);
         // step.value = 1;
         reloadHistoricalRecords();
+        resetFormToDefaults();
         changeTab(1);
       } else {
         Get.snackbar('ไม่สำเร็จ', 'บันทึกข้อมูลไม่สำเร็จ');
@@ -225,6 +230,41 @@ class NgInformationController extends GetxController with GetSingleTickerProvide
         part2: record.partLower ?? '',
       ),
     );
+  }
+
+  void resetFormToDefaults() {
+    // ล้างตัวเลือก
+    selectedProcess.value = '';
+    selectedReason.value = '';
+    timeDefault.value = tempTimeDefault.value;
+
+    // ถ้ามี defaults จาก API ให้ใช้ก่อน
+    final defaults = initData.value?.defaults;
+    if (defaults != null) {
+      try {
+        ngDate.value = DateTime.parse(defaults.ngDate);
+      } catch (_) {
+        ngDate.value = DateTime.now();
+      }
+      ngTimeController.text = defaults.ngTime;
+      quantityController.text = defaults.quantity.toString();
+    } else {
+      // ถ้าไม่มี defaults ให้ลองอิงจากแผน
+      final plan = initData.value?.plan;
+      if (plan != null) {
+        try {
+          ngDate.value = DateTime.parse(plan.planDate);
+        } catch (_) {
+          ngDate.value = DateTime.now();
+        }
+      } else {
+        ngDate.value = DateTime.now();
+      }
+      ngTimeController.text = DateFormat('HH:mm').format(DateTime.now());
+      quantityController.text = '1';
+    }
+
+    commentController.clear();
   }
 
   @override

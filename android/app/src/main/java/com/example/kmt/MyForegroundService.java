@@ -36,8 +36,8 @@ public class MyForegroundService extends Service {
         createNotificationChannel();
 
         Notification notification = new Notification.Builder(this, CHANNEL_ID)
-                .setContentTitle("ระบบแจ้งเตือนโรงงาน")
-                .setContentText("กำลังรอฟังคำสั่ง...")
+                .setContentTitle("")
+                .setContentText("")
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .build();
 
@@ -87,8 +87,8 @@ public class MyForegroundService extends Service {
                         getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
     
                 // URL url = new URL("http://192.168.1.177:84/api/alert/register-device"); //local
-                URL url = new URL("http://192.168.1.15:83/api/alert/register-device"); //customer
-                // URL url = new URL("http://27.254.253.176:82/api/alert/register-device"); //sandbox
+                // URL url = new URL("http://192.168.1.15:83/api/alert/register-device"); //customer
+                URL url = new URL("http://27.254.253.176:82/api/alert/register-device"); //sandbox
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");

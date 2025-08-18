@@ -32,11 +32,15 @@ class BaseService {
   static const Duration idleTimeout = Duration(minutes: 60);
 
   void _startIdleTimer() {
+    print('bumpIdle');
     _idleTimer?.cancel(); // ยกเลิกตัวเดิมก่อน
     _idleTimer = Timer(idleTimeout, _onSessionExpired);
   }
 
+  void bumpIdle() => _startIdleTimer();
+
   void _onSessionExpired() async {
+    _idleTimer?.cancel();
     final box = Get.find<GetStorage>();
     if (EasyLoading.isShow) {
       await EasyLoading.dismiss();

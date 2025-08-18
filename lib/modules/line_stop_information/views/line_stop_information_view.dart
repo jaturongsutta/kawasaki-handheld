@@ -70,6 +70,8 @@ class _RecordTab extends StatelessWidget {
       }
 
       final plan = data.plan;
+      DateTime dt = DateTime.parse(plan!.planDate);
+      controller.ngDate.value = dt;
 
       return KeyenceScanner(
         onBarcodeScanned: (String scannedCode) {
@@ -118,10 +120,10 @@ class _RecordTab extends StatelessWidget {
                     key: _formKey,
                     child: ListView(
                       children: [
-                        if (plan != null) ...[
+                        ...[
                           _buildInfoRowClickable(
                             'Plan Date',
-                            formatDateTime(plan.planDate, plan.planStartTime),
+                            formatDateTime(plan.planDate, controller.timeDefault.value),
                             () {
                               controller.selectedDate.value = DateTime.parse(plan.planDate);
                               controller.reloadRecords();
@@ -136,7 +138,7 @@ class _RecordTab extends StatelessWidget {
                           _buildInfoRow('Part 2', plan.part2),
                           const SizedBox(height: 8),
                           _buildDropdown('Process', data.process, controller.selectedProcess,
-                              isRequired: true),
+                              isRequired: false),
                           const SizedBox(height: 8),
                           _buildDatePicker('Stop Date', controller.ngDate, isRequired: true),
                           const SizedBox(height: 8),
@@ -192,9 +194,6 @@ class _RecordTab extends StatelessWidget {
                               ),
                             ],
                           ),
-                        ] else ...[
-                          const Center(child: Text('No production plan available')),
-                          OutlinedButton(onPressed: Get.back, child: const Text('Back')),
                         ],
                       ],
                     ),
@@ -472,6 +471,7 @@ class _RecordTab extends StatelessWidget {
         TextField(
           controller: controller,
           maxLines: 3,
+          textInputAction: TextInputAction.done,
           decoration: const InputDecoration(border: OutlineInputBorder()),
         ),
       ],

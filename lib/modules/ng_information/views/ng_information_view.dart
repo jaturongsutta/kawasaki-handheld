@@ -127,7 +127,7 @@ class _RecordTab extends StatelessWidget {
                         if (plan != null) ...[
                           _buildInfoRowClickable(
                             'Plan Date',
-                            formatDateTime(plan.planDate, plan.planStartTime),
+                            formatDateTime(plan.planDate, controller.timeDefault.value),
                             () {
                               controller.selectedDate.value = DateTime.parse(plan.planDate);
                               controller.reloadRecords();
@@ -145,7 +145,7 @@ class _RecordTab extends StatelessWidget {
                             'Process',
                             data.process,
                             controller.selectedProcess,
-                            isRequired: true,
+                            isRequired: false,
                           ),
                           const SizedBox(height: 8),
                           _buildDatePicker('NG Date', controller.ngDate, isRequired: true),
@@ -165,7 +165,7 @@ class _RecordTab extends StatelessWidget {
                             'Quantity',
                             controller.quantityController,
                             keyboardType: TextInputType.number,
-                            isRequired: true,
+                            isRequired: false,
                             inputFormatters: [
                               FilteringTextInputFormatter.digitsOnly,
                               LengthLimitingTextInputFormatter(3),

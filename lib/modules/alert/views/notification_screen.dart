@@ -50,38 +50,41 @@ class NotificationScreen extends GetView<NotificationController> {
                     controller.loadNotifications(reset: true);
                   }
                 },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header
-                      Text(
-                        item.header,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: item.level == 'W'
-                              ? Colors.green
-                              : item.level == 'A'
-                                  ? Colors.orange
-                                  : item.level == 'D'
-                                      ? Colors.red
-                                      : Colors.black,
+                child: Container(
+                  color: item.isReads != 'N' ? Colors.grey[300] : null,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header
+                        Text(
+                          item.header,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: item.level == 'W'
+                                ? Colors.green
+                                : item.level == 'A'
+                                    ? Colors.orange
+                                    : item.level == 'D'
+                                        ? Colors.red
+                                        : Colors.black,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      // วันที่แจ้งเตือน
-                      Text(
-                        'Date: ${formatDate(item.startDate)}',
-                        style: const TextStyle(color: Colors.black54),
-                      ),
-                      // รายละเอียด
-                      Text(
-                        item.title,
-                        style: const TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        // วันที่แจ้งเตือน
+                        Text(
+                          'Date: ${formatDate(item.startDate)}',
+                          style: const TextStyle(color: Colors.black54),
+                        ),
+                        // รายละเอียด
+                        Text(
+                          item.title,
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );

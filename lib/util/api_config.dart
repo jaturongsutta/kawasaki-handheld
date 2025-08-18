@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class ApiConfig {
   static const ApiConfig local = ApiConfig._(
-    endpoint: "http://192.168.1.10:84/api", //local
+    endpoint: "http://192.168.1.18:84/api", //local
     endpointName: "Local",
     colors: [
       Color(0xFF11CDEF),
@@ -49,7 +49,7 @@ class ApiConfig {
 }
 
 class EndpointConfig {
-  static const ApiConfig currentEndpoint = ApiConfig.kmtDev;
+  static const ApiConfig currentEndpoint = ApiConfig.local;
 }
 
 // const String appVersion = "250616-1";
