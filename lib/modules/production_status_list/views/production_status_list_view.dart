@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:kmt/model/production_detail_model.dart';
 import 'package:kmt/modules/login/controllers/login_controller.dart';
 import 'package:kmt/modules/production_status_list/controllers/production_status_list_controller.dart';
+import 'package:kmt/util/time_utils.dart';
 
 class ProductionStatusView extends GetView<ProductionStatusController> {
   const ProductionStatusView({super.key});
@@ -71,7 +72,7 @@ class _ProductionstatusTab extends StatelessWidget {
         body: Obx(() => Stack(
               children: [
                 // ✅ หน้าหลัก
-                _buildContent(data),
+                _buildContent(data, context),
 
                 // ✅ แสดง Overlay Loading
                 if (controller.isLoading.value)
@@ -85,7 +86,7 @@ class _ProductionstatusTab extends StatelessWidget {
             )));
   }
 
-  Widget _buildContent(ProductionDetailModel data) {
+  Widget _buildContent(ProductionDetailModel data, BuildContext tempContext) {
     return Padding(
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -104,75 +105,83 @@ class _ProductionstatusTab extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(
+            height: 8,
+          ),
           Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.black12),
-                borderRadius: BorderRadius.circular(16),
-                color: Colors.white,
-              ),
-              child: ListView(
-                shrinkWrap: true,
-                children: [
-                  _infoRow('Plan', formatDateTime(data.planDate, data.planStartTime)),
-                  _infoRow('Shift', data.teamName),
-                  _infoRow('ShiftTime', data.shiftPeriodName),
-                  _breakRow('Break 1', controller.isBreak1Checked, () => controller.setBreak(1)),
-                  _breakRow(
-                      'Lunch Break', controller.isBreak2Checked, () => controller.setBreak(2)),
-                  _breakRow('Break 2', controller.isBreak3Checked, () => controller.setBreak(3)),
-                  _breakRow('Break OT', controller.isBreak4Checked, () => controller.setBreak(4)),
-                  _otRow(data),
-                  _infoRow('Model', data.modelCd),
-                  _infoRow('Cycle Time', '${formatTime(data.cycleTime)} mins'),
-                  _infoRow('Part No', data.partNo),
-                  _infoRow('Part 1', data.partUpper),
-                  _infoRow('Part 2', data.partLower ?? '-'),
-                  _infoRow('AS400', data.productCd),
-                  _infoRow('Product Code', data.pkCd),
-                  const SizedBox(height: 16),
-                  if (data.status == "20" || data.status == "10")
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            icon: const Icon(Icons.check),
-                            label: const Text('Stop'),
-                            onPressed: () {
-                              controller.confirmStopPlan();
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.deepPurple.shade100,
-                              foregroundColor: Colors.black,
-                            ),
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                _infoRow('Plan',
+                    formatDateTime(data.planDate, data.planStartTime, data.planStopTime ?? '-')),
+                _infoRow('Shift', data.teamName),
+                // _infoRow('ShiftTime', data.shiftPeriodName),
+                // _breakRow('Break 1', controller.isBreak1Checked, () => controller.setBreak(1)),
+                // _breakRow(
+                //     'Lunch Break', controller.isBreak2Checked, () => controller.setBreak(2)),
+                // _breakRow('Break 2', controller.isBreak3Checked, () => controller.setBreak(3)),
+                // _breakRow('Break OT', controller.isBreak4Checked, () => controller.setBreak(4)),
+                _twoBreaksRow(
+                  left: _breakRow('Break 1', controller.isBreak1Checked,
+                      () => controller.setBreak(1), tempContext),
+                  right: _breakRow('Lunch Break', controller.isBreak2Checked,
+                      () => controller.setBreak(2), tempContext),
+                ),
+                _twoBreaksRow(
+                  left: _breakRow('Break 2', controller.isBreak3Checked,
+                      () => controller.setBreak(3), tempContext),
+                  right: _breakRow('Break OT', controller.isBreak4Checked,
+                      () => controller.setBreak(4), tempContext),
+                ),
+                _otRow(data, tempContext),
+                _infoRow('Model', data.modelCd),
+                _infoRow('Cycle Time', '${formatTime(data.cycleTime)} mins'),
+                _infoRow('Part No', data.partNo),
+                _infoRow('Part 1', data.partUpper),
+                _infoRow('Part 2', data.partLower ?? '-'),
+                // _infoRow('AS400', data.productCd),
+                // _infoRow('Product Code', data.pkCd),
+                const SizedBox(height: 16),
+                if (data.status == "20" || data.status == "10")
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.check),
+                          label: const Text('Stop'),
+                          onPressed: () {
+                            controller.confirmStopPlan();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.deepPurple.shade100,
+                            foregroundColor: Colors.black,
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () {
-                              controller.step.value = 0;
-                              controller.selectedPlanDetail.value = null;
-                            },
-                            child: const Text('Back'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  if (data.status != "20" && data.status != "10")
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: () {
-                          controller.step.value = 0;
-                          controller.selectedPlanDetail.value = null;
-                        },
-                        child: const Text('Back'),
                       ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            controller.step.value = 0;
+                            controller.selectedPlanDetail.value = null;
+                          },
+                          child: const Text('Back'),
+                        ),
+                      ),
+                    ],
+                  ),
+                if (data.status != "20" && data.status != "10")
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        controller.step.value = 0;
+                        controller.selectedPlanDetail.value = null;
+                      },
+                      child: const Text('Back'),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
         ],
@@ -186,7 +195,7 @@ class _ProductionstatusTab extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(width: 120, child: Text('$label :', style: const TextStyle(color: Colors.grey))),
+          SizedBox(width: 80, child: Text('$label :', style: const TextStyle(color: Colors.grey))),
           Expanded(
             child: Text(
               value.isNotEmpty ? value : '-',
@@ -198,81 +207,117 @@ class _ProductionstatusTab extends StatelessWidget {
     );
   }
 
-  Widget _otRow(ProductionDetailModel data) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Obx(() {
-        final isChecked = controller.isOTChecked.value;
+  Widget _otRow(ProductionDetailModel data, BuildContext tempContext) {
+    final enabled = (data.status == "20" || data.status == "10" || data.status == "00");
+    return Obx(() {
+      final isChecked = controller.isOTChecked.value;
 
-        return Row(
-          children: [
-            const SizedBox(
-              width: 120,
-              child: Text('OT :', style: TextStyle(color: Colors.grey)),
-            ),
-            Switch(
-              value: isChecked,
-              onChanged: (val) => controller.isOTChecked.value = val,
-              activeColor: Colors.green,
-              activeTrackColor: Colors.green.shade200,
-              inactiveThumbColor: Colors.red,
-              inactiveTrackColor: Colors.red.shade200,
-            ),
-            const SizedBox(width: 8),
-            SizedBox(
-              width: 74,
-              child: ElevatedButton(
-                onPressed: () async {
-                  final success = await controller.setOT();
-
-                  if (success) {
-                    controller.isOTSet.value = true;
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple.shade100,
-                  foregroundColor: Colors.black,
-                ),
-                child: const Text(
-                  'Save',
-                  textAlign: TextAlign.center,
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              const SizedBox(
+                width: 70,
+                child: Text(
+                  'OT :',
+                  style: TextStyle(color: Colors.grey),
+                  textAlign: TextAlign.justify,
                 ),
               ),
+              Theme(
+                data: Theme.of(tempContext).copyWith(useMaterial3: false),
+                child: Switch(
+                  value: isChecked,
+                  onChanged: (val) => controller.isOTChecked.value = val,
+                  activeColor: Colors.green,
+                  activeTrackColor: Colors.green.shade200,
+                  inactiveThumbColor: Colors.red,
+                  inactiveTrackColor: Colors.red.shade200,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 74,
+            height: 30,
+            child: ElevatedButton(
+              onPressed: enabled
+                  ? () async {
+                      final success = await controller.setOT();
+                      if (success) controller.isOTSet.value = true;
+                    }
+                  : null, // null = disabled
+              style: ButtonStyle(
+                backgroundColor: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.disabled)) {
+                    return Colors.grey.shade300; // พื้นตอน disable
+                  }
+                  return const Color(0xFF6CC24A); // ✅ เขียวเข้ม (enable)
+                }),
+                foregroundColor: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.disabled)) {
+                    return Colors.grey.shade600; // ตัวอักษรตอน disable
+                  }
+                  return Colors.white; // ✅ ตัวอักษรขาว (enable)
+                }),
+                overlayColor: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.pressed)) {
+                    return const Color(0xFF6CC24A)
+                        .withOpacity(0.20); // ripple ตอนกด (เขียวเข้มกว่า)
+                  }
+                  return null;
+                }),
+                // ทำให้ปุ่มดูเป็น action ชัดเจนขึ้น
+                elevation: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.disabled)) return 0;
+                  return 2;
+                }),
+              ),
+              child: const Text(
+                'Save',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13),
+              ),
             ),
-          ],
-        );
-      }),
-    );
+          ),
+        ],
+      );
+    });
   }
 
-  String formatDateTime(String dateStr, String timeStr) {
+  String formatDateTime(String dateStr, String timeStr, String stopTimeStr) {
     try {
       final date = DateTime.parse(dateStr);
       final time = DateTime.parse(timeStr);
       final combined = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-      return DateFormat('dd/MM/yy HH:mm').format(combined);
+
+      return "${DateFormat('dd/MM/yy HH:mm').format(combined)} - ${TimeUtils.toHhmm(stopTimeStr)}";
     } catch (e) {
       return '-';
     }
   }
 
-  Widget _breakRow(String label, RxBool rxValue, Future<bool> Function() onSet) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 0),
-      child: Obx(() {
-        final isChecked = rxValue.value;
+  Widget _breakRow(
+      String label, RxBool rxValue, Future<bool> Function() onSet, BuildContext tempContext) {
+    return Obx(() {
+      final isChecked = rxValue.value;
 
-        return Row(
-          children: [
-            SizedBox(
-              width: 120,
-              child: Text('$label :', style: const TextStyle(color: Colors.grey)),
-            ),
-            Switch(
+      return Row(
+        children: [
+          SizedBox(
+            width: 70,
+            child: Text('$label :', style: const TextStyle(color: Colors.grey)),
+          ),
+          Theme(
+            data: Theme.of(tempContext).copyWith(useMaterial3: false),
+            child: Switch(
               value: isChecked,
               onChanged: (val) {
                 rxValue.value = val;
-                // onSet(val);
                 onSet();
               },
               activeColor: Colors.green,
@@ -280,10 +325,23 @@ class _ProductionstatusTab extends StatelessWidget {
               inactiveThumbColor: Colors.red,
               inactiveTrackColor: Colors.red.shade200,
             ),
-            const SizedBox(width: 8),
-          ],
-        );
-      }),
+          ),
+          const SizedBox(width: 8),
+        ],
+      );
+    });
+  }
+
+  Widget _twoBreaksRow({
+    required Widget left,
+    required Widget right,
+  }) {
+    return Row(
+      children: [
+        Expanded(child: left),
+        const SizedBox(width: 12),
+        Expanded(child: right),
+      ],
     );
   }
 
@@ -341,10 +399,11 @@ class _CurrentListTab extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _row('Line', item.lineCd),
-                    _row('Plan Date', controller.formatPlanTime(item.planDate, item.planStartTime)),
+                    _row('Plan Date',
+                        formatDateTime(item.planDate, item.planStartTime, item.planStopTime)),
                     _row('Shift', item.teamName),
-                    _row('Shift Time', item.shiftPeriodName),
-                    _row('OT', item.ot == 'Y' ? 'Yes' : 'No'),
+                    // _row('Shift Time', item.shiftPeriodName),
+                    _row('OT/Break', item.otValue ?? '-'),
                     _row('Model', item.modelCd),
                     _row('Status', item.statusName),
                   ],
@@ -367,6 +426,18 @@ class _CurrentListTab extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String formatDateTime(String dateStr, String timeStr, String stopTimeStr) {
+    try {
+      final date = DateTime.parse(dateStr);
+      final time = DateTime.parse(timeStr);
+      final combined = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+
+      return "${DateFormat('dd/MM/yy HH:mm').format(combined)} - ${TimeUtils.toHhmm(stopTimeStr)}";
+    } catch (e) {
+      return '-';
+    }
   }
 }
 
@@ -448,11 +519,13 @@ class _OtherTab extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _row('Plan',
-                                      formatDateTime(record.planDate, record.planStartTime)),
+                                  _row(
+                                      'Plan',
+                                      formatDateTime(record.planDate, record.planStartTime,
+                                          record.planStopTime ?? '')),
                                   _row('Shift', record.teamName),
-                                  _row('ShiftTime', record.shiftPeriodName),
-                                  _row('OT', record.ot == 'Y' ? 'Yes OT' : 'No'),
+                                  // _row('ShiftTime', record.shiftPeriodName),
+                                  _row('OT/Break', record.otValue ?? '-'),
                                   _row('Model', record.modelCd),
                                   _row('Status', record.statusName),
                                 ],
@@ -510,17 +583,17 @@ class _OtherTab extends StatelessWidget {
     );
   }
 
-  String formatDateTime(String dateStr, String timeStr) {
+  String formatDateTime(String dateStr, String timeStr, String stopTimeStr) {
     try {
       final date = DateTime.parse(dateStr);
       final time = DateTime.parse(timeStr);
       final combined = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-      return DateFormat('dd/MM/yy HH:mm').format(combined);
+
+      return "${DateFormat('dd/MM/yy HH:mm').format(combined)} - ${TimeUtils.toHhmm(stopTimeStr)}";
     } catch (e) {
       return '-';
     }
   }
-
   // String formatDate(String dateStr) {
   //   try {
   //     final date = DateTime.parse(dateStr).toLocal();
@@ -585,7 +658,7 @@ class _OtherProductionstatusTab extends StatelessWidget {
       body: Obx(() => Stack(
             children: [
               // ✅ หน้าหลัก
-              _buildContent(data),
+              _buildContent(data, context),
 
               // ✅ แสดง Overlay Loading
               if (controller.isLoading.value)
@@ -600,7 +673,7 @@ class _OtherProductionstatusTab extends StatelessWidget {
     );
   }
 
-  Widget _buildContent(ProductionDetailModel data) {
+  Widget _buildContent(ProductionDetailModel data, BuildContext tempcontext) {
     return Padding(
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -619,52 +692,61 @@ class _OtherProductionstatusTab extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(
+            height: 8,
+          ),
           Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.black12),
-                borderRadius: BorderRadius.circular(16),
-                color: Colors.white,
-              ),
-              child: ListView(
-                shrinkWrap: true,
-                children: [
-                  _infoRow('Plan', formatDateTime(data.planDate, data.planStartTime)),
-                  _infoRow('Shift', data.teamName),
-                  _infoRow('ShiftTime', data.shiftPeriodName),
-                  _breakRow(
-                      'Break 1', controller.isBreak1Checked, () => controller.setBreakOther(1)),
-                  _breakRow(
-                      'Lunch Break', controller.isBreak2Checked, () => controller.setBreakOther(2)),
-                  _breakRow(
-                      'Break 2', controller.isBreak3Checked, () => controller.setBreakOther(3)),
-                  _breakRow(
-                      'Break OT', controller.isBreak4Checked, () => controller.setBreakOther(4)),
-                  _otRow(data),
-                  _infoRow('Model', data.modelCd),
-                  _infoRow('Cycle Time', '${formatTime(data.cycleTime)} mins'),
-                  _infoRow('Part No', data.partNo),
-                  _infoRow('Part 1', data.partUpper),
-                  _infoRow('Part 2', data.partLower ?? '-'),
-                  _infoRow('AS400', data.productCd),
-                  _infoRow('Product Code', data.pkCd),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {
-                            controller.step.value = 0;
-                            controller.selectedOtherPlanDetail.value = null;
-                          },
-                          child: const Text('Back'),
-                        ),
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                _infoRow('Plan',
+                    formatDateTime(data.planDate, data.planStartTime, data.planStopTime ?? '')),
+                _infoRow('Shift', data.teamName),
+                // _infoRow('ShiftTime', data.shiftPeriodName),
+                // _breakRow(
+                //     'Break 1', controller.isBreak1Checked, () => controller.setBreakOther(1)),
+                // _breakRow(
+                //     'Lunch Break', controller.isBreak2Checked, () => controller.setBreakOther(2)),
+                // _breakRow(
+                //     'Break 2', controller.isBreak3Checked, () => controller.setBreakOther(3)),
+                // _breakRow(
+                //     'Break OT', controller.isBreak4Checked, () => controller.setBreakOther(4)),
+
+                _twoBreaksRow(
+                  left: _breakRow('Break 1', controller.isBreak1Checked,
+                      () => controller.setBreakOther(1), tempcontext),
+                  right: _breakRow('Lunch Break', controller.isBreak2Checked,
+                      () => controller.setBreakOther(2), tempcontext),
+                ),
+                _twoBreaksRow(
+                  left: _breakRow('Break 2', controller.isBreak3Checked,
+                      () => controller.setBreakOther(3), tempcontext),
+                  right: _breakRow('Break OT', controller.isBreak4Checked,
+                      () => controller.setBreakOther(4), tempcontext),
+                ),
+                _otRow(data, tempcontext),
+                _infoRow('Model', data.modelCd),
+                _infoRow('Cycle Time', '${formatTime(data.cycleTime)} mins'),
+                _infoRow('Part No', data.partNo),
+                _infoRow('Part 1', data.partUpper),
+                _infoRow('Part 2', data.partLower ?? '-'),
+                _infoRow('AS400', data.productCd),
+                _infoRow('Product Code', data.pkCd),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          controller.step.value = 0;
+                          controller.selectedOtherPlanDetail.value = null;
+                        },
+                        child: const Text('Back'),
                       ),
-                    ],
-                  ),
-                ],
-              ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ],
@@ -678,7 +760,7 @@ class _OtherProductionstatusTab extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(width: 120, child: Text('$label :', style: const TextStyle(color: Colors.grey))),
+          SizedBox(width: 80, child: Text('$label :', style: const TextStyle(color: Colors.grey))),
           Expanded(
             child: Text(
               value.isNotEmpty ? value : '-',
@@ -690,69 +772,105 @@ class _OtherProductionstatusTab extends StatelessWidget {
     );
   }
 
-  Widget _otRow(ProductionDetailModel data) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Obx(() {
-        final isChecked = controller.isOTCheckedOther.value;
+  Widget _otRow(ProductionDetailModel data, BuildContext tempContext) {
+    final enabled = (data.status == "20" || data.status == "10" || data.status == "00");
+    return Obx(() {
+      final isChecked = controller.isOTChecked.value;
 
-        return Row(
-          children: [
-            const SizedBox(
-              width: 120,
-              child: Text('OT :', style: TextStyle(color: Colors.grey)),
-            ),
-            Switch(
-              value: isChecked,
-              onChanged: (val) => controller.isOTCheckedOther.value = val,
-              activeColor: Colors.green,
-              activeTrackColor: Colors.green.shade200,
-              inactiveThumbColor: Colors.red,
-              inactiveTrackColor: Colors.red.shade200,
-            ),
-            const SizedBox(width: 8),
-            SizedBox(
-              width: 74,
-              child: ElevatedButton(
-                onPressed: () async {
-                  final success = await controller.setOTOther();
-                  if (success) {
-                    controller.isOTSetOther.value = true;
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple.shade100,
-                  foregroundColor: Colors.black,
-                ),
-                child: const Text(
-                  'SET OT',
-                  textAlign: TextAlign.center,
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              const SizedBox(
+                width: 70,
+                child: Text(
+                  'OT :',
+                  style: TextStyle(color: Colors.grey),
+                  textAlign: TextAlign.justify,
                 ),
               ),
+              Theme(
+                data: Theme.of(tempContext).copyWith(useMaterial3: false),
+                child: Switch(
+                  value: isChecked,
+                  onChanged: (val) => controller.isOTChecked.value = val,
+                  activeColor: Colors.green,
+                  activeTrackColor: Colors.green.shade200,
+                  inactiveThumbColor: Colors.red,
+                  inactiveTrackColor: Colors.red.shade200,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 74,
+            height: 30,
+            child: ElevatedButton(
+              onPressed: enabled
+                  ? () async {
+                      final success = await controller.setOTOther();
+                      if (success) controller.isOTSetOther.value = true;
+                    }
+                  : null, // null = disabled
+              style: ButtonStyle(
+                backgroundColor: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.disabled)) {
+                    return Colors.grey.shade300; // พื้นตอน disable
+                  }
+                  return const Color(0xFF6CC24A); // ✅ เขียวเข้ม (enable)
+                }),
+                foregroundColor: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.disabled)) {
+                    return Colors.grey.shade600; // ตัวอักษรตอน disable
+                  }
+                  return Colors.white; // ✅ ตัวอักษรขาว (enable)
+                }),
+                overlayColor: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.pressed)) {
+                    return const Color(0xFF6CC24A)
+                        .withOpacity(0.20); // ripple ตอนกด (เขียวเข้มกว่า)
+                  }
+                  return null;
+                }),
+                // ทำให้ปุ่มดูเป็น action ชัดเจนขึ้น
+                elevation: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.disabled)) return 0;
+                  return 2;
+                }),
+              ),
+              child: const Text(
+                'Save',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13),
+              ),
             ),
-          ],
-        );
-      }),
-    );
+          ),
+        ],
+      );
+    });
   }
 
-  Widget _breakRow(String label, RxBool rxValue, Future<bool> Function() onSet) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 0),
-      child: Obx(() {
-        final isChecked = rxValue.value;
+  Widget _breakRow(
+      String label, RxBool rxValue, Future<bool> Function() onSet, BuildContext tempContext) {
+    return Obx(() {
+      final isChecked = rxValue.value;
 
-        return Row(
-          children: [
-            SizedBox(
-              width: 120,
-              child: Text('$label :', style: const TextStyle(color: Colors.grey)),
-            ),
-            Switch(
+      return Row(
+        children: [
+          SizedBox(
+            width: 70,
+            child: Text('$label :', style: const TextStyle(color: Colors.grey)),
+          ),
+          Theme(
+            data: Theme.of(tempContext).copyWith(useMaterial3: false),
+            child: Switch(
               value: isChecked,
               onChanged: (val) {
                 rxValue.value = val;
-                // onSet(val);
                 onSet();
               },
               activeColor: Colors.green,
@@ -760,10 +878,23 @@ class _OtherProductionstatusTab extends StatelessWidget {
               inactiveThumbColor: Colors.red,
               inactiveTrackColor: Colors.red.shade200,
             ),
-            const SizedBox(width: 8),
-          ],
-        );
-      }),
+          ),
+          const SizedBox(width: 8),
+        ],
+      );
+    });
+  }
+
+  Widget _twoBreaksRow({
+    required Widget left,
+    required Widget right,
+  }) {
+    return Row(
+      children: [
+        Expanded(child: left),
+        const SizedBox(width: 12),
+        Expanded(child: right),
+      ],
     );
   }
 
@@ -776,12 +907,13 @@ class _OtherProductionstatusTab extends StatelessWidget {
     }
   }
 
-  String formatDateTime(String dateStr, String timeStr) {
+  String formatDateTime(String dateStr, String timeStr, String stopTimeStr) {
     try {
       final date = DateTime.parse(dateStr);
       final time = DateTime.parse(timeStr);
       final combined = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-      return DateFormat('dd/MM/yy HH:mm').format(combined);
+
+      return "${DateFormat('dd/MM/yy HH:mm').format(combined)} - ${TimeUtils.toHhmm(stopTimeStr)}";
     } catch (e) {
       return '-';
     }

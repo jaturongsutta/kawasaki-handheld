@@ -85,6 +85,9 @@ class NgRecordModel {
   @JsonKey(name: 'Part_Lower')
   final String? partLower;
 
+  @JsonKey(name: 'OT_Value')
+  final String? otValue;
+
   NgRecordModel({
     required this.lineCd,
     required this.planDate,
@@ -113,6 +116,7 @@ class NgRecordModel {
     required this.partNo,
     required this.partUpper,
     required this.partLower,
+    this.otValue,
   });
 
   factory NgRecordModel.fromJson(Map<String, dynamic> json) => _$NgRecordModelFromJson(json);

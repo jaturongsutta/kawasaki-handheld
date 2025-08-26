@@ -21,6 +21,7 @@ HistoricalRecordModel _$HistoricalRecordModelFromJson(
       reasonName: json['Reason_name'] as String?,
       comment: json['comment'] as String?,
       statusName: json['Status_Name'] as String?,
+      planStopTime: json['Plan_Stop_Time'] as String? ?? '',
     );
 
 Map<String, dynamic> _$HistoricalRecordModelToJson(
@@ -38,4 +39,5 @@ Map<String, dynamic> _$HistoricalRecordModelToJson(
       'Reason_name': instance.reasonName,
       'comment': instance.comment,
       'Status_Name': instance.statusName,
+      'Plan_Stop_Time': instance.planStopTime,
     };

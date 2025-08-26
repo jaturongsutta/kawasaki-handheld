@@ -18,6 +18,7 @@ class LineStopInformationService {
         data: {'Line_CD': lineCode},
       );
 
+      print('object ===> ${res['data']}');
       if (res['result'] == true && res['data'] != null) {
         return LineStopInitDataModel.fromJson(res['data']);
       }

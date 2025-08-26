@@ -127,6 +127,9 @@ class ProductionDetailModel {
   @JsonKey(name: 'end_dt')
   final DateTime? endDT;
 
+  @JsonKey(name: 'Plan_Stop_Time')
+  final String? planStopTime;
+
   ProductionDetailModel({
     required this.lineCd,
     required this.lineName,
@@ -169,6 +172,7 @@ class ProductionDetailModel {
     this.cycletTimes,
     this.startDT,
     this.endDT,
+    this.planStopTime,
   });
 
   factory ProductionDetailModel.fromJson(Map<String, dynamic> json) =>

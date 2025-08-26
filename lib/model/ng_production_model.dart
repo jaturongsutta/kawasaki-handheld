@@ -19,6 +19,9 @@ class NGProductionPlanModel {
   @JsonKey(name: 'Plan_Start_Time', defaultValue: '')
   final String planStartTime;
 
+  @JsonKey(name: 'Plan_Stop_Time', defaultValue: '')
+  final String? planStopTime;
+
   @JsonKey(name: 'Team_Name', defaultValue: '')
   final String teamName;
 
@@ -93,6 +96,7 @@ class NGProductionPlanModel {
     required this.partNo,
     required this.part1,
     required this.part2,
+    this.planStopTime,
   });
 
   factory NGProductionPlanModel.fromJson(Map<String, dynamic> json) =>

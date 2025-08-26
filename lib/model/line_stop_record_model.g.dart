@@ -35,6 +35,7 @@ LineStopRecordModel _$LineStopRecordModelFromJson(Map<String, dynamic> json) =>
       partNo: json['part_no'] as String,
       partUpper: json['Part_Upper'] as String,
       partLower: json['Part_Lower'] as String?,
+      otValue: json['OT_Value'] as String?,
     );
 
 Map<String, dynamic> _$LineStopRecordModelToJson(
@@ -67,4 +68,5 @@ Map<String, dynamic> _$LineStopRecordModelToJson(
       'part_no': instance.partNo,
       'Part_Upper': instance.partUpper,
       'Part_Lower': instance.partLower,
+      'OT_Value': instance.otValue,
     };

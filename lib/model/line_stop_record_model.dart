@@ -85,6 +85,9 @@ class LineStopRecordModel {
   @JsonKey(name: 'Part_Lower')
   final String? partLower;
 
+  @JsonKey(name: 'OT_Value')
+  final String? otValue;
+
   LineStopRecordModel({
     required this.lineCd,
     required this.planDate,
@@ -113,6 +116,7 @@ class LineStopRecordModel {
     required this.partNo,
     required this.partUpper,
     required this.partLower,
+    this.otValue,
   });
 
   factory LineStopRecordModel.fromJson(Map<String, dynamic> json) =>

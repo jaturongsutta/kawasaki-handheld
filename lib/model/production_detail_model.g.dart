@@ -54,6 +54,7 @@ ProductionDetailModel _$ProductionDetailModelFromJson(
       endDT: json['end_dt'] == null
           ? null
           : DateTime.parse(json['end_dt'] as String),
+      planStopTime: json['Plan_Stop_Time'] as String?,
     );
 
 Map<String, dynamic> _$ProductionDetailModelToJson(
@@ -100,4 +101,5 @@ Map<String, dynamic> _$ProductionDetailModelToJson(
       'cycle_times': instance.cycletTimes,
       'start_dt': instance.startDT?.toIso8601String(),
       'end_dt': instance.endDT?.toIso8601String(),
+      'Plan_Stop_Time': instance.planStopTime,
     };

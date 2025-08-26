@@ -31,6 +31,7 @@ NGProductionPlanModel _$NGProductionPlanModelFromJson(
       partNo: json['Part_No'] as String? ?? '',
       part1: json['Part_1'] as String? ?? '',
       part2: json['Part_2'] as String? ?? '',
+      planStopTime: json['Plan_Stop_Time'] as String? ?? '',
     );
 
 Map<String, dynamic> _$NGProductionPlanModelToJson(
@@ -41,6 +42,7 @@ Map<String, dynamic> _$NGProductionPlanModelToJson(
       'Line_Name': instance.lineName,
       'Plan_Date': instance.planDate,
       'Plan_Start_Time': instance.planStartTime,
+      'Plan_Stop_Time': instance.planStopTime,
       'Team_Name': instance.teamName,
       'Shift_Period_Name': instance.shiftPeriodName,
       'B1': instance.b1,

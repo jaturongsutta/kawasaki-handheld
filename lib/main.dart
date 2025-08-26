@@ -89,8 +89,6 @@ class _MyAppState extends State<MyApp> {
         return Listener(
           behavior: HitTestBehavior.translucent,
           onPointerDown: (_) => baseService.bumpIdle(),
-          onPointerMove: (_) => baseService.bumpIdle(),
-          onPointerUp: (_) => baseService.bumpIdle(),
           child: easy,
         );
       },

@@ -203,6 +203,7 @@ class LineStopInformationController extends GetxController with GetSingleTickerP
         lineName: '-',
         planDate: record.planDate,
         planStartTime: record.planStartTime,
+        planStopTime: record.planStopTime,
         teamName: record.teamName,
         shiftPeriodName: record.shiftPeriodName,
         b1: record.b1,

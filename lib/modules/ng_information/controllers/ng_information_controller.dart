@@ -10,6 +10,7 @@ import 'package:kmt/model/ng_record_request.dart';
 import 'package:kmt/modules/login/controllers/login_controller.dart';
 import 'package:kmt/modules/menu_two/controllers/menu_two_controller.dart';
 import 'package:kmt/modules/ng_information/services/ngService.dart';
+import 'package:kmt/widgets/customLog.dart';
 
 class NgInformationController extends GetxController with GetSingleTickerProviderStateMixin {
   final NgInformationService service;
@@ -59,7 +60,10 @@ class NgInformationController extends GetxController with GetSingleTickerProvide
     isLoading.value = true;
     try {
       final result = await service.fetchNgInitialData(box.read('selectedLine'));
+      // print('defaults.ngTime===> ${result!.defaults!.ngTime}');
       if (result != null) {
+        logger.i(result.defaults);
+
         initData.value = result;
 
         // ค่า Default
@@ -67,6 +71,7 @@ class NgInformationController extends GetxController with GetSingleTickerProvide
         if (defaults != null) {
           ngDate.value = DateTime.parse(defaults.ngDate);
           ngTimeController.text = defaults.ngTime;
+          print('defaults.ngTime===> ${defaults.ngTime}');
           timeDefault.value = defaults.ngTime;
           tempTimeDefault.value = defaults.ngTime;
           quantityController.text = defaults.quantity.toString();
@@ -138,11 +143,12 @@ class NgInformationController extends GetxController with GetSingleTickerProvide
 
     try {
       final result = await service.saveNgRecord(request);
-      if (result) {
+      if (result.isEmpty) {
         Get.snackbar('สำเร็จ', 'บันทึกข้อมูลสำเร็จ');
 
         // ✅ เปลี่ยนหน้าไปแสดงรายการหลังบันทึก
         final dateStr = DateFormat('yyyy-MM-dd').format(selectedDate.value);
+        // const dateStr = '2025-08-19';
 
         // ✅ โหลดรายการข้อมูล NG Record
         final resRecordList = await service.fetchNgRecordList(box.read('selectedLine'), dateStr);
@@ -152,7 +158,7 @@ class NgInformationController extends GetxController with GetSingleTickerProvide
         resetFormToDefaults();
         changeTab(1);
       } else {
-        Get.snackbar('ไม่สำเร็จ', 'บันทึกข้อมูลไม่สำเร็จ');
+        Get.snackbar('ไม่สำเร็จ', result);
       }
     } catch (e) {
       Get.snackbar('ผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้');
@@ -165,7 +171,7 @@ class NgInformationController extends GetxController with GetSingleTickerProvide
     selectedDate.value = newDate;
   }
 
-  void reloadRecords() async {
+  Future<void> reloadRecords() async {
     isLoading.value = true;
     try {
       final dateStr = DateFormat('yyyy-MM-dd').format(selectedDate.value);
@@ -211,6 +217,7 @@ class NgInformationController extends GetxController with GetSingleTickerProvide
         lineName: '-', // หรือดึงจากข้อมูลอื่น
         planDate: record.planDate,
         planStartTime: record.planStartTime,
+        planStopTime: record.planStopTime,
         teamName: record.teamName,
         shiftPeriodName: record.shiftPeriodName,
         b1: record.b1,

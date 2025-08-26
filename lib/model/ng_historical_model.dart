@@ -38,6 +38,9 @@ class HistoricalRecordModel {
   @JsonKey(name: 'Status_Name')
   final String? statusName; // เปลี่ยนเป็น nullable
 
+  @JsonKey(name: 'Plan_Stop_Time', defaultValue: '')
+  final String? planStopTime;
+
   HistoricalRecordModel({
     required this.lineCd,
     required this.planDate,
@@ -51,6 +54,7 @@ class HistoricalRecordModel {
     this.reasonName,
     this.comment,
     this.statusName,
+    this.planStopTime,
   });
 
   factory HistoricalRecordModel.fromJson(Map<String, dynamic> json) =>

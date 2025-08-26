@@ -130,6 +130,7 @@ class ProductionStatusService {
         queryType: QueryType.post,
       );
 
+      print('object====> ${res['data']['records'][0]}');
       if (res['result']) {
         final recordList = res['data']['records'][0] as List<dynamic>;
         return recordList.map((e) => PlanSearchModel.fromJson(e)).toList();

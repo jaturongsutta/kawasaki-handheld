@@ -26,7 +26,7 @@ class ProductionStatusManageView extends GetView<ProductionStatusManageControlle
                 _row('Line', 'Cylinder Head 6'),
                 _row('Plan Date', '03/04/2025 08:00'),
                 _row('Shift', 'Team A'),
-                _row('Shift Time', 'Day (08:00 - 20:00)'),
+                // _row('Shift Time', 'Day (08:00 - 20:00)'),
                 const SizedBox(height: 8),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,

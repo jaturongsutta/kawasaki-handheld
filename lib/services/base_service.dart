@@ -31,16 +31,60 @@ class BaseService {
   Timer? _idleTimer;
   static const Duration idleTimeout = Duration(minutes: 60);
 
-  void _startIdleTimer() {
-    print('bumpIdle');
-    _idleTimer?.cancel(); // ยกเลิกตัวเดิมก่อน
-    _idleTimer = Timer(idleTimeout, _onSessionExpired);
-  }
+  int _idleGen = 0;
+  DateTime? _idleExpiresAt;
 
   void bumpIdle() => _startIdleTimer();
 
-  void _onSessionExpired() async {
+  void _startIdleTimer() {
+    // 1) log ก่อน cancel
+    if (_idleTimer?.isActive ?? false) {
+      debugPrint('[idle] cancel timer(gen: $_idleGen) active=true');
+    } else {
+      debugPrint('[idle] no active timer to cancel (gen: $_idleGen)');
+    }
+
+    // 2) cancel timer เดิม
     _idleTimer?.cancel();
+
+    // 3) เพิ่ม generation เพื่อกัน timer เก่าที่ยังยิง (เผื่อ timing race)
+    _idleGen++;
+    final myGen = _idleGen;
+
+    // 4) เก็บเวลาหมดอายุไว้ debug
+    _idleExpiresAt = DateTime.now().add(idleTimeout);
+    debugPrint('[idle] start timer(gen: $myGen) expiresAt: $_idleExpiresAt');
+
+    // 5) สร้าง timer ใหม่
+    _idleTimer = Timer(idleTimeout, () {
+      // ถ้า gen เปลี่ยน แปลว่ามีการรีเซ็ตหลังจากตั้ง timer นี้ → ข้าม
+      if (myGen != _idleGen) {
+        debugPrint('[idle] skip stale timer fire (myGen: $myGen, currentGen: $_idleGen)');
+        return;
+      }
+      debugPrint('[idle] timer fired (gen: $myGen) at: ${DateTime.now()}');
+      _onSessionExpired();
+    });
+  }
+
+  /// สำหรับเช็คสถานะตอนนี้ (เรียกจากที่ไหนก็ได้)
+  void debugIdleState() {
+    debugPrint('[idle] active=${_idleTimer?.isActive ?? false}, '
+        'gen=$_idleGen, expiresAt=$_idleExpiresAt, instance=${identityHashCode(this)}');
+  }
+
+  /// ถ้าต้องการยกเลิก timer ด้วยตัวเองแบบชัวร์ ๆ
+  void cancelIdleTimer() {
+    if (_idleTimer?.isActive ?? false) {
+      debugPrint('[idle] manual cancel timer(gen: $_idleGen)');
+    }
+    _idleTimer?.cancel();
+    _idleTimer = null;
+    _idleExpiresAt = null;
+  }
+
+  void _onSessionExpired() async {
+    cancelIdleTimer();
     final box = Get.find<GetStorage>();
     if (EasyLoading.isShow) {
       await EasyLoading.dismiss();

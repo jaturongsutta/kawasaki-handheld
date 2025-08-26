@@ -5,6 +5,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
+import 'package:kmt/enum/dialog_type.dart';
 import 'package:kmt/model/ng_init_data_model.dart';
 import 'package:kmt/model/ng_production_model.dart';
 import 'package:kmt/model/plan_search_model.dart';
@@ -113,6 +114,11 @@ class ProductionStatusController extends GetxController with GetSingleTickerProv
         selectedPlanDetail.value = res;
         print('aaaaa===> ${res.ot}');
         isOTChecked.value = res.ot == 'Y';
+        isBreak1Checked.value = res.b1 == 'Y';
+        isBreak2Checked.value = res.b2 == 'Y';
+        isBreak3Checked.value = res.b3 == 'Y';
+        isBreak4Checked.value = res.b4 == 'Y';
+
         // isOTSet.value = planList.where((val) => val.id == id).first.ot == 'Y';
         step.value = 1;
       } else {
@@ -161,22 +167,38 @@ class ProductionStatusController extends GetxController with GetSingleTickerProv
         return false;
       }
 
-      final confirm = await dialogService.showConfirmationDialog(
-        title: 'ยืนยันการอัปเดต OT',
-        description: isOT ? "คุณต้องการเพิ่ม OT ใช่หรือไม่?" : "คุณต้องการลบ OT ใช่หรือไม่?",
+      final confirm = await getIt<DialogService>().showCustomDialog(
+        variant: DialogType.confirmBreakOt,
+        title: 'ยืนยันการอัปเดต Break/OT',
+        description: 'คุณต้องการแก้ไข Break/OT ใช่หรือไม่?',
+        mainButtonTitle: 'ยืนยัน',
+        secondaryButtonTitle: 'ยกเลิก',
+        barrierDismissible: false,
+        data: {
+          // ปรับได้ตามต้องการ
+          'maxWidth': 800.0,
+          'titleSize': 14.0,
+          'descSize': 14.0,
+          'titleColor': const Color(0xFF1A1A1A),
+          'descColor': const Color(0xFF1A1A1A),
+          'confirmColor': const Color(0xFF6CC24A),
+          'cancelColor': Colors.grey.shade300,
+        },
       );
+
+      print('plan.cycleTime ===> ${plan.cycletTimes}');
 
       if (confirm?.confirmed == true) {
         final success = await service.updateOT(
           planId: plan.id,
           isOT: isOT,
           data: data,
-          cycleTime: plan.cycleTime,
+          cycleTime: plan.cycletTimes,
           updatedBy: createdBy,
         );
 
         if (success) {
-          EasyLoading.showSuccess('อัปเดต OT สำเร็จ');
+          EasyLoading.showSuccess('อัปเดต Breake/OT สำเร็จ');
           await loadPlanDetail(plan.id);
           await fetchTodayProductionPlan();
           return true;
@@ -259,6 +281,10 @@ class ProductionStatusController extends GetxController with GetSingleTickerProv
       if (res != null) {
         selectedOtherPlanDetail.value = res;
         isOTCheckedOther.value = res.ot == 'Y';
+        isBreak1Checked.value = res.b1 == 'Y';
+        isBreak2Checked.value = res.b2 == 'Y';
+        isBreak3Checked.value = res.b3 == 'Y';
+        isBreak4Checked.value = res.b4 == 'Y';
         // isOTSetOther.value = planList.where((val) => val.id == id).first.ot == 'Y';
         step.value = 2;
       } else {
@@ -304,9 +330,28 @@ class ProductionStatusController extends GetxController with GetSingleTickerProv
         return false;
       }
 
-      final confirm = await dialogService.showConfirmationDialog(
-        title: 'ยืนยันการอัปเดต OT',
-        description: isOT ? "คุณต้องการเพิ่ม OT ใช่หรือไม่?" : "คุณต้องการลบ OT ใช่หรือไม่?",
+      // final confirm = await dialogService.showConfirmationDialog(
+      //   title: 'ยืนยันการอัปเดต Break/OT',
+      //   description: "คุณต้องการแก้ไข Break/OT ใช่หรือไม่?",
+      // );
+
+      final confirm = await getIt<DialogService>().showCustomDialog(
+        variant: DialogType.confirmBreakOt,
+        title: 'ยืนยันการอัปเดต Break/OT',
+        description: 'คุณต้องการแก้ไข Break/OT ใช่หรือไม่?',
+        mainButtonTitle: 'ยืนยัน',
+        secondaryButtonTitle: 'ยกเลิก',
+        barrierDismissible: false,
+        data: {
+          // ปรับได้ตามต้องการ
+          'maxWidth': 800.0,
+          'titleSize': 14.0,
+          'descSize': 14.0,
+          'titleColor': const Color(0xFF1A1A1A),
+          'descColor': const Color(0xFF1A1A1A),
+          'confirmColor': const Color(0xFF6CC24A),
+          'cancelColor': Colors.grey.shade300,
+        },
       );
 
       if (confirm?.confirmed == true) {
@@ -319,7 +364,7 @@ class ProductionStatusController extends GetxController with GetSingleTickerProv
         );
 
         if (success) {
-          EasyLoading.showSuccess('อัปเดต OT สำเร็จ');
+          EasyLoading.showSuccess('อัปเดต Breake/OT สำเร็จ');
           await loadOtherPlanDetail(plan.id);
           await searchOtherTab();
           return true;
@@ -335,17 +380,6 @@ class ProductionStatusController extends GetxController with GetSingleTickerProv
       return false;
     } finally {
       isLoading.value = false; // ✅ หยุด loading ไม่ว่า success หรือ error
-    }
-  }
-
-  String formatPlanTime(String date, String time) {
-    try {
-      final d = DateTime.parse(date);
-      final t = DateTime.parse(time);
-      final combined = DateTime(d.year, d.month, d.day, t.hour, t.minute);
-      return DateFormat('dd/MM/yy HH:mm').format(combined);
-    } catch (e) {
-      return '-';
     }
   }
 
@@ -381,6 +415,7 @@ class ProductionStatusController extends GetxController with GetSingleTickerProv
 
   Future<bool> setBreakOther(int breakNo) async {
     final plan = selectedOtherPlanDetail.value;
+    print('play ====> ${plan == null ? 'Yes' : 'No'}');
     switch (breakNo) {
       case 1:
         plan!.b1 = isBreak1Checked.value ? 'Y' : 'N';
@@ -400,26 +435,6 @@ class ProductionStatusController extends GetxController with GetSingleTickerProv
         break;
     }
     return true;
-  }
-
-  DateTime _combineDateAndTime(String planDateIso, String timeIso) {
-    final date = DateTime.parse(planDateIso); // แปลงเป็น local
-    final time = DateTime.parse(timeIso); // แปลงเป็น local
-
-    return DateTime(
-      date.year,
-      date.month,
-      date.day,
-      time.hour,
-      time.minute,
-      time.second,
-    );
-  }
-
-  String _fmt(DateTime dt) {
-    String two(int v) => v.toString().padLeft(2, '0');
-    final d = dt.toLocal();
-    return '${d.year}-${two(d.month)}-${two(d.day)} ${two(d.hour)}:${two(d.minute)}:${two(d.second)}';
   }
 
   @override

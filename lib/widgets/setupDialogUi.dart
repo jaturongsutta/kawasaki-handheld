@@ -38,6 +38,8 @@ void setupDialogUi() {
         OneButtonDialogBox(request: sheetRequest, completer: completer),
     DialogType.customConfirm: (context, sheetRequest, completer) =>
         CustomConfirmDialogBox(request: sheetRequest, completer: completer),
+    DialogType.confirmBreakOt: (context, sheetRequest, completer) =>
+        ConfirmBreakOtDialogBox(request: sheetRequest, completer: completer),
   };
 
   dialogService.registerCustomDialogBuilders(builders);
@@ -1770,6 +1772,153 @@ class _CustomConfirmDialogBoxState extends State<CustomConfirmDialogBox> {
               height: 15,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class ConfirmBreakOtDialogBox extends StatelessWidget {
+  final DialogRequest request;
+  final Function(DialogResponse) completer;
+
+  const ConfirmBreakOtDialogBox({
+    super.key,
+    required this.request,
+    required this.completer,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // ปรับได้ผ่าน request.data
+    final double maxWidth = (request.data?['maxWidth'] as double?) ?? 420; // ✅ คุมความกว้าง
+    final double titleSize = (request.data?['titleSize'] as double?) ?? 20;
+    final double descSize = (request.data?['descSize'] as double?) ?? 16;
+    final Color titleColor = (request.data?['titleColor'] as Color?) ?? const Color(0xFF1A1A1A);
+    final Color descColor = (request.data?['descColor'] as Color?) ?? const Color(0xFF1A1A1A);
+
+    final Color confirmColor = (request.data?['confirmColor'] as Color?) ?? const Color(0xFF6CC24A);
+    final Color cancelColor = (request.data?['cancelColor'] as Color?) ?? Colors.grey.shade300;
+
+    final String okText = request.mainButtonTitle ?? 'ยืนยัน';
+    final String cancelText = request.secondaryButtonTitle ?? 'ยกเลิก';
+
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(Constants.padding),
+      ),
+      elevation: 0,
+      backgroundColor: Colors.transparent,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: Container(
+          // สูงปล่อย auto ตามเนื้อหา
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(Constants.padding),
+            boxShadow: const [
+              BoxShadow(color: Colors.black, offset: Offset(0, 10), blurRadius: 10),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (request.title != null) ...[
+                  Text(
+                    request.title ?? '',
+                    style: GoogleFonts.openSans(
+                      fontSize: titleSize,
+                      fontWeight: FontWeight.w900,
+                      color: titleColor,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 10),
+                  const Divider(height: 20, thickness: 1, color: Color(0xFFC5C5C5)),
+                ],
+                if (request.description?.isNotEmpty ?? false) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    request.description ?? '',
+                    style: GoogleFonts.openSans(
+                      fontSize: descSize,
+                      fontWeight: FontWeight.w400,
+                      color: descColor,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                ],
+                Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => completer(DialogResponse(confirmed: false)),
+                        child: Container(
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: cancelColor,
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.12),
+                                offset: const Offset(0, 4),
+                                blurRadius: 8,
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              cancelText,
+                              style: GoogleFonts.openSans(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: const Color.fromARGB(255, 43, 43, 43),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => completer(DialogResponse(confirmed: true)),
+                        child: Container(
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: confirmColor,
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.12),
+                                offset: const Offset(0, 4),
+                                blurRadius: 8,
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              okText,
+                              style: GoogleFonts.openSans(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+              ],
+            ),
+          ),
         ),
       ),
     );

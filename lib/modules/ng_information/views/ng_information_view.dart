@@ -5,6 +5,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:kmt/model/ng_historical_model.dart';
 import 'package:kmt/modules/login/controllers/login_controller.dart';
+import 'package:kmt/util/time_utils.dart';
 import 'package:kmt/widgets/KeyenceScanner.dart';
 import 'package:kmt/widgets/timeformat.dart';
 import '../controllers/ng_information_controller.dart';
@@ -59,6 +60,9 @@ class _RecordTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      if (controller.isLoading.value) {
+        return const Center(child: CircularProgressIndicator());
+      }
       final data = controller.initData.value;
 
       if (data == null) {
@@ -66,32 +70,50 @@ class _RecordTab extends StatelessWidget {
       }
 
       final plan = data.plan;
+      if (plan == null) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('No production plan for today.'),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.refresh),
+                label: const Text('Reload'),
+                onPressed: controller.loadNgInitialData,
+              ),
+            ],
+          ),
+        );
+      }
 
       return KeyenceScanner(
         onBarcodeScanned: (String scannedCode) {
           print('ng page');
-          String codeToCheck;
-          if (scannedCode.contains('|')) {
-            final parts = scannedCode.split('|');
-            if (parts.length >= 2) {
-              codeToCheck = parts[1];
-              final reasonLabel = controller.initData.value!.reason
-                  .firstWhere(
-                    (ele) => ele.code == parts[2],
-                  )
-                  .label;
-              controller.selectedReason.value = reasonLabel;
+          if (controller.tabController.index == 0) {
+            String codeToCheck;
+            if (scannedCode.contains('|')) {
+              final parts = scannedCode.split('|');
+              if (parts.length >= 2) {
+                codeToCheck = parts[1];
+                final reasonLabel = controller.initData.value!.reason
+                    .firstWhere(
+                      (ele) => ele.code == parts[2],
+                    )
+                    .label;
+                controller.selectedReason.value = reasonLabel;
+              } else {
+                codeToCheck = scannedCode;
+              }
             } else {
               codeToCheck = scannedCode;
             }
-          } else {
-            codeToCheck = scannedCode;
-          }
 
-          if (data.process.contains(codeToCheck)) {
-            controller.selectedProcess.value = codeToCheck;
-          } else {
-            Get.snackbar('ไม่พบข้อมูล', 'ไม่พบ Process ที่ตรงกับรหัส: $codeToCheck');
+            if (data.process.contains(codeToCheck)) {
+              controller.selectedProcess.value = codeToCheck;
+            } else {
+              Get.snackbar('ไม่พบข้อมูล', 'ไม่พบ Process ที่ตรงกับรหัส: $codeToCheck');
+            }
           }
         },
         child: Padding(
@@ -124,32 +146,30 @@ class _RecordTab extends StatelessWidget {
                     child: ListView(
                       shrinkWrap: true,
                       children: [
-                        if (plan != null) ...[
+                        ...[
                           _buildInfoRowClickable(
                             'Plan Date',
-                            formatDateTime(plan.planDate, controller.timeDefault.value),
-                            () {
+                            formatDateTime(
+                                plan.planDate, plan.planStartTime, plan.planStopTime ?? ''),
+                            () async {
                               controller.selectedDate.value = DateTime.parse(plan.planDate);
-                              controller.reloadRecords();
+                              await controller.reloadRecords();
                               controller.step.value = 1;
                             },
                           ),
                           _buildInfoRow('Shift', plan.teamName),
-                          _buildInfoRow('Shift Time', plan.shiftPeriodName),
+                          // _buildInfoRow('Shift Time', plan.shiftPeriodName),
                           _buildInfoRow('Model', plan.modelCd),
                           _buildInfoRow('Part No', plan.partNo),
                           _buildInfoRow('Part 1', plan.part1),
                           _buildInfoRow('Part 2', plan.part2),
-                          const SizedBox(height: 8),
                           _buildDropdown(
                             'Process',
                             data.process,
                             controller.selectedProcess,
                             isRequired: false,
                           ),
-                          const SizedBox(height: 8),
                           _buildDatePicker('NG Date', controller.ngDate, isRequired: true),
-                          const SizedBox(height: 8),
                           _buildTextFormField(
                             'NG Time',
                             controller.ngTimeController,
@@ -160,25 +180,23 @@ class _RecordTab extends StatelessWidget {
                               TimeTextInputFormatter(),
                             ],
                           ),
-                          const SizedBox(height: 8),
                           _buildTextFormField(
                             'Quantity',
                             controller.quantityController,
                             keyboardType: TextInputType.number,
                             isRequired: false,
+                            isDisable: true,
                             inputFormatters: [
                               FilteringTextInputFormatter.digitsOnly,
                               LengthLimitingTextInputFormatter(3),
                             ],
                           ),
-                          const SizedBox(height: 8),
                           _buildDropdown(
                             'Reason',
                             data.reason.map((e) => e.label).toList(),
                             controller.selectedReason,
                             isRequired: true,
                           ),
-                          const SizedBox(height: 8),
                           _buildCommentField('Comment', controller.commentController),
                           const SizedBox(height: 16),
                           Row(
@@ -202,18 +220,6 @@ class _RecordTab extends StatelessWidget {
                               ),
                             ],
                           ),
-                        ] else ...[
-                          const Center(child: Text('No production plan available')),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton(
-                                  onPressed: Get.back,
-                                  child: const Text('Back'),
-                                ),
-                              ),
-                            ],
-                          ),
                         ],
                       ],
                     ),
@@ -227,26 +233,27 @@ class _RecordTab extends StatelessWidget {
     });
   }
 
-  String formatDateTime(String dateStr, String timeStr) {
+  String formatDateTime(String dateStr, String timeStr, String stopTimeStr) {
     try {
+      print('stop ===> ${stopTimeStr}');
       final date = DateTime.parse(dateStr);
       final time = DateTime.parse(timeStr);
-
       final combined = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-      return DateFormat('dd/MM/yy HH:mm').format(combined);
+
+      return "${DateFormat('dd/MM/yy HH:mm').format(combined)} - ${TimeUtils.toHhmm(stopTimeStr)}";
     } catch (e) {
       return '-';
     }
   }
 
   Widget _buildInfoRow(String label, String value) {
-    return SizedBox(
-      height: 45,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           SizedBox(
-            width: 100,
+            width: 80,
             child: Text(
               label,
               style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.grey),
@@ -276,13 +283,14 @@ class _RecordTab extends StatelessWidget {
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
     bool isRequired = false,
+    bool isDisable = false,
   }) {
-    return SizedBox(
-      height: 60,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
           SizedBox(
-            width: 100,
+            width: 80,
             child: Text(label,
                 style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.grey)),
           ),
@@ -291,8 +299,32 @@ class _RecordTab extends StatelessWidget {
               controller: controller,
               keyboardType: keyboardType,
               inputFormatters: inputFormatters,
+              readOnly: isDisable,
+              enabled: !isDisable,
               decoration: const InputDecoration(
-                border: OutlineInputBorder(),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(10)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(10)),
+                  borderSide: BorderSide(color: Colors.grey),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(10)),
+                  borderSide: BorderSide(color: Color(0xFF6CC24A), width: 2), // เขียวโทนหลัก
+                ),
+                disabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(10)),
+                  borderSide: BorderSide(color: Color(0xFFDDDDDD)),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(10)),
+                  borderSide: BorderSide(color: Colors.red),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(10)),
+                  borderSide: BorderSide(color: Colors.red, width: 2),
+                ),
                 isDense: true,
                 contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 8),
               ),
@@ -323,12 +355,12 @@ class _RecordTab extends StatelessWidget {
     ];
 
     return Obx(() {
-      return SizedBox(
-        height: 60,
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(
           children: [
             SizedBox(
-              width: 100,
+              width: 80,
               child: Text(
                 label,
                 style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.grey),
@@ -378,81 +410,85 @@ class _RecordTab extends StatelessWidget {
   }
 
   Widget _buildDatePicker(String label, Rx<DateTime?> selectedDate, {bool isRequired = false}) {
-    return FormField<DateTime>(
-      validator: isRequired
-          ? (_) {
-              if (selectedDate.value == null) {
-                return 'กรุณาเลือก $label';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: FormField<DateTime>(
+        validator: isRequired
+            ? (_) {
+                if (selectedDate.value == null) {
+                  return 'กรุณาเลือก $label';
+                }
+                return null;
               }
-              return null;
-            }
-          : null,
-      builder: (formFieldState) {
-        return Obx(() {
-          final dateText =
-              selectedDate.value != null ? DateFormat('dd/MM/yy').format(selectedDate.value!) : '';
+            : null,
+        builder: (formFieldState) {
+          return Obx(() {
+            final dateText = selectedDate.value != null
+                ? DateFormat('dd/MM/yy').format(selectedDate.value!)
+                : '';
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  SizedBox(
-                    width: 100,
-                    child: Text(label,
-                        style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.grey)),
-                  ),
-                  Expanded(
-                    child: InkWell(
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: Get.context!,
-                          initialDate: selectedDate.value ?? DateTime.now(),
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
-                        );
-                        if (picked != null) {
-                          selectedDate.value = picked;
-                          formFieldState.didChange(picked);
-                        }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xF2EAF1FC),
-                          borderRadius: BorderRadius.circular(24),
-                          border:
-                              Border.all(color: formFieldState.hasError ? Colors.red : Colors.grey),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              dateText.isNotEmpty ? dateText : 'เลือกวันที่',
-                              style: TextStyle(
-                                color: dateText.isNotEmpty ? Colors.black : Colors.grey,
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 80,
+                      child: Text(label,
+                          style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.grey)),
+                    ),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () async {
+                          final picked = await showDatePicker(
+                            context: Get.context!,
+                            initialDate: selectedDate.value ?? DateTime.now(),
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime(2100),
+                          );
+                          if (picked != null) {
+                            selectedDate.value = picked;
+                            formFieldState.didChange(picked);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xF2EAF1FC),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                                color: formFieldState.hasError ? Colors.red : Colors.grey),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                dateText.isNotEmpty ? dateText : 'เลือกวันที่',
+                                style: TextStyle(
+                                  color: dateText.isNotEmpty ? Colors.black : Colors.grey,
+                                ),
                               ),
-                            ),
-                            const Icon(Icons.calendar_today, size: 18),
-                          ],
+                              const Icon(Icons.calendar_today, size: 18),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              if (formFieldState.hasError)
-                Padding(
-                  padding: const EdgeInsets.only(left: 100, top: 4),
-                  child: Text(
-                    formFieldState.errorText!,
-                    style: const TextStyle(color: Colors.red, fontSize: 12),
-                  ),
+                  ],
                 ),
-            ],
-          );
-        });
-      },
+                if (formFieldState.hasError)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 100, top: 4),
+                    child: Text(
+                      formFieldState.errorText!,
+                      style: const TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ),
+              ],
+            );
+          });
+        },
+      ),
     );
   }
 
@@ -478,13 +514,13 @@ class _RecordTab extends StatelessWidget {
   Widget _buildInfoRowClickable(String label, String value, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
-      child: SizedBox(
-        height: 45,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             SizedBox(
-              width: 100,
+              width: 80,
               child: Text(
                 label,
                 style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.grey),
@@ -600,11 +636,11 @@ class _ListRecord extends StatelessWidget {
                                           children: [
                                             _row(
                                                 'Plan',
-                                                formatDateTime(
-                                                    record.planDate, record.planStartTime)),
+                                                formatDateTime(record.planDate,
+                                                    record.planStartTime, record.planStopTime)),
                                             _row('Shift', record.teamName),
-                                            _row('Shift Time', record.shiftPeriodName),
-                                            _row('OT', record.ot == 'Y' ? 'Yes OT' : '-'),
+                                            // _row('Shift Time', record.shiftPeriodName),
+                                            _row('OT/Break', record.otValue ?? '-'),
                                             _row('Model', record.modelCd),
                                             Padding(
                                               padding: const EdgeInsets.symmetric(vertical: 2),
@@ -645,12 +681,13 @@ class _ListRecord extends StatelessWidget {
     });
   }
 
-  String formatDateTime(String dateStr, String timeStr) {
+  String formatDateTime(String dateStr, String timeStr, String stopTimeStr) {
     try {
       final date = DateTime.parse(dateStr);
       final time = DateTime.parse(timeStr);
       final combined = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-      return DateFormat('dd/MM/yy HH:mm').format(combined);
+
+      return "${DateFormat('dd/MM/yy HH:mm').format(combined)} - ${TimeUtils.toHhmm(stopTimeStr)}";
     } catch (e) {
       return '-';
     }
@@ -783,18 +820,19 @@ class _HistoryTab extends StatelessWidget {
                                         children: [
                                           _row(
                                               'Plan',
-                                              formatDateTime(
-                                                  record.planDate, record.planStartTime)),
-                                          _row('Line', record.lineCd),
+                                              formatDateTime(record.planDate, record.planStartTime,
+                                                  record.planStopTime ?? '')),
+                                          // _row('Line', record.lineCd),
                                           _row('Shift', record.teamName ?? '-'),
                                           _row('Model', record.modelCd ?? '-'),
                                           _row('Process', record.processCd ?? '-'),
-                                          _row('NG Date', formatDate(record.ngDate)),
-                                          _row('NG Time', formatTime(record.ngTime)),
+                                          _row('NG Date',
+                                              '${formatDate(record.ngDate)} ${formatTime(record.ngTime)}'),
+
                                           _row('Quantity', '${record.quantity}'),
                                           _row('Reason', record.reasonName ?? '-'),
                                           _row('Comment', record.comment ?? '-'),
-                                          _row('Status', record.statusName ?? '-'),
+                                          // _row('Status', record.statusName ?? '-'),
                                         ],
                                       ),
                                     ),
@@ -815,12 +853,13 @@ class _HistoryTab extends StatelessWidget {
     });
   }
 
-  String formatDateTime(String dateStr, String timeStr) {
+  String formatDateTime(String dateStr, String timeStr, String stopTimeStr) {
     try {
       final date = DateTime.parse(dateStr);
       final time = DateTime.parse(timeStr);
       final combined = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-      return DateFormat('dd/MM/yy HH:mm').format(combined);
+
+      return "${DateFormat('dd/MM/yy HH:mm').format(combined)} - ${TimeUtils.toHhmm(stopTimeStr)}";
     } catch (e) {
       return '-';
     }

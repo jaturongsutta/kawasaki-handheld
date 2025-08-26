@@ -4,6 +4,7 @@ import 'package:kmt/model/ng_init_data_model.dart';
 import 'package:kmt/model/ng_record_model.dart';
 import 'package:kmt/model/ng_record_request.dart';
 import 'package:kmt/services/base_service.dart';
+import 'package:kmt/widgets/customLog.dart';
 
 class NgInformationService {
   final BaseService baseService;
@@ -27,7 +28,7 @@ class NgInformationService {
     return null;
   }
 
-  Future<bool> saveNgRecord(NgRecordRequest record) async {
+  Future<String> saveNgRecord(NgRecordRequest record) async {
     try {
       final response = await baseService.apiRequest(
         '/ng/save-record',
@@ -36,12 +37,14 @@ class NgInformationService {
       );
       print('ress===$response');
       if (response['result'] == true) {
-        return true;
+        return '';
+      } else {
+        return response['message'];
       }
     } catch (e) {
       print('Save NG Record Error: $e');
+      return '';
     }
-    return false;
   }
 
   Future<List<NgRecordModel>> fetchNgRecordList(String lineCd, String planDate) async {
@@ -57,6 +60,7 @@ class NgInformationService {
 
       if (res['result'] == true && res['data'] != null) {
         final rawData = res['data'] as List;
+        logger.i(rawData);
 
         // ดึง List ชั้นใน
         final records = rawData.isNotEmpty && rawData[0] is List ? rawData[0] as List : [];

@@ -10,4 +10,5 @@ enum DialogType {
   multiLine,
   customTwoButton,
   customConfirm,
+  confirmBreakOt,
 }

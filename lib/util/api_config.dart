@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class ApiConfig {
   static const ApiConfig local = ApiConfig._(
-    endpoint: "http://192.168.1.18:84/api", //local
+    endpoint: "http://192.168.1.5:84/api", //local
     endpointName: "Local",
     colors: [
       Color(0xFF11CDEF),
@@ -20,7 +20,7 @@ class ApiConfig {
   );
 
   static const ApiConfig kmtDev = ApiConfig._(
-    endpoint: "[backend Url]", // kmtDev
+    endpoint: " http://192.168.1.15:83/api", // kmtDev
     endpointName: "Development",
     colors: [
       Color(0xFF11CDEF),
@@ -29,7 +29,7 @@ class ApiConfig {
   );
 
   static const ApiConfig kmtProd = ApiConfig._(
-    endpoint: "[backend Url]", // kmtProd
+    endpoint: "http://192.168.1.20:82/api", // kmtProd
     endpointName: "Production",
     colors: [
       Color(0xFF11CDEF),
@@ -49,7 +49,7 @@ class ApiConfig {
 }
 
 class EndpointConfig {
-  static const ApiConfig currentEndpoint = ApiConfig.kmtDev;
+  static const ApiConfig currentEndpoint = ApiConfig.kmtProd;
 }
 
 // const String appVersion = "250616-1";
