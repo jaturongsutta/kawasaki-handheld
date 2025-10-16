@@ -157,6 +157,8 @@ class ProductionStatusController extends GetxController with GetSingleTickerProv
         'id': plan.id,
       };
 
+      print(data);
+
       final otData = await service.fetchOTData(data);
       print('object===> $otData');
       if (otData.isNotEmpty) {
