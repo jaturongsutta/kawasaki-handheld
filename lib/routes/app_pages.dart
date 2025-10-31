@@ -1,6 +1,9 @@
 import 'package:get/get.dart';
 import 'package:kmt/modules/alert/bindings/notification_binding.dart';
 import 'package:kmt/modules/alert/views/notification_screen.dart';
+import 'package:kmt/modules/cyh_no_plan/bindings/cyh_no_plan_binding.dart';
+import 'package:kmt/modules/cyh_no_plan/views/cyh_no_plan_form_view.dart';
+import 'package:kmt/modules/cyh_no_plan/views/cyh_no_plan_view.dart';
 import 'package:kmt/modules/line_stop_information/bindings/line_stop_bindings.dart';
 import 'package:kmt/modules/line_stop_information/views/line_stop_information_view.dart';
 import 'package:kmt/modules/login/views/login_view.dart';
@@ -58,6 +61,16 @@ class AppPages {
       name: AppRoutes.alert,
       page: () => const NotificationScreen(),
       binding: AlertBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.cyhNoPlan,
+      page: () => const CYHNoPlanView(),
+      binding: CYHNoPlanBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.cyhNoPlanForm,
+      page: () => const CYHNoPlanFormView(),
+      binding: CYHNoPlanBinding(),
     ),
   ];
 }
