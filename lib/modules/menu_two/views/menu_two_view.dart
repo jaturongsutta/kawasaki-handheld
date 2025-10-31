@@ -4,7 +4,9 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:kmt/global_widgets/header_kmt.dart';
 import 'package:kmt/modules/alert/controllers/notification_controller.dart';
+import 'package:kmt/modules/cyh_no_plan/controllers/cyh_no_plan_controller.dart';
 import 'package:kmt/modules/line_stop_information/controllers/line_stop_information_controller.dart';
+import 'package:kmt/modules/login/controllers/login_controller.dart';
 import 'package:kmt/modules/menu_two/controllers/menu_two_controller.dart';
 import 'package:kmt/modules/ng_information/controllers/ng_information_controller.dart';
 import 'package:kmt/modules/production_status_list/controllers/production_status_list_controller.dart';
@@ -26,6 +28,7 @@ class _MenuTwoViewState extends State<MenuTwoView> {
   final controller = Get.find<MenuTwoController>();
   final notificationController = Get.find<NotificationController>();
   static const MethodChannel _navigateChannel = MethodChannel('navigate_channel');
+  final LoginController loginController = Get.find<LoginController>();
 
   @override
   void initState() {
@@ -49,9 +52,12 @@ class _MenuTwoViewState extends State<MenuTwoView> {
 
   @override
   Widget build(BuildContext context) {
+    print(
+        'loginController.selectedLine.value.toLowerCase() ===> ${loginController.selectedLine.value.toLowerCase()}');
+    print(RegExp(r'leak', caseSensitive: false)
+        .hasMatch(loginController.selectedLine.value.toLowerCase()));
     const buttonWidth = 250.0;
     const buttonHeight = 60.0;
-
     return KeyenceScanner(
       key: scannerKey,
       onBarcodeScanned: (scannedCode) {
@@ -157,6 +163,31 @@ class _MenuTwoViewState extends State<MenuTwoView> {
                         scannerKey.currentState?.initSensorReader();
                       });
                     }),
+                    if (RegExp(r'leak', caseSensitive: false)
+                        .hasMatch(loginController.selectedLine.value.toLowerCase())) ...[
+                      const SizedBox(height: 16),
+                      _buildFixedSizeButton("CYH Leak Test", buttonWidth, buttonHeight, () {
+                        loadingController.showLoading();
+                        Get.toNamed('/line-stop-information')?.then((_) async {
+                          await Future.delayed(const Duration(seconds: 1));
+                          loadingController.hideLoading();
+                          Get.delete<LineStopInformationController>();
+
+                          scannerKey.currentState?.initSensorReader();
+                        });
+                      }),
+                      const SizedBox(height: 16),
+                      _buildFixedSizeButton("CYH No Plan", buttonWidth, buttonHeight, () {
+                        loadingController.showLoading();
+                        Get.toNamed('/cyh-no-plan')?.then((_) async {
+                          await Future.delayed(const Duration(seconds: 1));
+                          loadingController.hideLoading();
+                          Get.delete<CYHNoPlanController>();
+
+                          scannerKey.currentState?.initSensorReader();
+                        });
+                      }),
+                    ]
                   ],
                 ),
               ),

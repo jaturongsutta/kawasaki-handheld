@@ -57,7 +57,6 @@ class BaseService {
 
     // 5) สร้าง timer ใหม่
     _idleTimer = Timer(idleTimeout, () {
-      // ถ้า gen เปลี่ยน แปลว่ามีการรีเซ็ตหลังจากตั้ง timer นี้ → ข้าม
       if (myGen != _idleGen) {
         debugPrint('[idle] skip stale timer fire (myGen: $myGen, currentGen: $_idleGen)');
         return;
@@ -67,13 +66,11 @@ class BaseService {
     });
   }
 
-  /// สำหรับเช็คสถานะตอนนี้ (เรียกจากที่ไหนก็ได้)
   void debugIdleState() {
     debugPrint('[idle] active=${_idleTimer?.isActive ?? false}, '
         'gen=$_idleGen, expiresAt=$_idleExpiresAt, instance=${identityHashCode(this)}');
   }
 
-  /// ถ้าต้องการยกเลิก timer ด้วยตัวเองแบบชัวร์ ๆ
   void cancelIdleTimer() {
     if (_idleTimer?.isActive ?? false) {
       debugPrint('[idle] manual cancel timer(gen: $_idleGen)');
@@ -116,11 +113,14 @@ class BaseService {
   }) async {
     final box = GetStorage();
     final user = box.read('user');
+    print('askdaksdas');
     if (user != null) {
       _startIdleTimer();
     }
 
     try {
+      print('bbbbb');
+
       final dio.Dio dioClient = dio.Dio();
 
       (dioClient.httpClientAdapter as DefaultHttpClientAdapter).onHttpClientCreate =
@@ -131,6 +131,7 @@ class BaseService {
 
       String? token = await LocalStorage.getLocalStorage(key: 'token');
       endpoint ??= EndpointConfig.currentEndpoint.endpoint;
+      logger.i('api ==> ${endpoint + apiPath}');
 
       headers ??= {
         'Content-Type': 'application/json',
@@ -138,7 +139,6 @@ class BaseService {
         if (token != null) 'Authorization': 'Bearer $token',
       };
 
-      logger.i('api ==> ${endpoint + apiPath}');
       logger.i('data ==> $data');
 
       dio.Response response;

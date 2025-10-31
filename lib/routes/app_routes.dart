@@ -9,4 +9,6 @@ abstract class AppRoutes {
   static const lineStopInformation = '/line-stop-information';
   static const alert = '/alert';
   static const test = '/test';
+  static const cyhNoPlan = '/cyh-no-plan';
+  static const cyhNoPlanForm = '/cyh-no-plan/form';
 }
