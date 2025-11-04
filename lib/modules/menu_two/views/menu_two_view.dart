@@ -52,10 +52,9 @@ class _MenuTwoViewState extends State<MenuTwoView> {
 
   @override
   Widget build(BuildContext context) {
-    print(
-        'loginController.selectedLine.value.toLowerCase() ===> ${loginController.selectedLine.value.toLowerCase()}');
+    print('controller.selectedLine.value ===> ${controller.selectedLine.value}');
     print(RegExp(r'leak', caseSensitive: false)
-        .hasMatch(loginController.selectedLine.value.toLowerCase()));
+        .hasMatch(controller.selectedLine.value.toLowerCase()));
     const buttonWidth = 250.0;
     const buttonHeight = 60.0;
     return KeyenceScanner(
@@ -164,7 +163,7 @@ class _MenuTwoViewState extends State<MenuTwoView> {
                       });
                     }),
                     if (RegExp(r'leak', caseSensitive: false)
-                        .hasMatch(loginController.selectedLine.value.toLowerCase())) ...[
+                        .hasMatch(controller.selectedLine.value.toLowerCase())) ...[
                       const SizedBox(height: 16),
                       _buildFixedSizeButton("CYH Leak Test", buttonWidth, buttonHeight, () {
                         loadingController.showLoading();
