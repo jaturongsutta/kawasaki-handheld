@@ -1,0 +1,25 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'leak_history_response_model.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+LeakHistoryResponseModel _$LeakHistoryResponseModelFromJson(
+        Map<String, dynamic> json) =>
+    LeakHistoryResponseModel(
+      items: (json['items'] as List<dynamic>)
+          .map((e) => LeakHistoryItemModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      totalLossTime: json['total_loss_time'] as num,
+      totalRecords: (json['total_records'] as num?)?.toInt(),
+    );
+
+Map<String, dynamic> _$LeakHistoryResponseModelToJson(
+        LeakHistoryResponseModel instance) =>
+    <String, dynamic>{
+      'items': instance.items,
+      'total_loss_time': instance.totalLossTime,
+      'total_records': instance.totalRecords,
+    };

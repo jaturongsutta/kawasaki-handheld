@@ -113,14 +113,11 @@ class BaseService {
   }) async {
     final box = GetStorage();
     final user = box.read('user');
-    print('askdaksdas');
     if (user != null) {
       _startIdleTimer();
     }
 
     try {
-      print('bbbbb');
-
       final dio.Dio dioClient = dio.Dio();
 
       (dioClient.httpClientAdapter as DefaultHttpClientAdapter).onHttpClientCreate =
@@ -146,7 +143,7 @@ class BaseService {
         case QueryType.get:
           response = await dioClient.get(
             endpoint + apiPath,
-            queryParameters: data, // ⚠️ สำหรับ GET ใช้ queryParameters
+            queryParameters: data,
             options: dio.Options(headers: headers),
           );
           break;
@@ -161,7 +158,6 @@ class BaseService {
 
       if (response.statusCode == 401) {
         print('Unauthorized: Token may be invalid or expired.');
-        // อาจเรียก logout() ได้ที่นี่
       } else if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.toString());
       } else {

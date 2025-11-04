@@ -40,7 +40,6 @@ class CYHNoPlanFormView extends GetView<CYHNoPlanController> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('No Plan'),
-        backgroundColor: const Color(0xFF3D7BFF),
         centerTitle: true,
       ),
       backgroundColor: const Color(0xFFF4F5FB),

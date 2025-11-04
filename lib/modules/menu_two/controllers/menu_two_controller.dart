@@ -15,6 +15,7 @@ class MenuTwoController extends GetxController {
   void onInit() {
     super.onInit();
     final box = GetStorage();
+    selectedLine.value = box.read('selectedLine');
 
     // อ่านไลน์
     final user = box.read('user');

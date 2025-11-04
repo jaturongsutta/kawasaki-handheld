@@ -3,12 +3,13 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
+import 'package:kmt/model/leak_history_item_model.dart';
 import 'package:kmt/model/leak_no_plan_model.dart';
 import 'package:kmt/model/machine_model.dart';
 import 'package:kmt/routes/app_routes.dart';
 import '../services/cyh_no_plan_service.dart';
 
-class CYHNoPlanController extends GetxController {
+class CYHNoPlanController extends GetxController with GetSingleTickerProviderStateMixin {
   final CYHNoPlanService service;
   CYHNoPlanController(this.service);
 
@@ -22,11 +23,58 @@ class CYHNoPlanController extends GetxController {
   final startTimeController =
       TextEditingController(text: DateFormat('HH:mm').format(DateTime.now()));
   final endTimeController = TextEditingController(text: DateFormat('HH:mm').format(DateTime.now()));
+  late TabController tabController;
+
+  final historyDate = Rx<DateTime>(DateTime.now());
+  final historyItems = <LeakHistoryItemModel>[].obs;
+  final historyTotalLoss = 0.0.obs;
+  final isHistoryLoading = false.obs;
+  final isHistoryLoadingMore = false.obs;
+  final historyHasMore = true.obs;
+  final historyPage = 1.obs;
+  final int historyPageSize = 10;
+
+  late final ScrollController historyScrollController;
+
+  String get currentLineCd {
+    final box = GetStorage();
+    return box.read('selectedLine')?.toString() ?? '';
+  }
 
   @override
   void onInit() {
     super.onInit();
+    tabController = TabController(length: 2, vsync: this);
+    historyScrollController = ScrollController();
+    historyScrollController.addListener(_onHistoryScroll);
+
     _bootstrap();
+    loadHistoricalInitial();
+  }
+
+  @override
+  void onClose() {
+    historyScrollController.dispose();
+    super.onClose();
+  }
+
+  void changeTab(int index) {
+    tabController.animateTo(index);
+  }
+
+  Future<void> loadHistoricalInitial() async {
+    historyPage.value = 1;
+    historyHasMore.value = true;
+    historyItems.clear();
+    await _fetchHistorical(page: 1, clear: true);
+  }
+
+  Future<void> loadHistoricalMore() async {
+    if (isHistoryLoading.value || isHistoryLoadingMore.value || !historyHasMore.value) {
+      return;
+    }
+    final nextPage = historyPage.value + 1;
+    await _fetchHistorical(page: nextPage);
   }
 
   Future<void> _bootstrap() async {
@@ -228,6 +276,79 @@ class CYHNoPlanController extends GetxController {
     }
     return '00:00:00';
   }
+
+  Future<void> _fetchHistorical({required int page, bool clear = false}) async {
+    final line = currentLineCd;
+    if (line.isEmpty) return;
+
+    final from = (page - 1) * historyPageSize + 1;
+    final to = page * historyPageSize;
+
+    final isFirstPage = page == 1;
+
+    if (isFirstPage) {
+      isHistoryLoading.value = true;
+    } else {
+      isHistoryLoadingMore.value = true;
+    }
+
+    try {
+      final resp = await service.fetchHistoricalNoPlan(
+        lineCd: line,
+        date: historyDate.value,
+        rowFrom: from,
+        rowTo: to,
+      );
+
+      final newItems = resp?.items ?? [];
+
+      if (isFirstPage) {
+        historyItems.assignAll(newItems);
+      } else {
+        historyItems.addAll(newItems);
+      }
+
+      historyTotalLoss.value = resp?.totalLossTime.toDouble() ?? 0;
+
+      historyPage.value = page;
+
+      if (newItems.length < historyPageSize) {
+        historyHasMore.value = false;
+      }
+    } catch (e) {
+      if (isFirstPage) {
+        historyItems.clear();
+        historyTotalLoss.value = 0;
+      }
+      Get.snackbar('Error', e.toString());
+    } finally {
+      isHistoryLoading.value = false;
+      isHistoryLoadingMore.value = false;
+    }
+  }
+
+  void _onHistoryScroll() {
+    if (!historyScrollController.hasClients) return;
+    final pos = historyScrollController.position;
+    if (pos.pixels >= pos.maxScrollExtent - 200) {
+      loadHistoricalMore();
+    }
+  }
+
+  Future<void> pickHistoryDate(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: historyDate.value,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      historyDate.value = picked;
+      await loadHistoricalInitial();
+    }
+  }
+
+  String get historyDateDisplay => DateFormat('dd/MM/yyyy').format(historyDate.value);
 
   void resetForm() {
     selectedMachineNo.value = null;
