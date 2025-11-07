@@ -1,6 +1,11 @@
 import 'package:get/get.dart';
 import 'package:kmt/modules/alert/bindings/notification_binding.dart';
 import 'package:kmt/modules/alert/views/notification_screen.dart';
+import 'package:kmt/modules/cyh_leak_test/bindings/cyh_leak_test_binding.dart';
+import 'package:kmt/modules/cyh_leak_test/bindings/cyh_leak_test_serial_binding.dart';
+import 'package:kmt/modules/cyh_leak_test/views/cyh_leak_test_ng_view.dart';
+import 'package:kmt/modules/cyh_leak_test/views/cyh_leak_test_serial_view.dart';
+import 'package:kmt/modules/cyh_leak_test/views/cyh_leak_test_view.dart';
 import 'package:kmt/modules/cyh_no_plan/bindings/cyh_no_plan_binding.dart';
 import 'package:kmt/modules/cyh_no_plan/views/cyh_no_plan_form_view.dart';
 import 'package:kmt/modules/cyh_no_plan/views/cyh_no_plan_view.dart';
@@ -71,6 +76,21 @@ class AppPages {
       name: AppRoutes.cyhNoPlanForm,
       page: () => const CYHNoPlanFormView(),
       binding: CYHNoPlanBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.cyhLeakTest,
+      page: () => CYHLeakTestView(),
+      binding: CYHLeakTestBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.cyhLeakTestSerial,
+      page: () => CYHLeakTestSerialView(),
+      binding: CYHLeakTestSerialBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.cyhLeakTestNG,
+      page: () => CYHLeakTestNGView(),
+      binding: CYHLeakTestBinding(),
     ),
   ];
 }

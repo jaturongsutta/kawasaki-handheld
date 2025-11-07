@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:kmt/global_widgets/header_kmt.dart';
 import 'package:kmt/modules/alert/controllers/notification_controller.dart';
+import 'package:kmt/modules/cyh_leak_test/controllers/cyh_leak_test_controller.dart';
 import 'package:kmt/modules/cyh_no_plan/controllers/cyh_no_plan_controller.dart';
 import 'package:kmt/modules/line_stop_information/controllers/line_stop_information_controller.dart';
 import 'package:kmt/modules/login/controllers/login_controller.dart';
@@ -167,10 +168,10 @@ class _MenuTwoViewState extends State<MenuTwoView> {
                       const SizedBox(height: 16),
                       _buildFixedSizeButton("CYH Leak Test", buttonWidth, buttonHeight, () {
                         loadingController.showLoading();
-                        Get.toNamed('/line-stop-information')?.then((_) async {
+                        Get.toNamed('/cyh-leak-test')?.then((_) async {
                           await Future.delayed(const Duration(seconds: 1));
                           loadingController.hideLoading();
-                          Get.delete<LineStopInformationController>();
+                          Get.delete<CYHLeakTestController>();
 
                           scannerKey.currentState?.initSensorReader();
                         });
