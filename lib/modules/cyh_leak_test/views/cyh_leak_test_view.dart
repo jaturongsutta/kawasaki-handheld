@@ -74,13 +74,11 @@ class CYHLeakTestView extends GetView<CYHLeakTestController> {
         centerTitle: true,
       ),
       body: Obx(() {
-        final isEnabled =
-            (controller.selectedWorkType.value ?? '').isNotEmpty &&
-                controller.machineController.text.trim().isNotEmpty;
-
         return KeyenceScanner(
           onBarcodeScanned: (String scannedCode) {
-            controller.scanQrForMachine(scannedCode);
+            if (scannedCode.isNotEmpty) {
+              controller.checkIsEnabledButton();
+            }
           },
           child: SafeArea(
             child: Stack(
@@ -117,20 +115,18 @@ class CYHLeakTestView extends GetView<CYHLeakTestController> {
                           label: 'Work Type',
                           child: DropdownButtonFormField<String>(
                             isExpanded: true,
-                            // value: controller
-                            //     .selectedWorkType.value, // ถ้ามีใน controller
-                            items: const [
-                              'Production',
-                              'Trial',
-                              'Maintenance',
-                              'Rework'
-                            ]
-                                .map((e) =>
-                                    DropdownMenuItem(value: e, child: Text(e)))
+                            value: controller.selectedWorkType.value,
+                            items: controller.workTypeItems
+                                .map((e) => DropdownMenuItem<String>(
+                                      value: e,
+                                      child: Text(e),
+                                    ))
                                 .toList(),
                             onChanged: (v) {
-                              if (v != null)
+                              if (v != null) {
                                 controller.selectedWorkType.value = v;
+                                controller.checkIsEnabledButton();
+                              }
                             },
                             decoration: InputDecoration(
                               contentPadding: const EdgeInsets.symmetric(
@@ -153,8 +149,11 @@ class CYHLeakTestView extends GetView<CYHLeakTestController> {
                             ),
                             onSubmitted: (value) => {
                               print(
-                                  'Machine code: ${controller.machineController.text}')
+                                  'Machine code: ${controller.machineController.text}'),
+                              controller.checkIsEnabledButton()
                             },
+                            onChanged: (value) =>
+                                {controller.checkIsEnabledButton()},
                           ),
 
                           //  DropdownButtonFormField<String>(
@@ -182,7 +181,9 @@ class CYHLeakTestView extends GetView<CYHLeakTestController> {
                         SizedBox(
                           height: 44,
                           child: FilledButton(
-                            onPressed: isEnabled ? controller.goToSerial : null,
+                            onPressed: controller.isEnabled.value
+                                ? controller.goToSerial
+                                : null,
                             child: const Text('Confirm'),
                           ),
                         ),
@@ -219,8 +220,8 @@ class _FormRowCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final labelStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
-      fontWeight: FontWeight.w700,
-    );
+          fontWeight: FontWeight.w700,
+        );
 
     return Card(
       elevation: 0.5,
@@ -240,7 +241,6 @@ class _FormRowCard extends StatelessWidget {
     );
   }
 }
-
 
 Widget _rowCard({
   required String label,

@@ -8,6 +8,20 @@ class CYHLeakTestService extends GetxService {
   final BaseService baseService;
   CYHLeakTestService(this.baseService);
 
+  Future<List<String>> fetchWorkType() async {
+    final res = await baseService.apiRequest(
+      '/leak/worktype',
+      queryType: QueryType.get,
+    );
+    print('coming up fetchWorkType');
+    print('res ===> $res');
+    if (res['result'] == true && res['data'] != null) {
+      final list = (res['data'] as List).cast<String>();
+      return list;
+    }
+    return <String>[];
+  }
+
   Future<List<MachineModel>> fetchMachines({required String? lineCd}) async {
     final res = await baseService.apiRequest(
       '/leak/machine-list',
