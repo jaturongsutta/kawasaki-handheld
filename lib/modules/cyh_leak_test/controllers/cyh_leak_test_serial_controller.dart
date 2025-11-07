@@ -25,11 +25,13 @@ class CYHLeakTestSerialController extends GetxController {
       TextEditingController(text: DateFormat('HH:mm').format(DateTime.now()));
 
   final selectedWorkType = RxnString();
+  final workTypeController = TextEditingController();
 
   final selectedModel = RxnString(); // nullable
-final models = <MachineModel>[].obs; // ถ้ามี list model
+  final models = <MachineModel>[].obs; // ถ้ามี list model
   final machineController = TextEditingController();
-final gsController = TextEditingController(); // ค่าเริ่มต้นถ้าต้องการ: TextEditingController(text: '1')
+  final gsController =
+      TextEditingController(); // ค่าเริ่มต้นถ้าต้องการ: TextEditingController(text: '1')
 
   @override
   void onInit() {
@@ -117,11 +119,11 @@ final gsController = TextEditingController(); // ค่าเริ่มต้�
     final args = Get.arguments as Map<String, dynamic>?;
 
     if (args != null) {
-      selectedMachineNo.value = args['machineNo'] as String?;
-      if (args['startDate'] is DateTime) startDate.value = args['startDate'];
-      if (args['endDate'] is DateTime) endDate.value = args['endDate'];
-      if (args['startTime'] is TimeOfDay) startTime.value = args['startTime'];
-      if (args['endTime'] is TimeOfDay) endTime.value = args['endTime'];
+      workTypeController.text = args['workType'] ?? '';
+      // if (args['startDate'] is DateTime) startDate.value = args['startDate'];
+      // if (args['endDate'] is DateTime) endDate.value = args['endDate'];
+      // if (args['startTime'] is TimeOfDay) startTime.value = args['startTime'];
+      // if (args['endTime'] is TimeOfDay) endTime.value = args['endTime'];
     }
   }
 

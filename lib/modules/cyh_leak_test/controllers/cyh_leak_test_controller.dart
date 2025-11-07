@@ -181,11 +181,8 @@ class CYHLeakTestController extends GetxController {
       return;
     }
     Get.toNamed(AppRoutes.cyhLeakTestSerial, arguments: {
-      // 'machineNo': selectedMachineNo.value,
-      // 'startDate': startDate.value,
-      // 'endDate': endDate.value,
-      // 'startTime': startTime.value,
-      // 'endTime': endTime.value,
+      'workType': selectedWorkType.value,
+      'machine': machineController.value,
     });
   }
 

@@ -54,6 +54,8 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
 
   @override
   Widget build(BuildContext context) {
+    controller.initFormFromArgs();
+    
     final theme = Theme.of(context);
     const labelStyle = TextStyle(
       // color: Colors.blue[700],
@@ -113,7 +115,7 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
                           label: 'Work Type',
                           child: TextField(
                             readOnly: true,
-                            controller: controller.machineController,
+                            controller: controller.workTypeController,
                             textAlignVertical: TextAlignVertical.center,
                             decoration: InputDecoration(
                               contentPadding: const EdgeInsets.symmetric(
@@ -447,6 +449,7 @@ class _OtpBoxesRowState extends State<_OtpBoxesRow> {
 
 @override
 Widget build(BuildContext context) {
+  
   final regex = RegExp(widget.allowedPattern);
   final lastIndex = widget.controllers.length - 1;
   const spacing = 8.0;
