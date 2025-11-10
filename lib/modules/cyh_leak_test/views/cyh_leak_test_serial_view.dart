@@ -12,50 +12,16 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
   CYHLeakTestSerialView({super.key});
 
   // NOTE: ในโปรดักชัน แนะนำย้าย controllers ไปไว้ใน Controller แล้ว dispose ใน onClose()
-  final noCtrls = List.generate(2, (_) => TextEditingController());
-  final serialCtrls = List.generate(12, (_) => TextEditingController());
-  final moldCtrls = List.generate(4, (_) => TextEditingController());
-  final machineCtrls = List.generate(5, (_) => TextEditingController());
 
-  Future<void> scanAndFill(OcrMode mode) async {
-    final result = await Get.to<String>(() => OcrView(mode: mode));
-    if (result == null || result.isEmpty) return;
+  // final noCtrls = List.generate(2, (_) => TextEditingController());
+  // final serialCtrls = List.generate(12, (_) => TextEditingController());
+  // final moldCtrls = List.generate(4, (_) => TextEditingController());
+  // final machineCtrls = List.generate(5, (_) => TextEditingController());
 
-    List<TextEditingController> target;
-    int cellCount;
-    switch (mode) {
-      case OcrMode.mcDate18:
-        target = noCtrls;
-        cellCount = 18;
-        break;
-      case OcrMode.no2:
-        target = noCtrls;
-        cellCount = 2;
-        break;
-      case OcrMode.serial11:
-        target = serialCtrls;
-        cellCount = 11;
-        break;
-      case OcrMode.mold4:
-        target = moldCtrls;
-        cellCount = 4;
-        break;
-      case OcrMode.machine5:
-        target = machineCtrls;
-        cellCount = 5;
-        break;
-    }
-
-    final chars = result.toUpperCase().characters.toList();
-    for (var i = 0; i < cellCount; i++) {
-      target[i].text = i < chars.length ? chars[i] : '';
-    }
-  }
-
-  void clearNo() => noCtrls.forEach((c) => c.clear());
-  void clearSerial() => serialCtrls.forEach((c) => c.clear());
-  void clearMold() => moldCtrls.forEach((c) => c.clear());
-  void clearMachine() => machineCtrls.forEach((c) => c.clear());
+  // void clearNo() => noCtrls.forEach((c) => c.clear());
+  // void clearSerial() => serialCtrls.forEach((c) => c.clear());
+  // void clearMold() => moldCtrls.forEach((c) => c.clear());
+  // void clearMachine() => machineCtrls.forEach((c) => c.clear());
 
   @override
   Widget build(BuildContext context) {
@@ -71,6 +37,9 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
     // ระยะ padding ด้านล่างเมื่อคีย์บอร์ดโผล่ขึ้นมา (กันล้น)
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
+    final gsText = controller.gsController.text.trim();
+    final gsValue = int.tryParse(gsText) ?? 0;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF4F5FB),
       // เปิดให้เลื่อนอัตโนมัติเวลาเปิดคีย์บอร์ด
@@ -83,7 +52,11 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
       body: Obx(() {
         return KeyenceScanner(
           onBarcodeScanned: (String scannedCode) {
-            controller.scanQrForMachine(scannedCode);
+            if (scannedCode.isNotEmpty) {
+              controller.selectedMCDate.value = scannedCode;
+              controller.getGSCount();
+              controller.checkIsEnabledButton();
+            }
           },
           child: SafeArea(
             child: Stack(
@@ -226,8 +199,18 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               _OtpBoxesRow(
-                                controllers: serialCtrls.sublist(0, 12),
+                                controllers:
+                                    controller.mcDateCtrls.sublist(0, 18),
                                 allowedPattern: r'[A-Za-z0-9#-]',
+                                onSubmitted: (value) {
+                                   print('MC Date submitted: $value');
+                                  if (value.isNotEmpty) {
+                                    controller.selectedMCDate.value =
+                                        value;
+                                    controller.getGSCount();
+                                    controller.checkIsEnabledButton();
+                                  }
+                                },
                               ),
                               const SizedBox(height: 8),
                               // _OtpBoxesRow(
@@ -237,61 +220,75 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
                               // const SizedBox(height: 8),
                             ],
                           ),
-                          onScan: () => scanAndFill(OcrMode.serial11),
-                          onClear: clearSerial,
+                          onScan: () =>
+                              controller.scanAndFill(OcrMode.mcDate18),
+                          onClear: controller.clearMCDate,
                           labelStyle: labelStyle,
-                          gs:
-
+                          gs: gsValue > 0
+                              ?
                               // ---------- แถว G/S ----------
                               // ให้จัดแนว/ขอบซ้ายขวาเท่ากับ input ด้านบน
                               Padding(
-                            padding: const EdgeInsets.only(
-                                right: 0), // ถ้าต้องเว้นเพิ่ม ปรับได้
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                // ความกว้าง label ให้เท่ากับแถว Machine/Model (เช่น 92 หรือ 110)
-                                const SizedBox(
-                                  width: kLabelWidth,
-                                  child: Text(
-                                    'G/S',
-                                    style:
-                                        labelStyle, // ใช้สไตล์เดียวกับ label ในการ์ด
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
+                                  padding: const EdgeInsets.only(
+                                      right: 0), // ถ้าต้องเว้นเพิ่ม ปรับได้
                                   child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
+                                      // ความกว้าง label ให้เท่ากับแถว Machine/Model (เช่น 92 หรือ 110)
+                                      const SizedBox(
+                                        width: kLabelWidth,
+                                        child: Text(
+                                          'G/S',
+                                          style:
+                                              labelStyle, // ใช้สไตล์เดียวกับ label ในการ์ด
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
                                       Expanded(
-                                        child: TextField(
-                                          controller: controller.gsController,
-                                          textAlignVertical:
-                                              TextAlignVertical.center,
-                                          decoration: InputDecoration(
-                                            contentPadding:
-                                                const EdgeInsets.symmetric(
-                                                    horizontal: 12,
-                                                    vertical: 10),
-                                            border: OutlineInputBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(8)),
-                                            isDense: true,
-                                          ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: TextField(
+                                                keyboardType: TextInputType
+                                                    .number, // แสดงคีย์บอร์ดตัวเลข
+                                                inputFormatters: [
+                                                  FilteringTextInputFormatter
+                                                      .digitsOnly, // ✅ อนุญาตเฉพาะตัวเลข 0–9
+                                                ],
+                                                controller:
+                                                    controller.gsController,
+                                                textAlignVertical:
+                                                    TextAlignVertical.center,
+                                                decoration: InputDecoration(
+                                                  contentPadding:
+                                                      const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 12,
+                                                          vertical: 10),
+                                                  border: OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              8)),
+                                                  isDense: true,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
+                                )
+                              : const SizedBox.shrink(),
                         ),
                         const SizedBox(height: 16),
                         SizedBox(
                           height: 44,
                           child: FilledButton(
-                            onPressed: controller.goToNG,
+                            onPressed: controller.isEnabled.value
+                                ? controller.goToNG
+                                : null,
                             child: const Text('Confirm'),
                           ),
                         ),
@@ -438,9 +435,14 @@ class _OtpBoxesRow extends StatefulWidget {
   final List<TextEditingController> controllers;
   final String allowedPattern;
 
+  /// เรียกเมื่อผู้ใช้กด `Done` ที่ช่องสุดท้าย
+  /// หรือเมื่อทุกช่องถูกกรอกครบแล้ว (เรียกจาก onChanged)
+  final ValueChanged<String>? onSubmitted;
+
   const _OtpBoxesRow({
     required this.controllers,
     required this.allowedPattern,
+    this.onSubmitted,
   });
 
   @override
@@ -472,6 +474,11 @@ class _OtpBoxesRowState extends State<_OtpBoxesRow> {
     }
   }
 
+  bool _allFilled() =>
+      widget.controllers.every((c) => c.text.trim().isNotEmpty);
+
+  String _joined() => widget.controllers.map((c) => c.text).join();
+
   @override
   Widget build(BuildContext context) {
     final regex = RegExp(widget.allowedPattern);
@@ -485,14 +492,15 @@ class _OtpBoxesRowState extends State<_OtpBoxesRow> {
         final side = boxSide.clamp(32.0, 56.0);
 
         return SizedBox(
-          width: maxW, // กว้างเต็ม เพื่อให้ alignment มีผล
+          width: maxW,
           child: Wrap(
-            alignment: WrapAlignment.end, // ✅ ชิดขวา
+            alignment: WrapAlignment.end, // ชิดขวา
             spacing: spacing,
             runSpacing: spacing,
             children: List.generate(widget.controllers.length, (i) {
               final c = widget.controllers[i];
               final isLast = i == lastIndex;
+
               return SizedBox(
                 width: side,
                 height: side,
@@ -515,11 +523,23 @@ class _OtpBoxesRowState extends State<_OtpBoxesRow> {
                     final upper = val.toUpperCase();
                     if (upper != val) {
                       c.value = TextEditingValue(
-                          text: upper,
-                          selection:
-                              TextSelection.collapsed(offset: upper.length));
+                        text: upper,
+                        selection:
+                            TextSelection.collapsed(offset: upper.length),
+                      );
                     }
                     _moveToNext(i);
+
+                    // ถ้ากรอกครบทุกช่องแล้ว ยิง callback ทันที
+                    if (_allFilled()) {
+                      widget.onSubmitted?.call(_joined());
+                    }
+                  },
+                  onFieldSubmitted: (_) {
+                    // กด Done ที่ช่องสุดท้าย → ยิง callback
+                    if (isLast) {
+                      widget.onSubmitted?.call(_joined());
+                    }
                   },
                   decoration: InputDecoration(
                     contentPadding: EdgeInsets.zero,

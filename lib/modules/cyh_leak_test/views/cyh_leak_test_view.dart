@@ -154,8 +154,6 @@ class CYHLeakTestView extends GetView<CYHLeakTestController> {
                             ),
                             onSubmitted: (value) => {
                               controller.machineController.text = value,
-                              print(
-                                  'Machine code: ${controller.machineController.text}'),
                               controller.checkIsEnabledButton()
                             },
                             onChanged: (value) => {

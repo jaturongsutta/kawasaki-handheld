@@ -4,13 +4,16 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:kmt/model/leak_no_plan_model.dart';
+import 'package:kmt/model/leak_test_model.dart';
 import 'package:kmt/model/leak_test_running_model.dart';
 import 'package:kmt/model/machine_model.dart';
+import 'package:kmt/modules/cyh_leak_test/services/cyh_leak_test_serial_service.dart';
+import 'package:kmt/modules/cyh_leak_test/views/ocr_view.dart';
 import 'package:kmt/routes/app_routes.dart';
 import '../services/cyh_leak_test_service.dart';
 
 class CYHLeakTestSerialController extends GetxController {
-  final CYHLeakTestService service;
+  final CYHLeakTestSerialService service;
   CYHLeakTestSerialController(this.service);
 
   final isLoading = false.obs;
@@ -34,6 +37,9 @@ class CYHLeakTestSerialController extends GetxController {
   final machineController = TextEditingController();
   final gsController =
       TextEditingController(); // ค่าเริ่มต้นถ้าต้องการ: TextEditingController(text: '1')
+  final isEnabled = false.obs;
+  final mcDateCtrls = List.generate(18, (_) => TextEditingController());
+  final selectedMCDate = ''.obs;
 
   @override
   void onInit() {
@@ -48,6 +54,53 @@ class CYHLeakTestSerialController extends GetxController {
       // loadMachines(lineCd: line),
     ]);
   }
+
+  Future<void> scanAndFill(OcrMode mode) async {
+    print('scan in ');
+    final result = await Get.to<String>(() => OcrView(mode: mode));
+    if (result == null || result.isEmpty) return;
+
+    List<TextEditingController> target = mcDateCtrls;
+    int cellCount = 0;
+    if (mode == OcrMode.mcDate18) {
+      target = mcDateCtrls;
+      cellCount = 18;
+    }
+    // switch (mode) {
+    //   case OcrMode.mcDate18:
+    //     target = noCtrls;
+    //     cellCount = 18;
+    //     break;
+    //   case OcrMode.no2:
+    //     target = noCtrls;
+    //     cellCount = 2;
+    //     break;
+    //   case OcrMode.serial11:
+    //     target = serialCtrls;
+    //     cellCount = 11;
+    //     break;
+    //   case OcrMode.mold4:
+    //     target = moldCtrls;
+    //     cellCount = 4;
+    //     break;
+    //   case OcrMode.machine5:
+    //     target = machineCtrls;
+    //     cellCount = 5;
+    //     break;
+    // }
+
+    final chars = result.toUpperCase().characters.toList();
+    for (var i = 0; i < cellCount; i++) {
+      target[i].text = i < chars.length ? chars[i] : '';
+    }
+
+    selectedMCDate.value = result.toUpperCase();
+    getGSCount();
+    checkIsEnabledButton();
+    print("ToTal value => ${selectedMCDate.value}");
+  }
+
+  void clearMCDate() => mcDateCtrls.forEach((c) => c.clear());
 
   // Future<void> loadMachines({required String? lineCd}) async {
   //   isLoading.value = true;
@@ -134,11 +187,36 @@ class CYHLeakTestSerialController extends GetxController {
 
       if (workTypeController.text == 'Production') {
         isModelReadOnly.value = true;
-      }
-      else {
-          isModelReadOnly.value = false;
+      } else {
+        isModelReadOnly.value = false;
       }
     }
+  }
+
+  Future<void> getGSCount() async {
+    isLoading.value = true;
+    try {
+      final count = await service.fetchGSCount(
+          modelCd: selectedModel.value?.modelCd,
+          serialNo: selectedMCDate.value);
+      gsController.text = count;
+
+      // print("count ===>>>>> ${list}");
+      // workTypeItems.value = list;
+      // final hasProduction = workTypeItems.contains('Production');
+      // if (hasProduction) {
+      //   selectedWorkType.value = 'Production';
+      // }
+    } catch (_) {
+      print("catch count ${_}");
+      // selectedWorkType.value = null;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  void checkIsEnabledButton() {
+    isEnabled.value = mcDateCtrls.isNotEmpty;
   }
 
   // Future<void> pickStartDate(BuildContext ctx) async {
@@ -242,8 +320,8 @@ class CYHLeakTestSerialController extends GetxController {
       //   return;
       // }
       // final now = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
-      // final model = LeakNoPlanModel(
-      //   id: 0,
+      // final model = LeakTestModel(
+      //  mappedPlanId: ,
       //   machineNo: selectedMachineNo.value ?? '',
       //   startDate: startDateStr,
       //   startTime: startTimeStr,
