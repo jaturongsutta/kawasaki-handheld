@@ -23,6 +23,10 @@ class CYHLeakTestNGView extends GetView<CYHLeakTestController> {
     List<TextEditingController> target;
     int cellCount;
     switch (mode) {
+        case OcrMode.mcDate18:
+        target = noCtrls;
+        cellCount = 18;
+        break;
       case OcrMode.no2:
         target = noCtrls;
         cellCount = 2;

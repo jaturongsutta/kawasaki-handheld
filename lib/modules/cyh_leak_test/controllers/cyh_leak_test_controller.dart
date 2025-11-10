@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:kmt/model/leak_no_plan_model.dart';
+import 'package:kmt/model/leak_test_running_model.dart';
 import 'package:kmt/model/machine_model.dart';
 import 'package:kmt/routes/app_routes.dart';
 import '../services/cyh_leak_test_service.dart';
@@ -13,16 +14,7 @@ class CYHLeakTestController extends GetxController {
   CYHLeakTestController(this.service);
 
   final isLoading = false.obs;
-  // final machines = <MachineModel>[].obs;
-  // final selectedMachineNo = RxnString();
-  // final startDate = Rx<DateTime>(DateTime.now());
-  // final endDate = Rx<DateTime>(DateTime.now());
-  // final startTime = Rx<TimeOfDay>(const TimeOfDay(hour: 8, minute: 0));
-  // final endTime = Rx<TimeOfDay>(const TimeOfDay(hour: 17, minute: 0));
-  // final startTimeController =
-  //     TextEditingController(text: DateFormat('HH:mm').format(DateTime.now()));
-  // final endTimeController =
-  //     TextEditingController(text: DateFormat('HH:mm').format(DateTime.now()));
+
   final workTypeItems = <String>[].obs;
   final selectedWorkType = RxnString();
   final machineController = TextEditingController();
@@ -40,7 +32,6 @@ class CYHLeakTestController extends GetxController {
     print('selectedLine = $line');
     await Future.wait([
       loadWorkType(),
-      // loadMachines(lineCd: line),
     ]);
   }
 
@@ -65,24 +56,6 @@ class CYHLeakTestController extends GetxController {
     }
   }
 
-  // Future<void> loadMachines({required String? lineCd}) async {
-  //   isLoading.value = true;
-  //   try {
-  //     final list = await service.fetchMachines(lineCd: lineCd);
-  //     machines.assignAll(list);
-  //     if (machines.isNotEmpty) {
-  //       selectedMachineNo.value = machines.first.machineNo;
-  //     } else {
-  //       selectedMachineNo.value = null;
-  //     }
-  //   } catch (_) {
-  //     machines.clear();
-  //     selectedMachineNo.value = null;
-  //   } finally {
-  //     isLoading.value = false;
-  //   }
-  // }
-
   void openFilterSheet() {
     Get.bottomSheet(
       Container(
@@ -104,85 +77,28 @@ class CYHLeakTestController extends GetxController {
 
     String norm(String s) => s.replaceAll(RegExp(r'\s+'), '').toLowerCase();
     final target = norm(code);
-
-    // if (machines.isEmpty) {
-    //   final line = Get.find<GetStorage>().read('selectedLine')?.toString();
-    //   await loadMachines(lineCd: line);
-    // }
-
-    // final found = machines.firstWhereOrNull(
-    //   (m) => norm(m.machineNo) == target,
-    // );
-
-    // if (found != null) {
-    //   selectedMachineNo.value = found.machineNo;
-    //   Get.snackbar('Selected', 'Machine: ${found.machineNo}', snackPosition: SnackPosition.BOTTOM);
-    // } else {
-    //   final fuzzy = machines.firstWhereOrNull(
-    //     (m) => norm(m.machineNo).contains(target),
-    //   );
-
-    //   if (fuzzy != null) {
-    //     selectedMachineNo.value = fuzzy.machineNo;
-    //     Get.snackbar('Selected (≈)', 'Machine: ${fuzzy.machineNo}',
-    //         snackPosition: SnackPosition.BOTTOM);
-    //   } else {
-    //     Get.snackbar('Not found', 'ไม่พบเครื่องที่ตรงกับ: $code',
-    //         snackPosition: SnackPosition.BOTTOM);
-    //   }
-    // }
   }
 
-  // void initFormFromArgs() {
-  //   final args = Get.arguments as Map<String, dynamic>?;
-
-  //   if (args != null) {
-  //     selectedMachineNo.value = args['machineNo'] as String?;
-  //     if (args['startDate'] is DateTime) startDate.value = args['startDate'];
-  //     if (args['endDate'] is DateTime) endDate.value = args['endDate'];
-  //     if (args['startTime'] is TimeOfDay) startTime.value = args['startTime'];
-  //     if (args['endTime'] is TimeOfDay) endTime.value = args['endTime'];
-  //   }
-  // }
-
-  // Future<void> pickStartDate(BuildContext ctx) async {
-  //   final d = await showDatePicker(
-  //     context: ctx,
-  //     initialDate: startDate.value,
-  //     firstDate: DateTime(2000),
-  //     lastDate: DateTime(2100),
-  //   );
-  //   if (d != null) startDate.value = d;
-  // }
-
-  // Future<void> pickEndDate(BuildContext ctx) async {
-  //   final d = await showDatePicker(
-  //     context: ctx,
-  //     initialDate: endDate.value,
-  //     firstDate: DateTime(2000),
-  //     lastDate: DateTime(2100),
-  //   );
-  //   if (d != null) endDate.value = d;
-  // }
-
-  // Future<void> pickStartTime(BuildContext ctx) async {
-  //   final t = await showTimePicker(context: ctx, initialTime: startTime.value);
-  //   if (t != null) startTime.value = t;
-  // }
-
-  // Future<void> pickEndTime(BuildContext ctx) async {
-  //   final t = await showTimePicker(context: ctx, initialTime: endTime.value);
-  //   if (t != null) endTime.value = t;
-  // }
-
-  void goToSerial() {
+  void goToSerial() async {
     if (machineController.text.trim().isEmpty) {
       Get.snackbar('Warning', 'กรุณาเลือก Machine ก่อน');
       return;
     }
+    EasyLoading.show(dismissOnTap: false, maskType: EasyLoadingMaskType.black);
+    final r = await service.fetchRunningList(
+        machineNo: machineController.text.trim(),
+        workType: selectedWorkType.value);
+    EasyLoading.dismiss();
+    if (!r.ok) {
+      EasyLoading.showInfo(r.message,
+          duration: const Duration(seconds: 2), dismissOnTap: false);
+      return;
+    }
+
     Get.toNamed(AppRoutes.cyhLeakTestSerial, arguments: {
       'workType': selectedWorkType.value,
-      'machine': machineController.value,
+      'machine': machineController.text,
+      'running-list': r.data
     });
   }
 
@@ -193,55 +109,6 @@ class CYHLeakTestController extends GetxController {
 
       final box = GetStorage();
       final user = box.read('user');
-      final createdBy = user?['userId'] ?? '';
-      // final startTimeStr = startTimeController.text;
-      // final endTimeStr = endTimeController.text;
-
-      // if (startTimeStr.isEmpty || endTimeStr.isEmpty) {
-      //   EasyLoading.dismiss();
-      //   Get.snackbar('Error', 'กรุณากรอกเวลาให้ครบ');
-      //   return;
-      // }
-
-      // final startDateStr = DateFormat('yyyy-MM-dd').format(startDate.value);
-      // final endDateStr = DateFormat('yyyy-MM-dd').format(endDate.value);
-
-      // final startDT = DateTime.parse('$startDateStr ${_fmtTime(startTimeStr)}');
-      // final endDT = DateTime.parse('$endDateStr ${_fmtTime(endTimeStr)}');
-      // final diffMinutes = endDT.difference(startDT).inMinutes.toDouble();
-      // if (endDT.isBefore(startDT)) {
-      //   EasyLoading.dismiss();
-      //   Get.snackbar('Error', 'เวลา End ต้องมากกว่า Start');
-      //   return;
-      // }
-      // final now = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
-      // final model = LeakNoPlanModel(
-      //   id: 0,
-      //   machineNo: selectedMachineNo.value ?? '',
-      //   startDate: startDateStr,
-      //   startTime: startTimeStr,
-      //   endDate: endDateStr,
-      //   endTime: endTimeStr,
-      //   lossTime: diffMinutes,
-      //   createdDate: now,
-      //   createdBy: createdBy,
-      //   updatedDate: now,
-      //   updatedBy: createdBy,
-      // );
-
-      // final res = await service.insertLeakNoPlan(model);
-
-      // if (res['result'] == true) {
-      //   EasyLoading.showSuccess('บันทึกสำเร็จ',
-      //       duration: const Duration(seconds: 1), dismissOnTap: false);
-
-      //   await Future.delayed(const Duration(seconds: 1));
-      //   resetForm();
-      //   Get.offAllNamed(AppRoutes.cyhNoPlan);
-      // } else {
-      //   EasyLoading.dismiss();
-      //   Get.snackbar('Error', res['message'] ?? 'บันทึกล้มเหลว');
-      // }
     } catch (e) {
       EasyLoading.dismiss();
       Get.snackbar('Error', e.toString());

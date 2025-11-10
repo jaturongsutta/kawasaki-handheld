@@ -23,6 +23,10 @@ class CYHLeakTestView extends GetView<CYHLeakTestController> {
     List<TextEditingController> target;
     int cellCount;
     switch (mode) {
+      case OcrMode.mcDate18:
+        target = noCtrls;
+        cellCount = 18;
+        break;
       case OcrMode.no2:
         target = noCtrls;
         cellCount = 2;
@@ -77,6 +81,7 @@ class CYHLeakTestView extends GetView<CYHLeakTestController> {
         return KeyenceScanner(
           onBarcodeScanned: (String scannedCode) {
             if (scannedCode.isNotEmpty) {
+              controller.machineController.text = scannedCode;
               controller.checkIsEnabledButton();
             }
           },
@@ -148,12 +153,15 @@ class CYHLeakTestView extends GetView<CYHLeakTestController> {
                                   borderRadius: BorderRadius.circular(8)),
                             ),
                             onSubmitted: (value) => {
+                              controller.machineController.text = value,
                               print(
                                   'Machine code: ${controller.machineController.text}'),
                               controller.checkIsEnabledButton()
                             },
-                            onChanged: (value) =>
-                                {controller.checkIsEnabledButton()},
+                            onChanged: (value) => {
+                              controller.machineController.text = value,
+                              controller.checkIsEnabledButton()
+                            },
                           ),
 
                           //  DropdownButtonFormField<String>(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:characters/characters.dart';
 import 'package:get/get.dart';
+import 'package:kmt/model/leak_test_running_model.dart';
 import 'package:kmt/modules/cyh_leak_test/controllers/cyh_leak_test_serial_controller.dart';
 
 import 'package:kmt/modules/cyh_leak_test/views/ocr_view.dart';
@@ -23,6 +24,10 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
     List<TextEditingController> target;
     int cellCount;
     switch (mode) {
+      case OcrMode.mcDate18:
+        target = noCtrls;
+        cellCount = 18;
+        break;
       case OcrMode.no2:
         target = noCtrls;
         cellCount = 2;
@@ -55,7 +60,7 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
   @override
   Widget build(BuildContext context) {
     controller.initFormFromArgs();
-    
+
     final theme = Theme.of(context);
     const labelStyle = TextStyle(
       // color: Colors.blue[700],
@@ -169,25 +174,45 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
                                 // แถว Model (Dropdown)
                                 _LabeledField(
                                   label: 'Model',
-                                  child: DropdownButtonFormField<String>(
-                                    isExpanded: true,
-                                    value: controller.selectedModel.value,
-                                    items: controller.models
-                                        .map((m) => DropdownMenuItem<String>(
-                                              value: m.modelCd,
-                                              child: Text(m.modelCd ?? ''),
-                                            ))
-                                        .toList(),
-                                    onChanged: (val) =>
-                                        controller.selectedModel.value = val,
-                                    decoration: InputDecoration(
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                              horizontal: 12, vertical: 10),
-                                      border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8)),
-                                      isDense: true,
+                                  child: AbsorbPointer(
+                                    absorbing: controller.isModelReadOnly.value,
+                                    child: DropdownButtonFormField<String>(
+                                      isExpanded:
+                                          controller.isModelReadOnly.value,
+                                      value: controller
+                                          .selectedModel.value?.modelCd,
+                                      items: controller.models
+                                          .map((m) => DropdownMenuItem<String>(
+                                                value: m.modelCd,
+                                                child: Text(m.modelCd ?? ''),
+                                              ))
+                                          .toList(),
+                                      onChanged: (val) {
+                                        if (val != null) {
+                                          final model =
+                                              controller.models.firstWhere(
+                                            (m) => m.modelCd == val,
+                                            orElse: () => LeakTestRunningModel(
+                                              id: '',
+                                              lineCd: '',
+                                              lineName: '',
+                                              modelCd: '',
+                                              partNo: '',
+                                            ),
+                                          );
+                                          controller.selectedModel.value =
+                                              model;
+                                        }
+                                      },
+                                      decoration: InputDecoration(
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                                horizontal: 12, vertical: 10),
+                                        border: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8)),
+                                        isDense: true,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -196,7 +221,7 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
                           ),
                         ),
                         _rowCard(
-                          label: 'Serial',
+                          label: 'M/C Date',
                           boxes: Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
@@ -447,63 +472,66 @@ class _OtpBoxesRowState extends State<_OtpBoxesRow> {
     }
   }
 
-@override
-Widget build(BuildContext context) {
-  
-  final regex = RegExp(widget.allowedPattern);
-  final lastIndex = widget.controllers.length - 1;
-  const spacing = 8.0;
+  @override
+  Widget build(BuildContext context) {
+    final regex = RegExp(widget.allowedPattern);
+    final lastIndex = widget.controllers.length - 1;
+    const spacing = 8.0;
 
-  return LayoutBuilder(
-    builder: (context, constraints) {
-      final maxW = constraints.maxWidth;
-      final boxSide = ((maxW) - (spacing * 5)) / 6; // 6 ช่อง/แถว
-      final side = boxSide.clamp(32.0, 56.0);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxW = constraints.maxWidth;
+        final boxSide = ((maxW) - (spacing * 5)) / 6; // 6 ช่อง/แถว
+        final side = boxSide.clamp(32.0, 56.0);
 
-      return SizedBox(
-        width: maxW, // กว้างเต็ม เพื่อให้ alignment มีผล
-        child: Wrap(
-          alignment: WrapAlignment.end, // ✅ ชิดขวา
-          spacing: spacing,
-          runSpacing: spacing,
-          children: List.generate(widget.controllers.length, (i) {
-            final c = widget.controllers[i];
-            final isLast = i == lastIndex;
-            return SizedBox(
-              width: side,
-              height: side,
-              child: TextFormField(
-                focusNode: _nodes[i],
-                controller: c,
-                textAlign: TextAlign.center,
-                textInputAction: isLast ? TextInputAction.done : TextInputAction.next,
-                textCapitalization: TextCapitalization.characters,
-                keyboardType: TextInputType.visiblePassword,
-                onTap: () => c.selection = TextSelection(baseOffset: 0, extentOffset: c.text.length),
-                inputFormatters: [
-                  LengthLimitingTextInputFormatter(1),
-                  FilteringTextInputFormatter.allow(regex),
-                ],
-                onChanged: (val) {
-                  if (val.isEmpty) return;
-                  final upper = val.toUpperCase();
-                  if (upper != val) {
-                    c.value = TextEditingValue(text: upper, selection: TextSelection.collapsed(offset: upper.length));
-                  }
-                  _moveToNext(i);
-                },
-                decoration: InputDecoration(
-                  contentPadding: EdgeInsets.zero,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+        return SizedBox(
+          width: maxW, // กว้างเต็ม เพื่อให้ alignment มีผล
+          child: Wrap(
+            alignment: WrapAlignment.end, // ✅ ชิดขวา
+            spacing: spacing,
+            runSpacing: spacing,
+            children: List.generate(widget.controllers.length, (i) {
+              final c = widget.controllers[i];
+              final isLast = i == lastIndex;
+              return SizedBox(
+                width: side,
+                height: side,
+                child: TextFormField(
+                  focusNode: _nodes[i],
+                  controller: c,
+                  textAlign: TextAlign.center,
+                  textInputAction:
+                      isLast ? TextInputAction.done : TextInputAction.next,
+                  textCapitalization: TextCapitalization.characters,
+                  keyboardType: TextInputType.visiblePassword,
+                  onTap: () => c.selection =
+                      TextSelection(baseOffset: 0, extentOffset: c.text.length),
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(1),
+                    FilteringTextInputFormatter.allow(regex),
+                  ],
+                  onChanged: (val) {
+                    if (val.isEmpty) return;
+                    final upper = val.toUpperCase();
+                    if (upper != val) {
+                      c.value = TextEditingValue(
+                          text: upper,
+                          selection:
+                              TextSelection.collapsed(offset: upper.length));
+                    }
+                    _moveToNext(i);
+                  },
+                  decoration: InputDecoration(
+                    contentPadding: EdgeInsets.zero,
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(6)),
+                  ),
                 ),
-              ),
-            );
-          }),
-        ),
-      );
-    },
-  );
-}
-
-
+              );
+            }),
+          ),
+        );
+      },
+    );
+  }
 }

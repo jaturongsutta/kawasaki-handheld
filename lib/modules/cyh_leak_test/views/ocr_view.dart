@@ -22,7 +22,7 @@ const Rect kType1RectLogical = Rect.fromLTWH(20, 190, 280, 100);
 const int kAutoScanIntervalMs = 700;
 
 /// งานที่ต้องการอ่าน (ไว้ใช้กรองแพทเทิร์น)
-enum OcrMode { no2, serial11, mold4, machine5 }
+enum OcrMode { mcDate18, no2, serial11, mold4, machine5 }
 
 class OcrView extends StatefulWidget {
   final OcrMode mode;
@@ -72,8 +72,8 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
     final perm = await Permission.camera.request();
     if (!perm.isGranted) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('ต้องอนุญาตสิทธิ์กล้อง')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('ต้องอนุญาตสิทธิ์กล้อง')));
       }
       return;
     }
@@ -123,7 +123,8 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
       if (mounted) setState(() => _torchOn = !_torchOn);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('สลับแฟลชไม่สำเร็จ: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('สลับแฟลชไม่สำเร็จ: $e')));
     }
   }
 
@@ -131,7 +132,8 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
   Future<void> _captureScreenRoiAndOcr() async {
     try {
       // 1) จับภาพทั้ง Stack
-      final boundary = _screenKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      final boundary = _screenKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
       if (boundary == null) return; // ยังวาดไม่เสร็จ
 
       final pixelRatio = MediaQuery.of(context).devicePixelRatio;
@@ -141,7 +143,8 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
       final pngBytes = byteData.buffer.asUint8List();
 
       // 2) คำนวณพิกัดกรอบบนพิกเซลจริง
-      final renderBox = _screenKey.currentContext!.findRenderObject() as RenderBox;
+      final renderBox =
+          _screenKey.currentContext!.findRenderObject() as RenderBox;
       final size = renderBox.size; // dp
       final wRatio = size.width / SCREEN_WIDTH;
       final hRatio = size.height / SCREEN_HEIGHT;
@@ -181,7 +184,8 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
 
       // 4) เขียนไฟล์ temp แล้ว OCR ด้วย MLKit
       final dir = await getTemporaryDirectory();
-      final outPath = '${dir.path}/screen_roi_${DateTime.now().millisecondsSinceEpoch}.png';
+      final outPath =
+          '${dir.path}/screen_roi_${DateTime.now().millisecondsSinceEpoch}.png';
       await File(outPath).writeAsBytes(img.encodePng(cropped), flush: true);
 
       final input = InputImage.fromFilePath(outPath);
@@ -274,7 +278,8 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
                     const SizedBox(height: 4),
                     Text(
                       _detectedText,
-                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                      style:
+                          const TextStyle(color: Colors.white70, fontSize: 12),
                     ),
                   ],
                 ),
@@ -314,11 +319,17 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
   String? _extractPattern(OcrMode mode, String plain) {
     final text = plain.toUpperCase();
     switch (mode) {
+      case OcrMode.mcDate18:
+        return RegExp(r'\b\d{2}-\d{2}-\d{2}#[A-Z0-9]{2}\b')
+            .firstMatch(text)
+            ?.group(0);
       case OcrMode.no2:
         return RegExp(r'\b\d{2}\b').firstMatch(text)?.group(0);
       case OcrMode.serial11:
         // รูปแบบ 12-34-56#4A (รวม 11 ตัวอักษร)
-        return RegExp(r'\b\d{2}-\d{2}-\d{2}#[A-Z0-9]{2}\b').firstMatch(text)?.group(0);
+        return RegExp(r'\b\d{2}-\d{2}-\d{2}#[A-Z0-9]{2}\b')
+            .firstMatch(text)
+            ?.group(0);
       case OcrMode.mold4:
         // ตัวอย่าง K9,3 → ตัวแรกตัวอักษร/ตัวเลข 1 ตัว + ตัวเลข 1 ตัว + คอมมา + ตัวเลข 1 ตัว
         return RegExp(r'\b[A-Z0-9][0-9],[0-9]\b').firstMatch(text)?.group(0);
@@ -374,11 +385,15 @@ class _OverlayPainter extends CustomPainter {
 
     // มาส์กดำทึบ (นอกกรอบทั้งหมด)
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, rect.top), _maskPaint);
-    canvas.drawRect(Rect.fromLTWH(0, rect.top, rect.left, rect.height), _maskPaint);
     canvas.drawRect(
-        Rect.fromLTWH(rect.right, rect.top, size.width - rect.right, rect.height), _maskPaint);
+        Rect.fromLTWH(0, rect.top, rect.left, rect.height), _maskPaint);
     canvas.drawRect(
-        Rect.fromLTWH(0, rect.bottom, size.width, size.height - rect.bottom), _maskPaint);
+        Rect.fromLTWH(
+            rect.right, rect.top, size.width - rect.right, rect.height),
+        _maskPaint);
+    canvas.drawRect(
+        Rect.fromLTWH(0, rect.bottom, size.width, size.height - rect.bottom),
+        _maskPaint);
 
     // กรอบสีแดง
     canvas.drawRect(rect, _rectPaint);
