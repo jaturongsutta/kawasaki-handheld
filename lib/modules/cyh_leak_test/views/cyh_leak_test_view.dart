@@ -16,40 +16,40 @@ class CYHLeakTestView extends GetView<CYHLeakTestController> {
   final moldCtrls = List.generate(4, (_) => TextEditingController());
   final machineCtrls = List.generate(5, (_) => TextEditingController());
 
-  Future<void> scanAndFill(OcrMode mode) async {
-    final result = await Get.to<String>(() => OcrView(mode: mode));
-    if (result == null || result.isEmpty) return;
+  // Future<void> scanAndFill(OcrMode mode) async {
+  //   final result = await Get.to<String>(() => OcrView(mode: mode));
+  //   if (result == null || result.isEmpty) return;
 
-    List<TextEditingController> target;
-    int cellCount;
-    switch (mode) {
-      case OcrMode.mcDate18:
-        target = noCtrls;
-        cellCount = 18;
-        break;
-      case OcrMode.no2:
-        target = noCtrls;
-        cellCount = 2;
-        break;
-      case OcrMode.serial11:
-        target = serialCtrls;
-        cellCount = 11;
-        break;
-      case OcrMode.mold4:
-        target = moldCtrls;
-        cellCount = 4;
-        break;
-      case OcrMode.machine5:
-        target = machineCtrls;
-        cellCount = 5;
-        break;
-    }
+  //   List<TextEditingController> target;
+  //   int cellCount;
+  //   switch (mode) {
+  //     case OcrMode.mcDate18:
+  //       target = noCtrls;
+  //       cellCount = 18;
+  //       break;
+  //     case OcrMode.no2:
+  //       target = noCtrls;
+  //       cellCount = 2;
+  //       break;
+  //     case OcrMode.serial11:
+  //       target = serialCtrls;
+  //       cellCount = 11;
+  //       break;
+  //     case OcrMode.mold4:
+  //       target = moldCtrls;
+  //       cellCount = 4;
+  //       break;
+  //     case OcrMode.machine5:
+  //       target = machineCtrls;
+  //       cellCount = 5;
+  //       break;
+  //   }
 
-    final chars = result.toUpperCase().characters.toList();
-    for (var i = 0; i < cellCount; i++) {
-      target[i].text = i < chars.length ? chars[i] : '';
-    }
-  }
+  //   final chars = result.toUpperCase().characters.toList();
+  //   for (var i = 0; i < cellCount; i++) {
+  //     target[i].text = i < chars.length ? chars[i] : '';
+  //   }
+  // }
 
   void clearNo() => noCtrls.forEach((c) => c.clear());
   void clearSerial() => serialCtrls.forEach((c) => c.clear());

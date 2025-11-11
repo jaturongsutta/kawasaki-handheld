@@ -2,62 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:characters/characters.dart';
 import 'package:get/get.dart';
+import 'package:kmt/modules/cyh_leak_test/controllers/cyh_leak_test_ng_controller.dart';
 
 import 'package:kmt/modules/cyh_leak_test/views/ocr_view.dart';
 import 'package:kmt/widgets/KeyenceScanner.dart';
 import '../controllers/cyh_leak_test_controller.dart';
 
-class CYHLeakTestNGView extends GetView<CYHLeakTestController> {
+class CYHLeakTestNGView extends GetView<CYHLeakTestNGController> {
   CYHLeakTestNGView({super.key});
 
   // NOTE: ในโปรดักชัน แนะนำย้าย controllers ไปไว้ใน Controller แล้ว dispose ใน onClose()
-  final noCtrls = List.generate(2, (_) => TextEditingController());
-  final serialCtrls = List.generate(12, (_) => TextEditingController());
-  final moldCtrls = List.generate(12, (_) => TextEditingController());
-  final machineCtrls = List.generate(5, (_) => TextEditingController());
-
-  Future<void> scanAndFill(OcrMode mode) async {
-    final result = await Get.to<String>(() => OcrView(mode: mode));
-    if (result == null || result.isEmpty) return;
-
-    List<TextEditingController> target;
-    int cellCount;
-    switch (mode) {
-        case OcrMode.mcDate18:
-        target = noCtrls;
-        cellCount = 18;
-        break;
-      case OcrMode.no2:
-        target = noCtrls;
-        cellCount = 2;
-        break;
-      case OcrMode.serial11:
-        target = serialCtrls;
-        cellCount = 11;
-        break;
-      case OcrMode.mold4:
-        target = moldCtrls;
-        cellCount = 4;
-        break;
-      case OcrMode.machine5:
-        target = machineCtrls;
-        cellCount = 5;
-        break;
-    }
-
-    final chars = result.toUpperCase().characters.toList();
-    for (var i = 0; i < cellCount; i++) {
-      target[i].text = i < chars.length ? chars[i] : '';
-    }
-  }
-
-  void clearNo() => noCtrls.forEach((c) => c.clear());
-  void clearSerial() => serialCtrls.forEach((c) => c.clear());
-  void clearMold() => moldCtrls.forEach((c) => c.clear());
-  void clearMachine() => machineCtrls.forEach((c) => c.clear());
 
   @override
   Widget build(BuildContext context) {
+    controller.initFormFromArgs();
+
     final theme = Theme.of(context);
     const labelStyle = TextStyle(
       fontSize: 16,
@@ -79,9 +38,9 @@ class CYHLeakTestNGView extends GetView<CYHLeakTestController> {
         centerTitle: true,
       ),
       body: Obx(() {
-        final isEnabled =
-            (controller.selectedWorkType.value ?? '').isNotEmpty &&
-                controller.machineController.text.trim().isNotEmpty;
+        // final isEnabled =
+        //     (controller.selectedWorkType.value ?? '').isNotEmpty &&
+        //         controller.machineController.text.trim().isNotEmpty;
 
         return KeyenceScanner(
           onBarcodeScanned: (String scannedCode) {
@@ -93,25 +52,6 @@ class CYHLeakTestNGView extends GetView<CYHLeakTestController> {
                 // ---------- BODY ----------
                 Padding(
                   padding: const EdgeInsets.all(10),
-
-                  //  child: Container(
-                  //    decoration: BoxDecoration(
-                  //      color: Colors.white,
-                  //      borderRadius: const BorderRadius.only(
-                  //        topLeft: Radius.circular(24),
-                  //        topRight: Radius.circular(24),
-                  //        bottomLeft: Radius.circular(12),
-                  //        bottomRight: Radius.circular(12),
-                  //      ),
-                  //      boxShadow: [
-                  //        BoxShadow(
-                  //          color: Colors.black.withOpacity(0.04),
-                  //          blurRadius: 8,
-                  //          offset: const Offset(0, 2),
-                  //        ),
-                  //      ],
-                  //    ),
-                  // ✅ เปลี่ยนจาก Column เป็น SingleChildScrollView เพื่อให้เลื่อนทั้งหน้า
                   child: SingleChildScrollView(
                       padding: EdgeInsets.all(0),
                       keyboardDismissBehavior:
@@ -133,20 +73,10 @@ class CYHLeakTestNGView extends GetView<CYHLeakTestController> {
                                 children: [
                                   _buildRowField(
                                     label: 'Machine',
-                                    child: TextField(
-                                      controller: controller.machineController,
-                                      readOnly: true, // ✅ อ่านได้อย่างเดียว
-                                      decoration: InputDecoration(
-                                        contentPadding:
-                                            const EdgeInsets.symmetric(
-                                                horizontal: 12, vertical: 10),
-                                        border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                        isDense: true,
-                                      ),
-                                    ),
+                                    child: Text(
+                                        controller.dataModel.value?.machineNo ??
+                                            '',
+                                        style: const TextStyle(fontSize: 16)),
                                     labelStyle: labelStyle,
                                   ),
                                   const SizedBox(height: 8),
@@ -154,7 +84,9 @@ class CYHLeakTestNGView extends GetView<CYHLeakTestController> {
                                   // ================= Model =================
                                   _buildRowField(
                                     label: 'Model',
-                                    child: Text(model,
+                                    child: Text(
+                                        controller.dataModel.value?.modelCd ??
+                                            '',
                                         style: const TextStyle(fontSize: 16)),
                                     labelStyle: labelStyle,
                                   ),
@@ -163,7 +95,9 @@ class CYHLeakTestNGView extends GetView<CYHLeakTestController> {
                                   // ================= Serial =================
                                   _buildRowField(
                                     label: 'Serial',
-                                    child: Text(serial,
+                                    child: Text(
+                                        controller.dataModel.value?.serial ??
+                                            '',
                                         style: const TextStyle(fontSize: 16)),
                                     labelStyle: labelStyle,
                                   ),
@@ -172,9 +106,9 @@ class CYHLeakTestNGView extends GetView<CYHLeakTestController> {
                                   // ================= Result =================
                                   _buildRowField(
                                     label: 'Result',
-                                    child: Text(
-                                      result,
-                                      style: const TextStyle(
+                                    child: const Text(
+                                      'NG',
+                                      style: TextStyle(
                                         fontSize: 16,
                                         color: Colors.red,
                                         fontWeight: FontWeight.bold,
@@ -189,16 +123,35 @@ class CYHLeakTestNGView extends GetView<CYHLeakTestController> {
                                     spacing: 8,
                                     runSpacing: 8,
                                     children: [
-                                      _resultButton('P1 (OH)', Colors.red),
-                                      _resultButton('P2 (WJ)', Colors.green),
                                       _resultButton(
-                                          'P3 (CC)', Colors.green.shade700),
-                                      _resultButton('P4', Colors.white,
-                                          borderColor: Colors.grey.shade400,
-                                          textColor: Colors.black),
-                                      _resultButton('T/B', Colors.white,
-                                          borderColor: Colors.grey.shade400,
-                                          textColor: Colors.black),
+                                          controller.dataModel.value?.ngP1 ??
+                                              '',
+                                          controller.hexToColor(controller
+                                                  .dataModel.value?.ngP1Color ??
+                                              '#FFFFFF')),
+                                      _resultButton(
+                                          controller.dataModel.value?.ngP2 ??
+                                              '',
+                                          controller.hexToColor(controller
+                                                  .dataModel.value?.ngP2Color ??
+                                              '#FFFFFF')),
+                                      _resultButton(
+                                          controller.dataModel.value?.ngP3 ??
+                                              '',
+                                          controller.hexToColor(controller
+                                                  .dataModel.value?.ngP3Color ??
+                                              '#FFFFFF')),
+                                      // _resultButton('P4', Colors.white,
+                                      //     borderColor: Colors.grey.shade400,
+                                      //     textColor: Colors.black),
+                                      _resultButton(
+                                        controller.dataModel.value?.ngTb ?? '',
+                                        controller.hexToColor(controller
+                                                .dataModel.value?.ngTbColor ??
+                                            '#FFFFFF'),
+                                        // borderColor: Colors.grey.shade400,
+                                        // textColor: Colors.black),
+                                      ),
                                     ],
                                   ),
                                 ],
@@ -210,12 +163,29 @@ class CYHLeakTestNGView extends GetView<CYHLeakTestController> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   _OtpBoxesRow(
-                                    controllers: serialCtrls.sublist(0, 6),
+                                    controllers: controller.castingDateCtrls
+                                        .sublist(0, 6),
                                     allowedPattern: r'[A-Za-z0-9#-]',
+                                    onChanged: (value) {
+                                      print('changed yes: $value');
+                                      if (value.isNotEmpty) {
+                                        controller.selectedcastingDate.value =
+                                            value;
+                                        controller.checkIsEnabledButton();
+                                      }
+                                    },
+                                    onSubmitted: (value) {
+                                      print('submitted yes: $value');
+                                      if (value.isNotEmpty) {
+                                        controller.selectedcastingDate.value =
+                                            value;
+                                        controller.checkIsEnabledButton();
+                                      }
+                                    },
                                   ),
                                 ],
                               ),
-                              onClear: clearSerial,
+                              onClear: controller.clearCastingDate,
                               labelStyle: labelStyle,
                             ),
                             _rowCard(
@@ -224,22 +194,40 @@ class CYHLeakTestNGView extends GetView<CYHLeakTestController> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   _OtpBoxesRow(
-                                    controllers: serialCtrls.sublist(0, 12),
+                                    controllers:
+                                        controller.moldCtrls.sublist(0, 12),
                                     allowedPattern: r'[A-Za-z0-9#-]',
+                                    onChanged: (value) {
+                                      print('changed yes: $value');
+                                      if (value.isNotEmpty) {
+                                        controller.selectedmoldCtrls.value =
+                                            value;
+                                        controller.checkIsEnabledButton();
+                                      }
+                                    },
+                                    onSubmitted: (value) {
+                                      print('submitted yes: $value');
+                                      if (value.isNotEmpty) {
+                                        controller.selectedmoldCtrls.value =
+                                            value;
+                                        controller.checkIsEnabledButton();
+                                      }
+                                    },
                                   ),
-                               
                                 ],
                               ),
-                              onScan: () => scanAndFill(OcrMode.serial11),
-                              onClear: clearSerial,
+                              onScan: () =>
+                                  controller.scanAndFill(OcrMode.serial11),
+                              onClear: controller.clearMold,
                               labelStyle: labelStyle,
                             ),
                             const SizedBox(height: 16),
                             SizedBox(
                               height: 44,
                               child: FilledButton(
-                                onPressed:
-                                    isEnabled ? controller.goToSerial : null,
+                                onPressed: controller.isEnabled.value
+                                    ? controller.confirmForm
+                                    : null,
                                 child: const Text('Confirm'),
                               ),
                             ),
@@ -290,17 +278,25 @@ Widget _resultButton(
   Color? textColor,
   Color? borderColor,
 }) {
+  // ตรวจว่าพื้นหลังเป็นสีขาวหรือไม่ (รวมถึง #FFFFFF, 0xFFFFFFFF)
+  final bool isWhite = bgColor.value == const Color(0xFFFFFFFF).value;
+
+  final effectiveBorderColor =
+      isWhite ? Colors.grey.shade400 : (borderColor ?? bgColor);
+  final effectiveTextColor =
+      isWhite ? Colors.black : (textColor ?? Colors.white);
+
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
     decoration: BoxDecoration(
       color: bgColor,
       borderRadius: BorderRadius.circular(6),
-      border: Border.all(color: borderColor ?? bgColor, width: 1),
+      border: Border.all(color: effectiveBorderColor, width: 1),
     ),
     child: Text(
       text,
       style: TextStyle(
-        color: textColor ?? Colors.white,
+        color: effectiveTextColor,
         fontWeight: FontWeight.w600,
         fontSize: 13,
       ),
@@ -369,7 +365,6 @@ Widget _rowCard({
   );
 }
 
-
 Widget _rowCardSimple({
   required String label,
   required Widget boxes,
@@ -435,9 +430,17 @@ class _OtpBoxesRow extends StatefulWidget {
   final List<TextEditingController> controllers;
   final String allowedPattern;
 
+  /// ยิงทุกครั้งที่มีการเปลี่ยนค่า (รวมทุกช่องเป็นสตริงแล้ว)
+  final ValueChanged<String>? onChanged;
+
+  /// ยิงตอนกด Done ที่ช่องสุดท้าย หรือกรอกครบทุกช่อง
+  final ValueChanged<String>? onSubmitted;
+
   const _OtpBoxesRow({
     required this.controllers,
     required this.allowedPattern,
+    this.onChanged,
+    this.onSubmitted,
   });
 
   @override
@@ -469,61 +472,88 @@ class _OtpBoxesRowState extends State<_OtpBoxesRow> {
     }
   }
 
-@override
-Widget build(BuildContext context) {
-  final regex = RegExp(widget.allowedPattern);
-  final lastIndex = widget.controllers.length - 1;
-  const spacing = 8.0;
+  bool _allFilled() =>
+      widget.controllers.every((c) => c.text.trim().isNotEmpty);
+  String _joined() => widget.controllers.map((c) => c.text).join();
 
-  return LayoutBuilder(
-    builder: (context, constraints) {
-      final maxW = constraints.maxWidth;
-      final boxSide = ((maxW) - (spacing * 5)) / 6; // 6 ช่อง/แถว
-      final side = boxSide.clamp(32.0, 56.0);
+  @override
+  Widget build(BuildContext context) {
+    final regex = RegExp(widget.allowedPattern);
+    final lastIndex = widget.controllers.length - 1;
+    const spacing = 8.0;
 
-      return SizedBox(
-        width: maxW, // กว้างเต็ม เพื่อให้ alignment มีผล
-        child: Wrap(
-          alignment: WrapAlignment.end, // ✅ ชิดขวา
-          spacing: spacing,
-          runSpacing: spacing,
-          children: List.generate(widget.controllers.length, (i) {
-            final c = widget.controllers[i];
-            final isLast = i == lastIndex;
-            return SizedBox(
-              width: side,
-              height: side,
-              child: TextFormField(
-                focusNode: _nodes[i],
-                controller: c,
-                textAlign: TextAlign.center,
-                textInputAction: isLast ? TextInputAction.done : TextInputAction.next,
-                textCapitalization: TextCapitalization.characters,
-                keyboardType: TextInputType.visiblePassword,
-                onTap: () => c.selection = TextSelection(baseOffset: 0, extentOffset: c.text.length),
-                inputFormatters: [
-                  LengthLimitingTextInputFormatter(1),
-                  FilteringTextInputFormatter.allow(regex),
-                ],
-                onChanged: (val) {
-                  if (val.isEmpty) return;
-                  final upper = val.toUpperCase();
-                  if (upper != val) {
-                    c.value = TextEditingValue(text: upper, selection: TextSelection.collapsed(offset: upper.length));
-                  }
-                  _moveToNext(i);
-                },
-                decoration: InputDecoration(
-                  contentPadding: EdgeInsets.zero,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxW = constraints.maxWidth;
+        final boxSide = ((maxW) - (spacing * 5)) / 6; // 6 ช่อง/แถว
+        final side = boxSide.clamp(32.0, 56.0);
+
+        return SizedBox(
+          width: maxW, // กว้างเต็ม เพื่อให้ alignment มีผล
+          child: Wrap(
+            alignment: WrapAlignment.end, // ชิดขวา
+            spacing: spacing,
+            runSpacing: spacing,
+            children: List.generate(widget.controllers.length, (i) {
+              final c = widget.controllers[i];
+              final isLast = i == lastIndex;
+
+              return SizedBox(
+                width: side,
+                height: side,
+                child: TextFormField(
+                  focusNode: _nodes[i],
+                  controller: c,
+                  textAlign: TextAlign.center,
+                  textInputAction:
+                      isLast ? TextInputAction.done : TextInputAction.next,
+                  textCapitalization: TextCapitalization.characters,
+                  keyboardType: TextInputType.visiblePassword,
+                  onTap: () => c.selection =
+                      TextSelection(baseOffset: 0, extentOffset: c.text.length),
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(1),
+                    FilteringTextInputFormatter.allow(regex),
+                  ],
+                  onChanged: (val) {
+                    // อัปเดตตัวอักษรให้เป็นตัวพิมพ์ใหญ่เสมอ
+                    if (val.isNotEmpty) {
+                      final upper = val.toUpperCase();
+                      if (upper != val) {
+                        c.value = TextEditingValue(
+                          text: upper,
+                          selection:
+                              TextSelection.collapsed(offset: upper.length),
+                        );
+                      }
+                      _moveToNext(i);
+                    }
+
+                    // ยิง onChanged พร้อมค่าสตริงที่รวมทุกช่อง
+                    widget.onChanged?.call(_joined());
+
+                    // ถ้ากรอกครบทุกช่องแล้ว ยิง onSubmitted ด้วย
+                    if (_allFilled()) {
+                      widget.onSubmitted?.call(_joined());
+                    }
+                  },
+                  onFieldSubmitted: (_) {
+                    if (isLast) {
+                      widget.onSubmitted?.call(_joined());
+                    }
+                  },
+                  decoration: InputDecoration(
+                    contentPadding: EdgeInsets.zero,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
                 ),
-              ),
-            );
-          }),
-        ),
-      );
-    },
-  );
-}
-
+              );
+            }),
+          ),
+        );
+      },
+    );
+  }
 }

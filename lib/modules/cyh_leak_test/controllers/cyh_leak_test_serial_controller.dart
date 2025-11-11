@@ -175,23 +175,33 @@ class CYHLeakTestSerialController extends GetxController {
         gsNo: gsController.text,
         scanDate: now,
         createdBy: createdBy,
+        castingDate: '',
+        moldNo: '',
+        plantId: '',
+        lineCd: '',
+        ngId: '',
+        updatedBy: createdBy,
       );
 
       final res = await service.insertLeakTest(model);
 
-      if (res['result'] == true && (res['data'] as List).isEmpty) {
+      if (res['result'] == true &&
+          (res['data'] as Map<String, dynamic>).isEmpty) {
         EasyLoading.showSuccess('บันทึกสำเร็จ',
             duration: const Duration(seconds: 1), dismissOnTap: false);
 
         await Future.delayed(const Duration(seconds: 1));
         resetForm();
         Get.offAllNamed(AppRoutes.cyhLeakTest);
-      } else if (res['result'] == true && (res['data'] as List).isNotEmpty) {
+      } else if (res['result'] == true &&
+          (res['data'] as Map<String, dynamic>).isNotEmpty) {
         EasyLoading.showSuccess('บันทึกสำเร็จ',
             duration: const Duration(seconds: 1), dismissOnTap: false);
 
         await Future.delayed(const Duration(seconds: 1));
         Get.toNamed(AppRoutes.cyhLeakTestNG, arguments: {
+          'ng-result': res['data'],
+          'plant-result': selectedModel
           // 'workType': selectedWorkType.value,
           // 'machine': machineController.text,
           // 'running-list': r.data

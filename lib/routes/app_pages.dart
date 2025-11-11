@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:kmt/modules/alert/bindings/notification_binding.dart';
 import 'package:kmt/modules/alert/views/notification_screen.dart';
 import 'package:kmt/modules/cyh_leak_test/bindings/cyh_leak_test_binding.dart';
+import 'package:kmt/modules/cyh_leak_test/bindings/cyh_leak_test_ng_binding.dart';
 import 'package:kmt/modules/cyh_leak_test/bindings/cyh_leak_test_serial_binding.dart';
 import 'package:kmt/modules/cyh_leak_test/views/cyh_leak_test_ng_view.dart';
 import 'package:kmt/modules/cyh_leak_test/views/cyh_leak_test_serial_view.dart';
@@ -90,7 +91,7 @@ class AppPages {
     GetPage(
       name: AppRoutes.cyhLeakTestNG,
       page: () => CYHLeakTestNGView(),
-      binding: CYHLeakTestBinding(),
+      binding: CYHLeakTestNGBinding(),
     ),
   ];
 }

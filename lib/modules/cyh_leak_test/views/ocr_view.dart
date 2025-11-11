@@ -22,7 +22,7 @@ const Rect kType1RectLogical = Rect.fromLTWH(20, 190, 280, 100);
 const int kAutoScanIntervalMs = 700;
 
 /// งานที่ต้องการอ่าน (ไว้ใช้กรองแพทเทิร์น)
-enum OcrMode { mcDate18, no2, serial11, mold4, machine5 }
+enum OcrMode { castingDate6, mcDate18, no2, serial11, mold4, machine5 }
 
 class OcrView extends StatefulWidget {
   final OcrMode mode;
@@ -320,6 +320,10 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
   String? _extractPattern(OcrMode mode, String plain) {
     final text = plain.toUpperCase();
     switch (mode) {
+      case OcrMode.castingDate6:
+       return RegExp(r'\b\d{2}-\d{2}-\d{2}#[A-Z0-9]{2}\b')
+            .firstMatch(text)
+            ?.group(0);
       case OcrMode.mcDate18:
         return RegExp(r'\b\d{2}-\d{2}-\d{2}#[A-Z0-9]{2}\b')
             .firstMatch(text)
