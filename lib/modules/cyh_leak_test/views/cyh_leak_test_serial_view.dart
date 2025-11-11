@@ -287,7 +287,7 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
                           height: 44,
                           child: FilledButton(
                             onPressed: controller.isEnabled.value
-                                ? controller.goToNG
+                                ? controller.confirmForm
                                 : null,
                             child: const Text('Confirm'),
                           ),

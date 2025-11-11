@@ -20,7 +20,7 @@ class CYHLeakTestSerialService extends GetxService {
     print('coming up fetchGSCount');
     print('res ===> $res');
     if (res['result'] == true && res['data'] != null) {
-     final String str = '${res['data']}';
+      final String str = '${res['data']}';
       return str;
     }
     return '0';
@@ -78,6 +78,7 @@ class CYHLeakTestSerialService extends GetxService {
       return {
         'result': res['result'] ?? false,
         'message': res['message'] ?? '',
+        'data': res['data']
       };
     } catch (e) {
       return {

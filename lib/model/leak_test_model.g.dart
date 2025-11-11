@@ -14,7 +14,7 @@ LeakTestModel _$LeakTestModelFromJson(Map<String, dynamic> json) =>
       modelCd: json['Model_CD'] as String,
       serialNo: json['Serial_No'] as String,
       scanDate: json['Scan_Date'] as String,
-      createdBy: json['CREATED_BY'] as String,
+      createdBy: json['CREATED_BY'] as int,
       gsNo: json['GS_No'] as String,
     );
 

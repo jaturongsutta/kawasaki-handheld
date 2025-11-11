@@ -23,7 +23,7 @@ class LeakTestModel {
   final String scanDate;
 
   @JsonKey(name: 'CREATED_BY')
-  final String createdBy;
+  final int createdBy;
 
   @JsonKey(name: 'GS_No')
   final String gsNo;
