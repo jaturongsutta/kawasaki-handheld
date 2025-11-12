@@ -9,7 +9,7 @@ part of 'leak_test_running_model.dart';
 LeakTestRunningModel _$LeakTestRunningModelFromJson(
         Map<String, dynamic> json) =>
     LeakTestRunningModel(
-      id: json['id'] as String? ?? '',
+      id: (json['id'] as num).toInt(),
       lineCd: json['Line_CD'] as String,
       lineName: json['Line_Name'] as String,
       modelCd: json['Model_CD'] as String,

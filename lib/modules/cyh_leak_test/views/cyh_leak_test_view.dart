@@ -4,6 +4,7 @@ import 'package:characters/characters.dart';
 import 'package:get/get.dart';
 
 import 'package:kmt/modules/cyh_leak_test/views/ocr_view.dart';
+import 'package:kmt/modules/cyh_leak_test/widgets/tab_selector.dart';
 import 'package:kmt/widgets/KeyenceScanner.dart';
 import '../controllers/cyh_leak_test_controller.dart';
 
@@ -91,24 +92,6 @@ class CYHLeakTestView extends GetView<CYHLeakTestController> {
                 // ---------- BODY ----------
                 Padding(
                   padding: const EdgeInsets.all(10),
-                  //  child: Container(
-                  //    decoration: BoxDecoration(
-                  //      color: Colors.white,
-                  //      borderRadius: const BorderRadius.only(
-                  //        topLeft: Radius.circular(24),
-                  //        topRight: Radius.circular(24),
-                  //        bottomLeft: Radius.circular(12),
-                  //        bottomRight: Radius.circular(12),
-                  //      ),
-                  //      boxShadow: [
-                  //        BoxShadow(
-                  //          color: Colors.black.withOpacity(0.04),
-                  //          blurRadius: 8,
-                  //          offset: const Offset(0, 2),
-                  //        ),
-                  //      ],
-                  //    ),
-                  // ✅ เปลี่ยนจาก Column เป็น SingleChildScrollView เพื่อให้เลื่อนทั้งหน้า
                   child: SingleChildScrollView(
                     padding: EdgeInsets.all(0),
                     keyboardDismissBehavior:
@@ -116,32 +99,12 @@ class CYHLeakTestView extends GetView<CYHLeakTestController> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _FormRowCard(
-                          label: 'Work Type',
-                          child: DropdownButtonFormField<String>(
-                            isExpanded: true,
-                            value: controller.selectedWorkType.value,
-                            items: controller.workTypeItems
-                                .map((e) => DropdownMenuItem<String>(
-                                      value: e,
-                                      child: Text(e),
-                                    ))
-                                .toList(),
-                            onChanged: (v) {
-                              if (v != null) {
-                                controller.selectedWorkType.value = v;
-                                controller.checkIsEnabledButton();
-                              }
-                            },
-                            decoration: InputDecoration(
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 12),
-                              border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8)),
-                              // isDense: true,
-                            ),
-                          ),
-                        ),
+                        WorkTypeSelector(
+                            value: controller.workType.value,
+                            onChanged: (v) => {
+                                  controller.workType.value = v,
+                                  controller.selectedWorkType.value = v.name
+                                }),
                         _FormRowCard(
                           label: 'Machine',
                           child: TextField(

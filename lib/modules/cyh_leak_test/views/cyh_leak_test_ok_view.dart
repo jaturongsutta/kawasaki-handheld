@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:characters/characters.dart';
 import 'package:get/get.dart';
-import 'package:kmt/modules/cyh_leak_test/controllers/cyh_leak_test_ng_controller.dart';
+import 'package:kmt/modules/cyh_leak_test/controllers/cyh_leak_test_ok_controller.dart';
 
 import 'package:kmt/modules/cyh_leak_test/views/ocr_view.dart';
 import 'package:kmt/widgets/KeyenceScanner.dart';
-import '../controllers/cyh_leak_test_controller.dart';
 
-class CYHLeakTestNGView extends GetView<CYHLeakTestNGController> {
-  CYHLeakTestNGView({super.key});
+class CYHLeakTestOKView extends GetView<CYHLeakTestOKController> {
+  CYHLeakTestOKView({super.key});
 
   // NOTE: ในโปรดักชัน แนะนำย้าย controllers ไปไว้ใน Controller แล้ว dispose ใน onClose()
 
@@ -33,7 +31,7 @@ class CYHLeakTestNGView extends GetView<CYHLeakTestNGController> {
       // เปิดให้เลื่อนอัตโนมัติเวลาเปิดคีย์บอร์ด
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        title: const Text('NG Leak Test',
+        title: const Text('Leak Test - OK',
             style: TextStyle(fontWeight: FontWeight.w700)),
         centerTitle: true,
       ),
@@ -107,10 +105,10 @@ class CYHLeakTestNGView extends GetView<CYHLeakTestNGController> {
                                   _buildRowField(
                                     label: 'Result',
                                     child: const Text(
-                                      'NG',
+                                      'OK',
                                       style: TextStyle(
                                         fontSize: 16,
-                                        color: Colors.red,
+                                        color: Colors.green,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -119,41 +117,6 @@ class CYHLeakTestNGView extends GetView<CYHLeakTestNGController> {
                                   const SizedBox(height: 12),
 
                                   // ================= Buttons =================
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: [
-                                      _resultButton(
-                                          controller.dataModel.value?.ngP1 ??
-                                              '',
-                                          controller.hexToColor(controller
-                                                  .dataModel.value?.ngP1Color ??
-                                              '#FFFFFF')),
-                                      _resultButton(
-                                          controller.dataModel.value?.ngP2 ??
-                                              '',
-                                          controller.hexToColor(controller
-                                                  .dataModel.value?.ngP2Color ??
-                                              '#FFFFFF')),
-                                      _resultButton(
-                                          controller.dataModel.value?.ngP3 ??
-                                              '',
-                                          controller.hexToColor(controller
-                                                  .dataModel.value?.ngP3Color ??
-                                              '#FFFFFF')),
-                                      // _resultButton('P4', Colors.white,
-                                      //     borderColor: Colors.grey.shade400,
-                                      //     textColor: Colors.black),
-                                      _resultButton(
-                                        controller.dataModel.value?.ngTb ?? '',
-                                        controller.hexToColor(controller
-                                                .dataModel.value?.ngTbColor ??
-                                            '#FFFFFF'),
-                                        // borderColor: Colors.grey.shade400,
-                                        // textColor: Colors.black),
-                                      ),
-                                    ],
-                                  ),
                                 ],
                               ),
                             ),
@@ -246,7 +209,7 @@ class CYHLeakTestNGView extends GetView<CYHLeakTestNGController> {
                                 ],
                               ),
                               onScan: () =>
-                                  controller.scanAndFill(OcrMode.serial11),
+                                  controller.scanAndFill(OcrMode.mold12),
                               onClear: controller.clearMold,
                               labelStyle: labelStyle,
                             ),

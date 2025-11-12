@@ -7,9 +7,9 @@ import 'package:kmt/model/machine_model.dart';
 import 'package:kmt/services/base_service.dart';
 import 'package:kmt/enum/dio_type.dart';
 
-class CYHLeakTestNGService extends GetxService {
+class CYHLeakTestOKService extends GetxService {
   final BaseService baseService;
-  CYHLeakTestNGService(this.baseService);
+  CYHLeakTestOKService(this.baseService);
 
   Future<String> fetchGSCount(
       {required String? modelCd, required String? serialNo}) async {
@@ -27,23 +27,16 @@ class CYHLeakTestNGService extends GetxService {
     return '0';
   }
 
-  Future<Map<String, dynamic>> updateLeakTest(LeakTestModel model) async {
+  Future<Map<String, dynamic>> updateLeakTestOK(LeakTestModel model) async {
     try {
       final res = await baseService.apiRequest(
-        '/leak/update-leak-test-cyh',
+        '/leak/update-leak-test-ok-cyh',
         queryType: QueryType.post,
         data: model.toJson(),
       );
-
-      LeakTestNgModel? leakData;
-      if (res['data'] != null && res['data'] is Map<String, dynamic>) {
-        leakData = LeakTestNgModel.fromJson(res['data']);
-      }
-
       return {
         'result': res['result'] ?? false,
         'message': res['message'] ?? '',
-        'data': leakData,
       };
     } catch (e) {
       return {'result': false, 'message': e.toString(), 'data': null};

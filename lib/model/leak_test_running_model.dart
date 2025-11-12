@@ -5,7 +5,7 @@ part 'leak_test_running_model.g.dart';
 @JsonSerializable()
 class LeakTestRunningModel {
   @JsonKey(name: 'id' , defaultValue: '')
-  final String id;
+  final int id;
 
   @JsonKey(name: 'Line_CD')
   final String lineCd;

@@ -6,6 +6,7 @@ import 'package:kmt/model/leak_test_running_model.dart';
 import 'package:kmt/modules/cyh_leak_test/controllers/cyh_leak_test_serial_controller.dart';
 
 import 'package:kmt/modules/cyh_leak_test/views/ocr_view.dart';
+import 'package:kmt/modules/cyh_leak_test/widgets/tab_selector.dart';
 import 'package:kmt/widgets/KeyenceScanner.dart';
 
 class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
@@ -89,21 +90,9 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _FormRowCard(
-                          label: 'Work Type',
-                          child: TextField(
-                            readOnly: true,
-                            controller: controller.workTypeController,
-                            textAlignVertical: TextAlignVertical.center,
-                            decoration: InputDecoration(
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 10),
-                              border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8)),
-                              isDense: true,
-                            ),
-                          ),
-                        ),
+                        WorkTypeSelector(
+                            value: controller.workType.value,
+                            onChanged: (v) => {}),
                         Card(
                           elevation: 0.5,
                           shape: RoundedRectangleBorder(
@@ -155,9 +144,12 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
                                       value: controller
                                           .selectedModel.value?.modelCd,
                                       items: controller.models
-                                          .map((m) => DropdownMenuItem<String>(
-                                                value: m.modelCd,
-                                                child: Text(m.modelCd ?? ''),
+                                          .map((m) => m.modelCd)
+                                          .where((cd) => cd.isNotEmpty)
+                                          .toSet() // <-- ตรงนี้แปลงเป็น Set เพื่อกันซ้ำ
+                                          .map((cd) => DropdownMenuItem<String>(
+                                                value: cd,
+                                                child: Text(cd),
                                               ))
                                           .toList(),
                                       onChanged: (val) {
@@ -166,7 +158,7 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
                                               controller.models.firstWhere(
                                             (m) => m.modelCd == val,
                                             orElse: () => LeakTestRunningModel(
-                                              id: '',
+                                              id: 0,
                                               lineCd: '',
                                               lineName: '',
                                               modelCd: '',
@@ -203,10 +195,9 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
                                     controller.mcDateCtrls.sublist(0, 18),
                                 allowedPattern: r'[A-Za-z0-9#-]',
                                 onSubmitted: (value) {
-                                   print('MC Date submitted: $value');
+                                  print('MC Date submitted: $value');
                                   if (value.isNotEmpty) {
-                                    controller.selectedMCDate.value =
-                                        value;
+                                    controller.selectedMCDate.value = value;
                                     controller.getGSCount();
                                     controller.checkIsEnabledButton();
                                   }
@@ -224,64 +215,178 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
                               controller.scanAndFill(OcrMode.mcDate18),
                           onClear: controller.clearMCDate,
                           labelStyle: labelStyle,
-                          gs: gsValue > 0
-                              ?
-                              // ---------- แถว G/S ----------
-                              // ให้จัดแนว/ขอบซ้ายขวาเท่ากับ input ด้านบน
-                              Padding(
-                                  padding: const EdgeInsets.only(
-                                      right: 0), // ถ้าต้องเว้นเพิ่ม ปรับได้
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      // ความกว้าง label ให้เท่ากับแถว Machine/Model (เช่น 92 หรือ 110)
-                                      const SizedBox(
-                                        width: kLabelWidth,
-                                        child: Text(
-                                          'G/S',
-                                          style:
-                                              labelStyle, // ใช้สไตล์เดียวกับ label ในการ์ด
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Row(
-                                          children: [
-                                            Expanded(
-                                              child: TextField(
-                                                keyboardType: TextInputType
-                                                    .number, // แสดงคีย์บอร์ดตัวเลข
-                                                inputFormatters: [
-                                                  FilteringTextInputFormatter
-                                                      .digitsOnly, // ✅ อนุญาตเฉพาะตัวเลข 0–9
-                                                ],
-                                                controller:
-                                                    controller.gsController,
-                                                textAlignVertical:
-                                                    TextAlignVertical.center,
-                                                decoration: InputDecoration(
-                                                  contentPadding:
-                                                      const EdgeInsets
-                                                          .symmetric(
-                                                          horizontal: 12,
-                                                          vertical: 10),
-                                                  border: OutlineInputBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              8)),
-                                                  isDense: true,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                )
-                              : const SizedBox.shrink(),
+                          // gs: gsValue > 0
+                          //     ?
+                          //     // ---------- แถว G/S ----------
+                          //     // ให้จัดแนว/ขอบซ้ายขวาเท่ากับ input ด้านบน
+                          //     Padding(
+                          //         padding: const EdgeInsets.only(
+                          //             right: 0), // ถ้าต้องเว้นเพิ่ม ปรับได้
+                          //         child: Row(
+                          //           crossAxisAlignment:
+                          //               CrossAxisAlignment.center,
+                          //           children: [
+                          //             // ความกว้าง label ให้เท่ากับแถว Machine/Model (เช่น 92 หรือ 110)
+                          //             const SizedBox(
+                          //               width: kLabelWidth,
+                          //               child: Text(
+                          //                 'G/S',
+                          //                 style:
+                          //                     labelStyle, // ใช้สไตล์เดียวกับ label ในการ์ด
+                          //               ),
+                          //             ),
+                          //             const SizedBox(width: 8),
+                          //             Expanded(
+                          //               child: Row(
+                          //                 children: [
+                          //                   Expanded(
+                          //                     child: TextField(
+                          //                       keyboardType: TextInputType
+                          //                           .number, // แสดงคีย์บอร์ดตัวเลข
+                          //                       inputFormatters: [
+                          //                         FilteringTextInputFormatter
+                          //                             .digitsOnly, // ✅ อนุญาตเฉพาะตัวเลข 0–9
+                          //                       ],
+                          //                       controller:
+                          //                           controller.gsController,
+                          //                       textAlignVertical:
+                          //                           TextAlignVertical.center,
+                          //                       decoration: InputDecoration(
+                          //                         contentPadding:
+                          //                             const EdgeInsets
+                          //                                 .symmetric(
+                          //                                 horizontal: 12,
+                          //                                 vertical: 10),
+                          //                         border: OutlineInputBorder(
+                          //                             borderRadius:
+                          //                                 BorderRadius.circular(
+                          //                                     8)),
+                          //                         isDense: true,
+                          //                       ),
+                          //                     ),
+                          //                   ),
+                          //                 ],
+                          //               ),
+                          //             ),
+                          //           ],
+                          //         ),
+                          //       )
+                          //     : const SizedBox.shrink(),
                         ),
+                        _rowCardSimple(
+                          label: 'C/A No',
+                          boxes: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _OtpBoxesRow(
+                                controllers: controller.caNoCtrls.sublist(0, 3),
+                                allowedPattern: r'[A-Za-z0-9#-]',
+                                onSubmitted: (value) {
+                                  print('C/A No submitted: $value');
+                                  if (value.isNotEmpty) {
+                                    controller.selectedCANo.value = value;
+                                    controller.getGSCount();
+                                    controller.checkIsEnabledButton();
+                                  }
+                                },
+                              ),
+                              const SizedBox(height: 8),
+                              // _OtpBoxesRow(
+                              //   controllers: serialCtrls.sublist(6, 12),
+                              //   allowedPattern: r'[A-Za-z0-9#-]',
+                              // ),
+                              // const SizedBox(height: 8),
+                            ],
+                          ),
+                          onClear: controller.clearMCDate,
+                          labelStyle: labelStyle,
+                        ),
+                        _rowCardSimple(
+                          label: 'C/A Date',
+                          boxes: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _OtpBoxesRow(
+                                controllers:
+                                    controller.caDateCtrls.sublist(0, 6),
+                                allowedPattern: r'[A-Za-z0-9#-]',
+                                onSubmitted: (value) {
+                                  print('C/A Date submitted: $value');
+                                  if (value.isNotEmpty) {
+                                    controller.selectedCADate.value = value;
+                                    controller.getGSCount();
+                                    controller.checkIsEnabledButton();
+                                  }
+                                },
+                              ),
+                              const SizedBox(height: 8),
+                              // _OtpBoxesRow(
+                              //   controllers: serialCtrls.sublist(6, 12),
+                              //   allowedPattern: r'[A-Za-z0-9#-]',
+                              // ),
+                              // const SizedBox(height: 8),
+                            ],
+                          ),
+                          onClear: controller.clearMCDate,
+                          labelStyle: labelStyle,
+                        ),
+                        _rowCard(
+                          label: 'Mold No',
+                          boxes: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _OtpBoxesRow(
+                                controllers:
+                                    controller.moldCtrls.sublist(0, 12),
+                                allowedPattern: r'[A-Za-z0-9#-]',
+                                onChanged: (value) {
+                                  print('changed yes: $value');
+                                  if (value.isNotEmpty) {
+                                    controller.selectedmoldCtrls.value = value;
+                                    controller.checkIsEnabledButton();
+                                  }
+                                },
+                                onSubmitted: (value) {
+                                  print('submitted yes: $value');
+                                  if (value.isNotEmpty) {
+                                    controller.selectedmoldCtrls.value = value;
+                                    controller.checkIsEnabledButton();
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                          onScan: () =>
+                              controller.scanAndFill(OcrMode.serial11),
+                          onClear: controller.clearMold,
+                          labelStyle: labelStyle,
+                        ),
+
+                        _FormRowCard(
+                          label: 'G/S',
+                          child: TextField(
+                            controller: controller.gsController,
+                            keyboardType:
+                                TextInputType.number, // แสดงคีย์บอร์ดตัวเลข
+                            inputFormatters: [
+                              FilteringTextInputFormatter
+                                  .digitsOnly, // ✅ อนุญาตเฉพาะตัวเลข 0–9
+                            ],
+                            decoration: InputDecoration(
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 8),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8)),
+                            ),
+                            onSubmitted: (value) => {
+                              controller.gsController.text = value,
+                            },
+                            onChanged: (value) => {
+                              controller.gsController.text = value,
+                            },
+                          ),
+                        ),
+
                         const SizedBox(height: 16),
                         SizedBox(
                           height: 44,
@@ -292,6 +397,7 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
                             child: const Text('Confirm'),
                           ),
                         ),
+                        const SizedBox(height: 32),
                       ],
                     ),
                   ),
@@ -373,7 +479,6 @@ Widget _rowCard({
   required VoidCallback onScan,
   required VoidCallback onClear,
   required TextStyle labelStyle,
-  required Widget gs,
 }) {
   return Card(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -409,20 +514,73 @@ Widget _rowCard({
           LayoutBuilder(
             builder: (context, constraints) {
               // ✅ ใช้ LayoutBuilder เพื่อให้ยืดหยุ่นตามความกว้างจริงของ Card
-              final availableWidth = constraints.maxWidth;
+
               // เพิ่มระยะห่างขวาให้เท่ากับขอบกล่องบน
               return Padding(
-                padding: EdgeInsets.only(right: availableWidth * 0.10),
+                padding: const EdgeInsets.only(left: 0, top: 4),
                 // ประมาณ 4% ของความกว้าง (responsive)
                 child: Align(
-                  alignment: Alignment.centerRight,
+                  alignment: Alignment.centerLeft,
                   child: boxes,
                 ),
               );
             },
           ),
           const SizedBox(height: 12),
-          gs,
+          // gs,
+          // const SizedBox(height: 4),
+        ],
+      ),
+    ),
+  );
+}
+
+Widget _rowCardSimple({
+  required String label,
+  required Widget boxes,
+  required VoidCallback onClear,
+  required TextStyle labelStyle,
+}) {
+  return Card(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    elevation: 0.5,
+    margin: const EdgeInsets.symmetric(vertical: 8),
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ---------- Header ----------
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // label ด้านซ้าย
+              Expanded(
+                child: Text(
+                  label,
+                  style: labelStyle,
+                ),
+              ),
+              // ปุ่มลบด้านขวา
+              IconButton(
+                onPressed: onClear,
+                icon: const Icon(Icons.delete, color: Colors.red),
+                tooltip: 'Clear',
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 4),
+
+          // ---------- Boxes ----------
+          Padding(
+            padding: const EdgeInsets.only(left: 0, top: 4),
+            child: Align(
+              alignment: Alignment.centerLeft, // ✅ ชิดซ้าย
+              child: boxes,
+            ),
+          ),
+
           const SizedBox(height: 4),
         ],
       ),
@@ -431,17 +589,145 @@ Widget _rowCard({
 }
 
 /// กล่องกรอกแบบ OTP: 1 ช่อง = 1 ตัวอักษร
+// class _OtpBoxesRow extends StatefulWidget {
+//   final List<TextEditingController> controllers;
+//   final String allowedPattern;
+
+//   /// เรียกเมื่อผู้ใช้กด `Done` ที่ช่องสุดท้าย
+//   /// หรือเมื่อทุกช่องถูกกรอกครบแล้ว (เรียกจาก onChanged)
+//   final ValueChanged<String>? onSubmitted;
+
+//   const _OtpBoxesRow({
+//     required this.controllers,
+//     required this.allowedPattern,
+//     this.onSubmitted,
+//   });
+
+//   @override
+//   State<_OtpBoxesRow> createState() => _OtpBoxesRowState();
+// }
+
+// class _OtpBoxesRowState extends State<_OtpBoxesRow> {
+//   late final List<FocusNode> _nodes;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _nodes = List.generate(widget.controllers.length, (_) => FocusNode());
+//   }
+
+//   @override
+//   void dispose() {
+//     for (final n in _nodes) {
+//       n.dispose();
+//     }
+//     super.dispose();
+//   }
+
+//   void _moveToNext(int i) {
+//     if (i + 1 < _nodes.length) {
+//       _nodes[i + 1].requestFocus();
+//     } else {
+//       _nodes[i].unfocus();
+//     }
+//   }
+
+//   bool _allFilled() =>
+//       widget.controllers.every((c) => c.text.trim().isNotEmpty);
+
+//   String _joined() => widget.controllers.map((c) => c.text).join();
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final regex = RegExp(widget.allowedPattern);
+//     final lastIndex = widget.controllers.length - 1;
+//     const spacing = 8.0;
+
+//     return LayoutBuilder(
+//       builder: (context, constraints) {
+//         final maxW = constraints.maxWidth;
+//         final boxSide = ((maxW) - (spacing * 5)) / 6; // 6 ช่อง/แถว
+//         final side = boxSide.clamp(32.0, 56.0);
+
+//         return SizedBox(
+//           width: maxW,
+//           child: Wrap(
+//             alignment: WrapAlignment.start, // ชิดขวา
+//             spacing: spacing,
+//             runSpacing: spacing,
+//             children: List.generate(widget.controllers.length, (i) {
+//               final c = widget.controllers[i];
+//               final isLast = i == lastIndex;
+
+//               return SizedBox(
+//                 width: side,
+//                 height: side,
+//                 child: TextFormField(
+//                   focusNode: _nodes[i],
+//                   controller: c,
+//                   textAlign: TextAlign.center,
+//                   textInputAction:
+//                       isLast ? TextInputAction.done : TextInputAction.next,
+//                   textCapitalization: TextCapitalization.characters,
+//                   keyboardType: TextInputType.visiblePassword,
+//                   onTap: () => c.selection =
+//                       TextSelection(baseOffset: 0, extentOffset: c.text.length),
+//                   inputFormatters: [
+//                     LengthLimitingTextInputFormatter(1),
+//                     FilteringTextInputFormatter.allow(regex),
+//                   ],
+//                   onChanged: (val) {
+//                     if (val.isEmpty) return;
+//                     final upper = val.toUpperCase();
+//                     if (upper != val) {
+//                       c.value = TextEditingValue(
+//                         text: upper,
+//                         selection:
+//                             TextSelection.collapsed(offset: upper.length),
+//                       );
+//                     }
+//                     _moveToNext(i);
+
+//                     // ถ้ากรอกครบทุกช่องแล้ว ยิง callback ทันที
+//                     if (_allFilled()) {
+//                       widget.onSubmitted?.call(_joined());
+//                     }
+//                   },
+//                   onFieldSubmitted: (_) {
+//                     // กด Done ที่ช่องสุดท้าย → ยิง callback
+//                     if (isLast) {
+//                       widget.onSubmitted?.call(_joined());
+//                     }
+//                   },
+//                   decoration: InputDecoration(
+//                     contentPadding: EdgeInsets.zero,
+//                     border: OutlineInputBorder(
+//                         borderRadius: BorderRadius.circular(6)),
+//                   ),
+//                 ),
+//               );
+//             }),
+//           ),
+//         );
+//       },
+//     );
+//   }
+// }
+
 class _OtpBoxesRow extends StatefulWidget {
   final List<TextEditingController> controllers;
   final String allowedPattern;
 
-  /// เรียกเมื่อผู้ใช้กด `Done` ที่ช่องสุดท้าย
-  /// หรือเมื่อทุกช่องถูกกรอกครบแล้ว (เรียกจาก onChanged)
+  /// ยิงทุกครั้งที่มีการเปลี่ยนค่า (รวมทุกช่องเป็นสตริงแล้ว)
+  final ValueChanged<String>? onChanged;
+
+  /// ยิงตอนกด Done ที่ช่องสุดท้าย หรือกรอกครบทุกช่อง
   final ValueChanged<String>? onSubmitted;
 
   const _OtpBoxesRow({
     required this.controllers,
     required this.allowedPattern,
+    this.onChanged,
     this.onSubmitted,
   });
 
@@ -476,7 +762,6 @@ class _OtpBoxesRowState extends State<_OtpBoxesRow> {
 
   bool _allFilled() =>
       widget.controllers.every((c) => c.text.trim().isNotEmpty);
-
   String _joined() => widget.controllers.map((c) => c.text).join();
 
   @override
@@ -492,9 +777,9 @@ class _OtpBoxesRowState extends State<_OtpBoxesRow> {
         final side = boxSide.clamp(32.0, 56.0);
 
         return SizedBox(
-          width: maxW,
+          width: maxW, // กว้างเต็ม เพื่อให้ alignment มีผล
           child: Wrap(
-            alignment: WrapAlignment.end, // ชิดขวา
+            alignment: WrapAlignment.start, // ชิดขวา
             spacing: spacing,
             runSpacing: spacing,
             children: List.generate(widget.controllers.length, (i) {
@@ -519,24 +804,28 @@ class _OtpBoxesRowState extends State<_OtpBoxesRow> {
                     FilteringTextInputFormatter.allow(regex),
                   ],
                   onChanged: (val) {
-                    if (val.isEmpty) return;
-                    final upper = val.toUpperCase();
-                    if (upper != val) {
-                      c.value = TextEditingValue(
-                        text: upper,
-                        selection:
-                            TextSelection.collapsed(offset: upper.length),
-                      );
+                    // อัปเดตตัวอักษรให้เป็นตัวพิมพ์ใหญ่เสมอ
+                    if (val.isNotEmpty) {
+                      final upper = val.toUpperCase();
+                      if (upper != val) {
+                        c.value = TextEditingValue(
+                          text: upper,
+                          selection:
+                              TextSelection.collapsed(offset: upper.length),
+                        );
+                      }
+                      _moveToNext(i);
                     }
-                    _moveToNext(i);
 
-                    // ถ้ากรอกครบทุกช่องแล้ว ยิง callback ทันที
+                    // ยิง onChanged พร้อมค่าสตริงที่รวมทุกช่อง
+                    widget.onChanged?.call(_joined());
+
+                    // ถ้ากรอกครบทุกช่องแล้ว ยิง onSubmitted ด้วย
                     if (_allFilled()) {
                       widget.onSubmitted?.call(_joined());
                     }
                   },
                   onFieldSubmitted: (_) {
-                    // กด Done ที่ช่องสุดท้าย → ยิง callback
                     if (isLast) {
                       widget.onSubmitted?.call(_joined());
                     }
@@ -544,7 +833,8 @@ class _OtpBoxesRowState extends State<_OtpBoxesRow> {
                   decoration: InputDecoration(
                     contentPadding: EdgeInsets.zero,
                     border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(6)),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
                   ),
                 ),
               );

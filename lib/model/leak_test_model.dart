@@ -5,7 +5,7 @@ part 'leak_test_model.g.dart';
 @JsonSerializable()
 class LeakTestModel {
   @JsonKey(name: 'Mapped_Plan_ID', defaultValue: '')
-  final String mappedPlanId;
+  final int mappedPlanId;
 
   @JsonKey(name: 'Machine_No')
   final String machineNo;
@@ -38,30 +38,33 @@ class LeakTestModel {
   final String ngId;
 
   @JsonKey(name: 'Plant_Id')
-  final String plantId;
-
-  @JsonKey(name: 'Casting_Date')
-  final String castingDate;
+  final int plantId;
 
   @JsonKey(name: 'Mold_No')
   final String moldNo;
 
-  LeakTestModel({
-    required this.mappedPlanId,
-    required this.machineNo,
-    required this.workType,
-    required this.modelCd,
-    required this.serialNo,
-    required this.scanDate,
-    required this.createdBy,
-    required this.updatedBy,
-    required this.gsNo,
-    required this.lineCd,
-    required this.ngId,
-    required this.plantId,
-    required this.castingDate,
-    required this.moldNo,
-  });
+  @JsonKey(name: 'CA_No')
+  final String caNo;
+
+  @JsonKey(name: 'CA_Date')
+  final String caDate;
+
+  LeakTestModel(
+      {required this.mappedPlanId,
+      required this.machineNo,
+      required this.workType,
+      required this.modelCd,
+      required this.serialNo,
+      required this.scanDate,
+      required this.createdBy,
+      required this.updatedBy,
+      required this.gsNo,
+      required this.lineCd,
+      required this.ngId,
+      required this.plantId,
+      required this.moldNo,
+      required this.caDate,
+      required this.caNo});
 
   factory LeakTestModel.fromJson(Map<String, dynamic> json) =>
       _$LeakTestModelFromJson(json);

@@ -6,13 +6,13 @@ import 'package:intl/intl.dart';
 import 'package:kmt/model/leak_test_model.dart';
 import 'package:kmt/model/leak_test_ng_model.dart';
 import 'package:kmt/model/leak_test_running_model.dart';
-import 'package:kmt/modules/cyh_leak_test/services/cyh_leak_test_ng_service.dart';
+import 'package:kmt/modules/cyh_leak_test/services/cyh_leak_test_ok_service.dart';
 import 'package:kmt/modules/cyh_leak_test/views/ocr_view.dart';
 import 'package:kmt/routes/app_routes.dart';
 
-class CYHLeakTestNGController extends GetxController {
-  final CYHLeakTestNGService service;
-  CYHLeakTestNGController(this.service);
+class CYHLeakTestOKController extends GetxController {
+  final CYHLeakTestOKService service;
+  CYHLeakTestOKController(this.service);
 
   final isLoading = false.obs;
   final isModelReadOnly = true.obs;
@@ -22,19 +22,22 @@ class CYHLeakTestNGController extends GetxController {
   final machineController = TextEditingController();
   final gsController = TextEditingController();
   final isEnabled = false.obs;
-  final mcDateCtrls = List.generate(18, (_) => TextEditingController());
+
   final dataModel = Rxn<LeakTestNgModel>();
 
   final castingDateCtrls = List.generate(6, (_) => TextEditingController());
   final moldCtrls = List.generate(12, (_) => TextEditingController());
 
+  final plantResultModel = Rxn<LeakTestRunningModel>();
+
+  final mcDateCtrls = List.generate(18, (_) => TextEditingController());
+  final selectedmoldCtrls = ''.obs;
+
   final caNoCtrls = List.generate(3, (_) => TextEditingController());
   final selectedCANo = ''.obs;
 
-  final plantResultModel = Rxn<LeakTestRunningModel>();
-
+  final caDateCtrls = List.generate(6, (_) => TextEditingController());
   final selectedcastingDate = ''.obs;
-  final selectedmoldCtrls = ''.obs;
 
   @override
   void onInit() {
@@ -116,14 +119,43 @@ class CYHLeakTestNGController extends GetxController {
       } else {
         print('❌ ng-result is not a Map, got: ${data.runtimeType}');
       }
-      selectedCANo.value = dataModel.value?.caNo ?? '';
-      selectedcastingDate.value = dataModel.value?.caDate ?? '';
-      selectedmoldCtrls.value = dataModel.value?.moldNo ?? '';
 
       final plant = args['plant-result'];
       plantResultModel.value = plant;
+
+      // workTypeController.text =
+      // machineController.text = args['machine'] ?? '';
+      // if (args['running-list'] != null) {
+      //   final list = args['running-list'] as List<LeakTestRunningModel>;
+      //   models.assignAll(list);
+      // }
+
+      // if (models.isNotEmpty) {
+      //   selectedModel.value = models[0];
+      // }
+
+      // if (workTypeController.text == 'Production') {
+      //   isModelReadOnly.value = true;
+      // } else {
+      //   isModelReadOnly.value = false;
+      // }
     }
   }
+
+  // Future<void> getGSCount() async {
+  //   isLoading.value = true;
+  //   try {
+  //     final count = await service.fetchGSCount(
+  //         modelCd: selectedModel.value?.modelCd,
+  //         serialNo: selectedMCDate.value);
+  //     gsController.text = count;
+  //   } catch (_) {
+  //     print("catch getGSCount ${_}");
+  //     // selectedWorkType.value = null;
+  //   } finally {
+  //     isLoading.value = false;
+  //   }
+  // }
 
   Color hexToColor(String hex) {
     // ลบ # ถ้ามี
@@ -171,7 +203,7 @@ class CYHLeakTestNGController extends GetxController {
         createdBy: updatedBy,
       );
 
-      final res = await service.updateLeakTest(model);
+      final res = await service.updateLeakTestOK(model);
 
       if (res['result'] == true) {
         EasyLoading.showSuccess('บันทึกสำเร็จ',
@@ -195,15 +227,16 @@ class CYHLeakTestNGController extends GetxController {
     final result = await Get.to<String>(() => OcrView(mode: mode));
     if (result == null || result.isEmpty) return;
 
-    List<TextEditingController> target;
-    int cellCount;
-    if (mode == OcrMode.castingDate6) {
-      target = castingDateCtrls;
-      cellCount = 6;
-    } else {
-      target = moldCtrls;
-      cellCount = 12;
-    }
+    List<TextEditingController> target = moldCtrls;
+    int cellCount = 12;
+    // if (mode == OcrMode.mold12) {
+    //   target = moldCtrls;
+    //   cellCount = 12;
+    // }
+    // else {
+    //   target = moldCtrls;
+    //   cellCount = 12;
+    // }
     // switch (mode) {
     //   case OcrMode.castingDate6:
     //     target = castingDateCtrls;

@@ -3,8 +3,10 @@ import 'package:kmt/modules/alert/bindings/notification_binding.dart';
 import 'package:kmt/modules/alert/views/notification_screen.dart';
 import 'package:kmt/modules/cyh_leak_test/bindings/cyh_leak_test_binding.dart';
 import 'package:kmt/modules/cyh_leak_test/bindings/cyh_leak_test_ng_binding.dart';
+import 'package:kmt/modules/cyh_leak_test/bindings/cyh_leak_test_ok_binding.dart';
 import 'package:kmt/modules/cyh_leak_test/bindings/cyh_leak_test_serial_binding.dart';
 import 'package:kmt/modules/cyh_leak_test/views/cyh_leak_test_ng_view.dart';
+import 'package:kmt/modules/cyh_leak_test/views/cyh_leak_test_ok_view.dart';
 import 'package:kmt/modules/cyh_leak_test/views/cyh_leak_test_serial_view.dart';
 import 'package:kmt/modules/cyh_leak_test/views/cyh_leak_test_view.dart';
 import 'package:kmt/modules/cyh_no_plan/bindings/cyh_no_plan_binding.dart';
@@ -92,6 +94,11 @@ class AppPages {
       name: AppRoutes.cyhLeakTestNG,
       page: () => CYHLeakTestNGView(),
       binding: CYHLeakTestNGBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.cyhLeakTestOK,
+      page: () => CYHLeakTestOKView(),
+      binding: CYHLeakTestOKBinding(),
     ),
   ];
 }

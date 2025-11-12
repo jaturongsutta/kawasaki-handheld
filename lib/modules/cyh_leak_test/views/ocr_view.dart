@@ -22,7 +22,7 @@ const Rect kType1RectLogical = Rect.fromLTWH(20, 190, 280, 100);
 const int kAutoScanIntervalMs = 700;
 
 /// งานที่ต้องการอ่าน (ไว้ใช้กรองแพทเทิร์น)
-enum OcrMode { castingDate6, mcDate18, no2, serial11, mold4, machine5 }
+enum OcrMode { castingDate6, mcDate18, no2, serial11, mold12, machine5 }
 
 class OcrView extends StatefulWidget {
   final OcrMode mode;
@@ -227,7 +227,7 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
       OcrMode.mcDate18: 'M/C Date',
       OcrMode.no2: 'Scan No. (2 digits)',
       OcrMode.serial11: 'Scan Serial (12-34-56#4A)',
-      OcrMode.mold4: 'Scan Mold (เช่น K9,3)',
+      OcrMode.mold12: 'Scan Mold (เช่น K9,3)',
       OcrMode.machine5: 'Scan Machine (เช่น KMT-7)',
     }[widget.mode]!;
 
@@ -335,7 +335,7 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
         return RegExp(r'\b\d{2}-\d{2}-\d{2}#[A-Z0-9]{2}\b')
             .firstMatch(text)
             ?.group(0);
-      case OcrMode.mold4:
+      case OcrMode.mold12:
         // ตัวอย่าง K9,3 → ตัวแรกตัวอักษร/ตัวเลข 1 ตัว + ตัวเลข 1 ตัว + คอมมา + ตัวเลข 1 ตัว
         return RegExp(r'\b[A-Z0-9][0-9],[0-9]\b').firstMatch(text)?.group(0);
       case OcrMode.machine5:

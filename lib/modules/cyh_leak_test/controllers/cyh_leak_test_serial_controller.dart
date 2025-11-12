@@ -7,6 +7,7 @@ import 'package:kmt/model/leak_test_model.dart';
 import 'package:kmt/model/leak_test_running_model.dart';
 import 'package:kmt/modules/cyh_leak_test/services/cyh_leak_test_serial_service.dart';
 import 'package:kmt/modules/cyh_leak_test/views/ocr_view.dart';
+import 'package:kmt/modules/cyh_leak_test/widgets/tab_selector.dart';
 import 'package:kmt/routes/app_routes.dart';
 
 class CYHLeakTestSerialController extends GetxController {
@@ -24,6 +25,17 @@ class CYHLeakTestSerialController extends GetxController {
   final isEnabled = false.obs;
   final mcDateCtrls = List.generate(18, (_) => TextEditingController());
   final selectedMCDate = ''.obs;
+
+  final moldCtrls = List.generate(12, (_) => TextEditingController());
+  final selectedmoldCtrls = ''.obs;
+
+  final caNoCtrls = List.generate(3, (_) => TextEditingController());
+  final selectedCANo = ''.obs;
+
+  final caDateCtrls = List.generate(6, (_) => TextEditingController());
+  final selectedCADate = ''.obs;
+
+  final workType = WorkTab.Production.obs;
 
   @override
   void onInit() {
@@ -118,18 +130,22 @@ class CYHLeakTestSerialController extends GetxController {
     final args = Get.arguments as Map<String, dynamic>?;
 
     if (args != null) {
-      workTypeController.text = args['workType'] ?? '';
       machineController.text = args['machine'] ?? '';
       if (args['running-list'] != null) {
         final list = args['running-list'] as List<LeakTestRunningModel>;
         models.assignAll(list);
       }
 
+      workType.value = WorkTab.Master;
+      if (args['workType'] == 'Production') {
+        workType.value = WorkTab.Production;
+      }
+
       if (models.isNotEmpty) {
         selectedModel.value = models[0];
       }
 
-      if (workTypeController.text == 'Production') {
+      if (workType.value == WorkTab.Production) {
         isModelReadOnly.value = true;
       } else {
         isModelReadOnly.value = false;
@@ -139,6 +155,8 @@ class CYHLeakTestSerialController extends GetxController {
 
   Future<void> getGSCount() async {
     isLoading.value = true;
+    EasyLoading.show(status: 'Loading...', maskType: EasyLoadingMaskType.black);
+
     try {
       final count = await service.fetchGSCount(
           modelCd: selectedModel.value?.modelCd,
@@ -149,6 +167,7 @@ class CYHLeakTestSerialController extends GetxController {
       // selectedWorkType.value = null;
     } finally {
       isLoading.value = false;
+      EasyLoading.dismiss();
     }
   }
 
@@ -167,17 +186,18 @@ class CYHLeakTestSerialController extends GetxController {
 
       final now = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
       final model = LeakTestModel(
-        mappedPlanId: selectedModel.value?.id ?? '',
+        mappedPlanId: selectedModel.value?.id ?? 0,
         machineNo: machineController.text,
         workType: workTypeController.text,
         modelCd: selectedModel.value?.modelCd ?? '',
         serialNo: selectedMCDate.value,
         gsNo: gsController.text,
+        caNo: selectedCANo.value,
+        caDate: selectedCADate.value,
+        moldNo: selectedmoldCtrls.value,
         scanDate: now,
         createdBy: createdBy,
-        castingDate: '',
-        moldNo: '',
-        plantId: '',
+        plantId: 0,
         lineCd: '',
         ngId: '',
         updatedBy: createdBy,
@@ -185,14 +205,23 @@ class CYHLeakTestSerialController extends GetxController {
 
       final res = await service.insertLeakTest(model);
 
-      if (res['result'] == true &&
-          (res['data'] as Map<String, dynamic>).isEmpty) {
+  print('result-> ${res['result']}');
+    print('type-> ${res['type']}');
+
+      if (res['result'] == true && res['type'] == 'OK') {
         EasyLoading.showSuccess('บันทึกสำเร็จ',
             duration: const Duration(seconds: 1), dismissOnTap: false);
 
         await Future.delayed(const Duration(seconds: 1));
-        resetForm();
-        Get.offAllNamed(AppRoutes.cyhLeakTest);
+        // resetForm();
+        // Get.offAllNamed(AppRoutes.cyhLeakTest);
+        Get.toNamed(AppRoutes.cyhLeakTestOK, arguments: {
+          'ng-result': res['data'],
+          'plant-result': selectedModel.value
+          // 'workType': selectedWorkType.value,
+          // 'machine': machineController.text,
+          // 'running-list': r.data
+        });
       } else if (res['result'] == true &&
           (res['data'] as Map<String, dynamic>).isNotEmpty) {
         EasyLoading.showSuccess('บันทึกสำเร็จ',
@@ -201,7 +230,7 @@ class CYHLeakTestSerialController extends GetxController {
         await Future.delayed(const Duration(seconds: 1));
         Get.toNamed(AppRoutes.cyhLeakTestNG, arguments: {
           'ng-result': res['data'],
-          'plant-result': selectedModel
+          'plant-result': selectedModel.value
           // 'workType': selectedWorkType.value,
           // 'machine': machineController.text,
           // 'running-list': r.data
@@ -217,6 +246,8 @@ class CYHLeakTestSerialController extends GetxController {
       Get.snackbar('Error', e.toString());
     }
   }
+
+  void clearMold() => moldCtrls.forEach((c) => c.clear());
 
   void resetForm() {
     workTypeController.clear();

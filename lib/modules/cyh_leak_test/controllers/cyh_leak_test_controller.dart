@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:kmt/model/leak_no_plan_model.dart';
 import 'package:kmt/model/leak_test_running_model.dart';
 import 'package:kmt/model/machine_model.dart';
+import 'package:kmt/modules/cyh_leak_test/widgets/tab_selector.dart';
 import 'package:kmt/routes/app_routes.dart';
 import '../services/cyh_leak_test_service.dart';
 
@@ -15,10 +16,12 @@ class CYHLeakTestController extends GetxController {
 
   final isLoading = false.obs;
 
-  final workTypeItems = <String>[].obs;
-  final selectedWorkType = RxnString();
+  // final workTypeItems = <String>[].obs;
+  final selectedWorkType = RxnString("Production");
   final machineController = TextEditingController();
   final isEnabled = false.obs;
+  final workType = WorkTab.Production.obs;
+
 
   @override
   void onInit() {
@@ -30,9 +33,9 @@ class CYHLeakTestController extends GetxController {
     final box = GetStorage();
     final line = box.read('selectedLine')?.toString();
     print('selectedLine = $line');
-    await Future.wait([
-      loadWorkType(),
-    ]);
+    // await Future.wait([
+    //   loadWorkType(),
+    // ]);
   }
 
   void checkIsEnabledButton() {
@@ -40,21 +43,6 @@ class CYHLeakTestController extends GetxController {
         machineController.text.trim().isNotEmpty;
   }
 
-  Future<void> loadWorkType() async {
-    isLoading.value = true;
-    try {
-      final list = await service.fetchWorkType();
-      workTypeItems.value = list;
-      final hasProduction = workTypeItems.contains('Production');
-      if (hasProduction) {
-        selectedWorkType.value = 'Production';
-      }
-    } catch (_) {
-      selectedWorkType.value = null;
-    } finally {
-      isLoading.value = false;
-    }
-  }
 
   void openFilterSheet() {
     Get.bottomSheet(

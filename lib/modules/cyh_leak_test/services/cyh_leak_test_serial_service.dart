@@ -80,6 +80,7 @@ class CYHLeakTestSerialService extends GetxService {
         'result': res['result'] ?? false,
         'message': res['message'] ?? '',
         'data': res['data'],
+        'type': res['type']
       };
     } catch (e) {
       return {'result': false, 'message': e.toString(), 'data': null};

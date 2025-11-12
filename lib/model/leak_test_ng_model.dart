@@ -1,62 +1,74 @@
 import 'package:json_annotation/json_annotation.dart';
 
 part 'leak_test_ng_model.g.dart';
-
 @JsonSerializable()
 class LeakTestNgModel {
   @JsonKey(name: 'Id')
-  final String id;
+  final String? id;
 
   @JsonKey(name: 'Machine_No')
-  final String machineNo;
+  final String? machineNo;
 
   @JsonKey(name: 'Model_CD')
-  final String modelCd;
+  final String? modelCd;
 
   @JsonKey(name: 'Serial')
-  final String serial;
+  final String? serial;
 
   @JsonKey(name: 'Result')
-  final String result;
+  final String? result;
 
   @JsonKey(name: 'NG_P1')
-  final String ngP1;
+  final String? ngP1;
 
   @JsonKey(name: 'NG_P1_color')
-  final String ngP1Color;
+  final String? ngP1Color;
 
   @JsonKey(name: 'NG_P2')
-  final String ngP2;
+  final String? ngP2;
 
   @JsonKey(name: 'NG_P2_color')
-  final String ngP2Color;
+  final String? ngP2Color;
 
   @JsonKey(name: 'NG_P3')
-  final String ngP3;
+  final String? ngP3;
 
   @JsonKey(name: 'NG_P3_color')
-  final String ngP3Color;
+  final String? ngP3Color;
 
   @JsonKey(name: 'NG_TB')
-  final String ngTb;
+  final String? ngTb;
 
   @JsonKey(name: 'NG_TB_color')
-  final String ngTbColor;
+  final String? ngTbColor;
 
-  LeakTestNgModel({
-    required this.id,
-    required this.machineNo,
-    required this.modelCd,
-    required this.serial,
-    required this.result,
-    required this.ngP1,
-    required this.ngP1Color,
-    required this.ngP2,
-    required this.ngP2Color,
-    required this.ngP3,
-    required this.ngP3Color,
-    required this.ngTb,
-    required this.ngTbColor,
+  @JsonKey(name: 'CA_No')
+  final String? caNo;
+
+  @JsonKey(name: 'CA_Date')
+  final String? caDate;
+
+  @JsonKey(name: 'Mold_No')
+  final String? moldNo;
+
+  // ✅ Constructor ไม่ต้อง required
+  const LeakTestNgModel({
+    this.id,
+    this.machineNo,
+    this.modelCd,
+    this.serial,
+    this.result,
+    this.ngP1,
+    this.ngP1Color,
+    this.ngP2,
+    this.ngP2Color,
+    this.ngP3,
+    this.ngP3Color,
+    this.ngTb,
+    this.ngTbColor,
+    this.caNo,
+    this.caDate,
+    this.moldNo,
   });
 
   factory LeakTestNgModel.fromJson(Map<String, dynamic> json) =>
@@ -64,3 +76,4 @@ class LeakTestNgModel {
 
   Map<String, dynamic> toJson() => _$LeakTestNgModelToJson(this);
 }
+
