@@ -38,30 +38,9 @@ class CYHLeakTestNGController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _bootstrap();
+    initFormFromArgs(); 
   }
-
-  Future<void> _bootstrap() async {
-    final box = GetStorage();
-    final line = box.read('selectedLine')?.toString();
-    await Future.wait([
-      // loadMachines(lineCd: line),
-    ]);
-  }
-
-  void openFilterSheet() {
-    Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.all(16),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        child: const Text('Filter (กำหนดเองภายหลัง)'),
-      ),
-    );
-  }
-
+  
   Future<void> scanQrForMachine(String code) async {
     if (code.trim().isEmpty) {
       Get.snackbar('Invalid', 'QR ว่าง');
@@ -70,7 +49,6 @@ class CYHLeakTestNGController extends GetxController {
 
     String norm(String s) => s.replaceAll(RegExp(r'\s+'), '').toLowerCase();
     final target = norm(code);
-
   }
 
   void initFormFromArgs() {
@@ -180,39 +158,6 @@ class CYHLeakTestNGController extends GetxController {
 
     List<TextEditingController> target = moldCtrls;
     int cellCount = 12;
-    // if (mode == OcrMode.castingDate6) {
-    //   target = castingDateCtrls;
-    //   cellCount = 6;
-    // } else {
-    //   target = moldCtrls;
-    //   cellCount = 12;
-    // }
-    // switch (mode) {
-    //   case OcrMode.castingDate6:
-    //     target = castingDateCtrls;
-    //     cellCount = 6;
-    //     break;
-    //   case OcrMode.mcDate18:
-    //     // target = noCtrls;
-    //     cellCount = 18;
-    //     break;
-    //   case OcrMode.no2:
-    //     // target = noCtrls;
-    //     cellCount = 2;
-    //     break;
-    //   case OcrMode.serial11:
-    //     // target = serialCtrls;
-    //     cellCount = 11;
-    //     break;
-    //   case OcrMode.mold4:
-    //     target = moldCtrls;
-    //     cellCount = 4;
-    //     break;
-    //   case OcrMode.machine5:
-    //     // target = machineCtrls;
-    //     cellCount = 5;
-    //     break;
-    // }
 
     final chars = result.toUpperCase().characters.toList();
     for (var i = 0; i < cellCount; i++) {

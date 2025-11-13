@@ -35,21 +35,9 @@ class CYHLeakTestSerialController extends GetxController {
   final caDateCtrls = List.generate(6, (_) => TextEditingController());
   final selectedCADate = ''.obs;
 
+  final gsCheck = '0'.obs;
   final workType = WorkTab.Production.obs;
-
-  @override
-  void onInit() {
-    super.onInit();
-    _bootstrap();
-  }
-
-  Future<void> _bootstrap() async {
-    final box = GetStorage();
-    final line = box.read('selectedLine')?.toString();
-    await Future.wait([
-      // loadMachines(lineCd: line),
-    ]);
-  }
+  late Worker _mcDateWorker;
 
   Future<void> scanAndFill(OcrMode mode) async {
     print('scan in ');
@@ -80,56 +68,6 @@ class CYHLeakTestSerialController extends GetxController {
     print("ToTal value => ${selectedMCDate.value}");
   }
 
-  void openFilterSheet() {
-    Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.all(16),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        child: const Text('Filter (กำหนดเองภายหลัง)'),
-      ),
-    );
-  }
-
-  Future<void> scanQrForMachine(String code) async {
-    if (code.trim().isEmpty) {
-      Get.snackbar('Invalid', 'QR ว่าง');
-      return;
-    }
-
-    String norm(String s) => s.replaceAll(RegExp(r'\s+'), '').toLowerCase();
-    final target = norm(code);
-
-    // if (machines.isEmpty) {
-    //   final line = Get.find<GetStorage>().read('selectedLine')?.toString();
-    //   // await loadMachines(lineCd: line);
-    // }
-
-    // final found = machines.firstWhereOrNull(
-    //   (m) => norm(m.machineNo) == target,
-    // );
-
-    // if (found != null) {
-    //   selectedMachineNo.value = found.machineNo;
-    //   Get.snackbar('Selected', 'Machine: ${found.machineNo}', snackPosition: SnackPosition.BOTTOM);
-    // } else {
-    //   final fuzzy = machines.firstWhereOrNull(
-    //     (m) => norm(m.machineNo).contains(target),
-    //   );
-
-    //   if (fuzzy != null) {
-    //     selectedMachineNo.value = fuzzy.machineNo;
-    //     Get.snackbar('Selected (≈)', 'Machine: ${fuzzy.machineNo}',
-    //         snackPosition: SnackPosition.BOTTOM);
-    //   } else {
-    //     Get.snackbar('Not found', 'ไม่พบเครื่องที่ตรงกับ: $code',
-    //         snackPosition: SnackPosition.BOTTOM);
-    //   }
-    // }
-  }
-
   void initFormFromArgs() {
     final args = Get.arguments as Map<String, dynamic>?;
 
@@ -157,6 +95,19 @@ class CYHLeakTestSerialController extends GetxController {
     }
   }
 
+  void checkGetGSCount() {
+    _mcDateWorker = debounce<String>(
+      selectedMCDate,
+      (_) async {
+        if (selectedMCDate.isNotEmpty) {
+          await getGSCount();
+        }
+        checkIsEnabledButton();
+      },
+      time: const Duration(milliseconds: 400),
+    );
+  }
+
   Future<void> getGSCount() async {
     isLoading.value = true;
     EasyLoading.show(status: 'Loading...', maskType: EasyLoadingMaskType.black);
@@ -166,9 +117,9 @@ class CYHLeakTestSerialController extends GetxController {
           modelCd: selectedModel.value?.modelCd,
           serialNo: selectedMCDate.value);
       gsController.text = count;
+      gsCheck.value = count;
     } catch (_) {
       print("catch getGSCount ${_}");
-      // selectedWorkType.value = null;
     } finally {
       isLoading.value = false;
       EasyLoading.dismiss();
@@ -176,13 +127,16 @@ class CYHLeakTestSerialController extends GetxController {
   }
 
   void checkIsEnabledButton() {
-    isEnabled.value = selectedMCDate.value.trim().isNotEmpty;// mcDateCtrls.isNotEmpty;
-    print("selectedMCDate => ${ selectedMCDate.value.trim()}");
+    isEnabled.value = selectedMCDate.value.trim().isNotEmpty;
+    print("selectedMCDate => ${selectedMCDate.value.trim()}");
     print("isElable => ${isEnabled}");
-
   }
 
   void confirmForm() async {
+    if (selectedMCDate.value.trim().isEmpty) {
+      Get.snackbar('Warning', 'กรุณากรอก M/C Date ก่อน');
+      return;
+    }
     try {
       EasyLoading.show(
           status: 'กำลังบันทึก...', maskType: EasyLoadingMaskType.black);
@@ -198,7 +152,7 @@ class CYHLeakTestSerialController extends GetxController {
         workType: workTypeController.text,
         modelCd: selectedModel.value?.modelCd ?? '',
         serialNo: selectedMCDate.value,
-        gsNo: gsController.text,
+        gsNo: gsController.text.isEmpty ? '0' : gsController.text,
         caNo: selectedCANo.value,
         caDate: selectedCADate.value,
         moldNo: selectedmoldCtrls.value,
@@ -212,22 +166,14 @@ class CYHLeakTestSerialController extends GetxController {
 
       final res = await service.insertLeakTest(model);
 
-      print('result-> ${res['result']}');
-      print('type-> ${res['type']}');
-
       if (res['result'] == true && res['type'] == 'OK') {
         EasyLoading.showSuccess('บันทึกสำเร็จ',
             duration: const Duration(seconds: 1), dismissOnTap: false);
 
         await Future.delayed(const Duration(seconds: 1));
-        // resetForm();
-        // Get.offAllNamed(AppRoutes.cyhLeakTest);
         Get.toNamed(AppRoutes.cyhLeakTestOK, arguments: {
           'ng-result': res['data'],
           'plant-result': selectedModel.value
-          // 'workType': selectedWorkType.value,
-          // 'machine': machineController.text,
-          // 'running-list': r.data
         });
       } else if (res['result'] == true &&
           (res['data'] as Map<String, dynamic>).isNotEmpty) {
@@ -238,15 +184,11 @@ class CYHLeakTestSerialController extends GetxController {
         Get.toNamed(AppRoutes.cyhLeakTestNG, arguments: {
           'ng-result': res['data'],
           'plant-result': selectedModel.value
-          // 'workType': selectedWorkType.value,
-          // 'machine': machineController.text,
-          // 'running-list': r.data
         });
       } else {
         EasyLoading.dismiss();
         EasyLoading.showInfo(res['message'] ?? 'บันทึกล้มเหลว',
             duration: const Duration(seconds: 2), dismissOnTap: false);
-        // Get.snackbar('Error', res['message'] ?? 'บันทึกล้มเหลว');
       }
     } catch (e) {
       EasyLoading.dismiss();
@@ -273,5 +215,11 @@ class CYHLeakTestSerialController extends GetxController {
     selectedModel.value = null;
     mcDateCtrls.clear();
     gsController.clear();
+  }
+
+  @override
+  void onClose() {
+    _mcDateWorker.dispose();
+    super.onClose();
   }
 }

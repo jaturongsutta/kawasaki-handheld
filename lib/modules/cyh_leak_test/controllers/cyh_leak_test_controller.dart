@@ -22,39 +22,9 @@ class CYHLeakTestController extends GetxController {
   final isEnabled = false.obs;
   final workType = WorkTab.Production.obs;
 
-
-  @override
-  void onInit() {
-    super.onInit();
-    _bootstrap();
-  }
-
-  Future<void> _bootstrap() async {
-    final box = GetStorage();
-    final line = box.read('selectedLine')?.toString();
-    print('selectedLine = $line');
-    // await Future.wait([
-    //   loadWorkType(),
-    // ]);
-  }
-
   void checkIsEnabledButton() {
     isEnabled.value = (selectedWorkType.value ?? '').isNotEmpty &&
         machineController.text.trim().isNotEmpty;
-  }
-
-
-  void openFilterSheet() {
-    Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.all(16),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        child: const Text('Filter (กำหนดเองภายหลัง)'),
-      ),
-    );
   }
 
   Future<void> scanQrForMachine(String code) async {
@@ -65,6 +35,9 @@ class CYHLeakTestController extends GetxController {
 
     String norm(String s) => s.replaceAll(RegExp(r'\s+'), '').toLowerCase();
     final target = norm(code);
+
+    machineController.text = target;
+    checkIsEnabledButton();
   }
 
   void goToSerial() async {

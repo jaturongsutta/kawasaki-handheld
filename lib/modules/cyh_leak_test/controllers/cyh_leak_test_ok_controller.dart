@@ -42,30 +42,7 @@ class CYHLeakTestOKController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _bootstrap();
-  }
-
-  Future<void> _bootstrap() async {
-    final box = GetStorage();
-    final line = box.read('selectedLine')?.toString();
-    await Future.wait([
-      // loadMachines(lineCd: line),
-    ]);
-  }
-
-  void clearMCDate() => mcDateCtrls.forEach((c) => c.clear());
-
-  void openFilterSheet() {
-    Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.all(16),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        child: const Text('Filter (กำหนดเองภายหลัง)'),
-      ),
-    );
+    initFormFromArgs();
   }
 
   Future<void> scanQrForMachine(String code) async {
@@ -196,7 +173,7 @@ class CYHLeakTestOKController extends GetxController {
     final result = r.replaceAll(RegExp(r'\s+'), '');
     List<TextEditingController> target = moldCtrls;
     int cellCount = 12;
-   
+
     final chars = result.toUpperCase().characters.toList();
     for (var i = 0; i < cellCount; i++) {
       target[i].text = i < chars.length ? chars[i] : '';
@@ -206,6 +183,7 @@ class CYHLeakTestOKController extends GetxController {
   void clearCANo() => caNoCtrls.forEach((c) => c.clear());
   void clearCastingDate() => castingDateCtrls.forEach((c) => c.clear());
   void clearMold() => moldCtrls.forEach((c) => c.clear());
+  void clearMCDate() => mcDateCtrls.forEach((c) => c.clear());
 
   void resetForm() {
     workTypeController.clear();
@@ -213,5 +191,7 @@ class CYHLeakTestOKController extends GetxController {
     plantResultModel.value = null;
     mcDateCtrls.clear();
     gsController.clear();
+    caNoCtrls.clear();
+    caDateCtrls.clear();
   }
 }

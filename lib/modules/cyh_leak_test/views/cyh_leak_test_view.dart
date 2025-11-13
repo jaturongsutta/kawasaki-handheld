@@ -13,19 +13,8 @@ class CYHLeakTestView extends GetView<CYHLeakTestController> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final labelStyle = TextStyle(
-      color: Colors.blue[700],
-      fontSize: 16,
-      fontWeight: FontWeight.w600,
-    );
-
-    // ระยะ padding ด้านล่างเมื่อคีย์บอร์ดโผล่ขึ้นมา (กันล้น)
-    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
-
     return Scaffold(
       backgroundColor: const Color(0xFFF4F5FB),
-      // เปิดให้เลื่อนอัตโนมัติเวลาเปิดคีย์บอร์ด
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('Leak Test',
@@ -35,10 +24,7 @@ class CYHLeakTestView extends GetView<CYHLeakTestController> {
       body: Obx(() {
         return KeyenceScanner(
           onBarcodeScanned: (String scannedCode) {
-            if (scannedCode.isNotEmpty) {
-              controller.machineController.text = scannedCode;
-              controller.checkIsEnabledButton();
-            }
+            controller.scanQrForMachine(scannedCode);
           },
           child: SafeArea(
             child: Stack(
