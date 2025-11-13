@@ -76,33 +76,6 @@ class CYHLeakTestOKController extends GetxController {
 
     String norm(String s) => s.replaceAll(RegExp(r'\s+'), '').toLowerCase();
     final target = norm(code);
-
-    // if (machines.isEmpty) {
-    //   final line = Get.find<GetStorage>().read('selectedLine')?.toString();
-    //   // await loadMachines(lineCd: line);
-    // }
-
-    // final found = machines.firstWhereOrNull(
-    //   (m) => norm(m.machineNo) == target,
-    // );
-
-    // if (found != null) {
-    //   selectedMachineNo.value = found.machineNo;
-    //   Get.snackbar('Selected', 'Machine: ${found.machineNo}', snackPosition: SnackPosition.BOTTOM);
-    // } else {
-    //   final fuzzy = machines.firstWhereOrNull(
-    //     (m) => norm(m.machineNo).contains(target),
-    //   );
-
-    //   if (fuzzy != null) {
-    //     selectedMachineNo.value = fuzzy.machineNo;
-    //     Get.snackbar('Selected (≈)', 'Machine: ${fuzzy.machineNo}',
-    //         snackPosition: SnackPosition.BOTTOM);
-    //   } else {
-    //     Get.snackbar('Not found', 'ไม่พบเครื่องที่ตรงกับ: $code',
-    //         snackPosition: SnackPosition.BOTTOM);
-    //   }
-    // }
   }
 
   void initFormFromArgs() {
@@ -119,43 +92,35 @@ class CYHLeakTestOKController extends GetxController {
       } else {
         print('❌ ng-result is not a Map, got: ${data.runtimeType}');
       }
+      selectedCANo.value = dataModel.value?.caNo ?? '';
+      selectedcastingDate.value = dataModel.value?.caDate ?? '';
+      selectedmoldCtrls.value = dataModel.value?.moldNo ?? '';
 
       final plant = args['plant-result'];
       plantResultModel.value = plant;
 
-      // workTypeController.text =
-      // machineController.text = args['machine'] ?? '';
-      // if (args['running-list'] != null) {
-      //   final list = args['running-list'] as List<LeakTestRunningModel>;
-      //   models.assignAll(list);
-      // }
+      initTextField(dataModel.value?.caNo ?? '', caNoCtrls);
+      initTextField(dataModel.value?.caDate ?? '', castingDateCtrls);
+      initTextField(dataModel.value?.moldNo ?? '', moldCtrls);
 
-      // if (models.isNotEmpty) {
-      //   selectedModel.value = models[0];
-      // }
-
-      // if (workTypeController.text == 'Production') {
-      //   isModelReadOnly.value = true;
-      // } else {
-      //   isModelReadOnly.value = false;
-      // }
+      checkIsEnabledButton();
     }
   }
 
-  // Future<void> getGSCount() async {
-  //   isLoading.value = true;
-  //   try {
-  //     final count = await service.fetchGSCount(
-  //         modelCd: selectedModel.value?.modelCd,
-  //         serialNo: selectedMCDate.value);
-  //     gsController.text = count;
-  //   } catch (_) {
-  //     print("catch getGSCount ${_}");
-  //     // selectedWorkType.value = null;
-  //   } finally {
-  //     isLoading.value = false;
-  //   }
-  // }
+  void initTextField(String text, List<TextEditingController> widget) {
+    final len = text.length;
+    final max = widget.length;
+
+    final limit = len < max ? len : max; // min(len, max)
+
+    for (var i = 0; i < limit; i++) {
+      widget[i].text = text[i];
+    }
+
+    for (var i = limit; i < max; i++) {
+      widget[i].clear();
+    }
+  }
 
   Color hexToColor(String hex) {
     // ลบ # ถ้ามี
@@ -171,8 +136,9 @@ class CYHLeakTestOKController extends GetxController {
   }
 
   void checkIsEnabledButton() {
-    isEnabled.value =
-        selectedmoldCtrls.isNotEmpty && selectedcastingDate.isNotEmpty;
+    isEnabled.value = selectedCANo.trim().isNotEmpty &&
+        selectedmoldCtrls.trim().isNotEmpty &&
+        selectedcastingDate.trim().isNotEmpty;
   }
 
   void confirmForm() async {
@@ -224,52 +190,20 @@ class CYHLeakTestOKController extends GetxController {
   }
 
   Future<void> scanAndFill(OcrMode mode) async {
-    final result = await Get.to<String>(() => OcrView(mode: mode));
-    if (result == null || result.isEmpty) return;
+    final r = await Get.to<String>(() => OcrView(mode: mode));
+    if (r == null || r.isEmpty) return;
 
+    final result = r.replaceAll(RegExp(r'\s+'), '');
     List<TextEditingController> target = moldCtrls;
     int cellCount = 12;
-    // if (mode == OcrMode.mold12) {
-    //   target = moldCtrls;
-    //   cellCount = 12;
-    // }
-    // else {
-    //   target = moldCtrls;
-    //   cellCount = 12;
-    // }
-    // switch (mode) {
-    //   case OcrMode.castingDate6:
-    //     target = castingDateCtrls;
-    //     cellCount = 6;
-    //     break;
-    //   case OcrMode.mcDate18:
-    //     // target = noCtrls;
-    //     cellCount = 18;
-    //     break;
-    //   case OcrMode.no2:
-    //     // target = noCtrls;
-    //     cellCount = 2;
-    //     break;
-    //   case OcrMode.serial11:
-    //     // target = serialCtrls;
-    //     cellCount = 11;
-    //     break;
-    //   case OcrMode.mold4:
-    //     target = moldCtrls;
-    //     cellCount = 4;
-    //     break;
-    //   case OcrMode.machine5:
-    //     // target = machineCtrls;
-    //     cellCount = 5;
-    //     break;
-    // }
-
+   
     final chars = result.toUpperCase().characters.toList();
     for (var i = 0; i < cellCount; i++) {
       target[i].text = i < chars.length ? chars[i] : '';
     }
   }
 
+  void clearCANo() => caNoCtrls.forEach((c) => c.clear());
   void clearCastingDate() => castingDateCtrls.forEach((c) => c.clear());
   void clearMold() => moldCtrls.forEach((c) => c.clear());
 

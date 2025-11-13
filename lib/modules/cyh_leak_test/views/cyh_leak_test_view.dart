@@ -11,52 +11,6 @@ import '../controllers/cyh_leak_test_controller.dart';
 class CYHLeakTestView extends GetView<CYHLeakTestController> {
   CYHLeakTestView({super.key});
 
-  // NOTE: ในโปรดักชัน แนะนำย้าย controllers ไปไว้ใน Controller แล้ว dispose ใน onClose()
-  final noCtrls = List.generate(2, (_) => TextEditingController());
-  final serialCtrls = List.generate(11, (_) => TextEditingController());
-  final moldCtrls = List.generate(4, (_) => TextEditingController());
-  final machineCtrls = List.generate(5, (_) => TextEditingController());
-
-  // Future<void> scanAndFill(OcrMode mode) async {
-  //   final result = await Get.to<String>(() => OcrView(mode: mode));
-  //   if (result == null || result.isEmpty) return;
-
-  //   List<TextEditingController> target;
-  //   int cellCount;
-  //   switch (mode) {
-  //     case OcrMode.mcDate18:
-  //       target = noCtrls;
-  //       cellCount = 18;
-  //       break;
-  //     case OcrMode.no2:
-  //       target = noCtrls;
-  //       cellCount = 2;
-  //       break;
-  //     case OcrMode.serial11:
-  //       target = serialCtrls;
-  //       cellCount = 11;
-  //       break;
-  //     case OcrMode.mold4:
-  //       target = moldCtrls;
-  //       cellCount = 4;
-  //       break;
-  //     case OcrMode.machine5:
-  //       target = machineCtrls;
-  //       cellCount = 5;
-  //       break;
-  //   }
-
-  //   final chars = result.toUpperCase().characters.toList();
-  //   for (var i = 0; i < cellCount; i++) {
-  //     target[i].text = i < chars.length ? chars[i] : '';
-  //   }
-  // }
-
-  void clearNo() => noCtrls.forEach((c) => c.clear());
-  void clearSerial() => serialCtrls.forEach((c) => c.clear());
-  void clearMold() => moldCtrls.forEach((c) => c.clear());
-  void clearMachine() => machineCtrls.forEach((c) => c.clear());
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -124,27 +78,6 @@ class CYHLeakTestView extends GetView<CYHLeakTestController> {
                               controller.checkIsEnabledButton()
                             },
                           ),
-
-                          //  DropdownButtonFormField<String>(
-                          //   isExpanded: true,
-                          //   value: controller.selectedMachineNo.value,
-                          //   items: controller.machines
-                          //       .map((m) => DropdownMenuItem<String>(
-                          //             value: m.machineNo,
-                          //             child: Text(m.machineNo),
-                          //           ))
-                          //       .toList(),
-                          //   onChanged: (val) =>
-                          //       controller.selectedMachineNo.value = val,
-                          //   decoration: InputDecoration(
-                          //     contentPadding: const EdgeInsets.symmetric(
-                          //         horizontal: 12, vertical: 10),
-                          //     border: OutlineInputBorder(
-                          //       borderRadius: BorderRadius.circular(8),
-                          //     ),
-                          //     isDense: true,
-                          //   ),
-                          // ),
                         ),
                         const SizedBox(height: 16),
                         SizedBox(

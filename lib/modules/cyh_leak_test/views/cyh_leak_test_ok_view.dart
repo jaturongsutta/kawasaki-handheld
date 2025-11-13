@@ -7,14 +7,14 @@ import 'package:kmt/modules/cyh_leak_test/views/ocr_view.dart';
 import 'package:kmt/widgets/KeyenceScanner.dart';
 
 class CYHLeakTestOKView extends GetView<CYHLeakTestOKController> {
-  CYHLeakTestOKView({super.key});
-
-  // NOTE: ในโปรดักชัน แนะนำย้าย controllers ไปไว้ใน Controller แล้ว dispose ใน onClose()
+  CYHLeakTestOKView({super.key}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.initFormFromArgs();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    controller.initFormFromArgs();
-
     final theme = Theme.of(context);
     const labelStyle = TextStyle(
       fontSize: 16,
@@ -128,7 +128,7 @@ class CYHLeakTestOKView extends GetView<CYHLeakTestOKController> {
                                   _OtpBoxesRow(
                                     controllers:
                                         controller.caNoCtrls.sublist(0, 3),
-                                    allowedPattern: r'[A-Za-z0-9#-]',
+                                    allowedPattern: r'[0-9]',
                                     onChanged: (value) {
                                       print('changed yes: $value');
                                       if (value.isNotEmpty) {
@@ -146,7 +146,11 @@ class CYHLeakTestOKView extends GetView<CYHLeakTestOKController> {
                                   ),
                                 ],
                               ),
-                              onClear: controller.clearCastingDate,
+                              onClear: () {
+                                controller.clearCANo();
+                                controller.selectedCANo.value = '';
+                                controller.checkIsEnabledButton();
+                              },
                               labelStyle: labelStyle,
                             ),
                             _rowCardSimple(
@@ -158,6 +162,7 @@ class CYHLeakTestOKView extends GetView<CYHLeakTestOKController> {
                                     controllers: controller.castingDateCtrls
                                         .sublist(0, 6),
                                     allowedPattern: r'[A-Za-z0-9#-]',
+                                    hyphenIndex: 2,
                                     onChanged: (value) {
                                       print('changed yes: $value');
                                       if (value.isNotEmpty) {
@@ -177,7 +182,11 @@ class CYHLeakTestOKView extends GetView<CYHLeakTestOKController> {
                                   ),
                                 ],
                               ),
-                              onClear: controller.clearCastingDate,
+                              onClear: () {
+                                controller.clearCastingDate();
+                                controller.selectedcastingDate.value = '';
+                                controller.checkIsEnabledButton();
+                              },
                               labelStyle: labelStyle,
                             ),
                             _rowCard(
@@ -210,7 +219,11 @@ class CYHLeakTestOKView extends GetView<CYHLeakTestOKController> {
                               ),
                               onScan: () =>
                                   controller.scanAndFill(OcrMode.mold12),
-                              onClear: controller.clearMold,
+                              onClear: () {
+                                controller.clearMold();
+                                controller.selectedmoldCtrls.value = '';
+                                controller.checkIsEnabledButton();
+                              },
                               labelStyle: labelStyle,
                             ),
                             const SizedBox(height: 16),
@@ -412,12 +425,9 @@ Widget _rowCardSimple({
 
 class _OtpBoxesRow extends StatefulWidget {
   final List<TextEditingController> controllers;
-  final String allowedPattern;
-
-  /// ยิงทุกครั้งที่มีการเปลี่ยนค่า (รวมทุกช่องเป็นสตริงแล้ว)
+  final String allowedPattern; // เช่น r'[0-9]' หรือ r'[A-Za-z0-9]'
+  final int hyphenIndex; // ช่องที่จะเป็นขีด (index เริ่มที่ 0)
   final ValueChanged<String>? onChanged;
-
-  /// ยิงตอนกด Done ที่ช่องสุดท้าย หรือกรอกครบทุกช่อง
   final ValueChanged<String>? onSubmitted;
 
   const _OtpBoxesRow({
@@ -425,6 +435,7 @@ class _OtpBoxesRow extends StatefulWidget {
     required this.allowedPattern,
     this.onChanged,
     this.onSubmitted,
+    this.hyphenIndex = -1, // ค่าเริ่ม: ช่องที่ 3 เป็นขีด
   });
 
   @override
@@ -433,31 +444,59 @@ class _OtpBoxesRow extends StatefulWidget {
 
 class _OtpBoxesRowState extends State<_OtpBoxesRow> {
   late final List<FocusNode> _nodes;
+  late final List<String> _lastValues;
+
+  bool _isHyphen(int i) => i == widget.hyphenIndex;
 
   @override
   void initState() {
     super.initState();
     _nodes = List.generate(widget.controllers.length, (_) => FocusNode());
+    _lastValues = List.generate(widget.controllers.length, (_) => '');
+
+    // เซ็ต '-' ให้ช่องขีดเสมอ
+    if (widget.hyphenIndex >= 0 &&
+        widget.hyphenIndex < widget.controllers.length) {
+      widget.controllers[widget.hyphenIndex].text = '-';
+      _lastValues[widget.hyphenIndex] = '-';
+    }
   }
 
   @override
   void dispose() {
-    for (final n in _nodes) {
-      n.dispose();
-    }
+    for (final n in _nodes) n.dispose();
     super.dispose();
   }
 
+  int _nextEditable(int i) {
+    var n = i + 1;
+    if (n < _nodes.length && _isHyphen(n)) n++; // ข้ามช่องขีด
+    return n;
+  }
+
+  int _prevEditable(int i) {
+    var p = i - 1;
+    if (p >= 0 && _isHyphen(p)) p--; // ข้ามช่องขีด
+    return p;
+  }
+
   void _moveToNext(int i) {
-    if (i + 1 < _nodes.length) {
-      _nodes[i + 1].requestFocus();
+    final n = _nextEditable(i);
+    if (n < _nodes.length) {
+      _nodes[n].requestFocus();
     } else {
       _nodes[i].unfocus();
     }
   }
 
+  void _moveToPrev(int i) {
+    final p = _prevEditable(i);
+    if (p >= 0) _nodes[p].requestFocus();
+  }
+
   bool _allFilled() =>
       widget.controllers.every((c) => c.text.trim().isNotEmpty);
+
   String _joined() => widget.controllers.map((c) => c.text).join();
 
   @override
@@ -469,19 +508,40 @@ class _OtpBoxesRowState extends State<_OtpBoxesRow> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxW = constraints.maxWidth;
-        final boxSide = ((maxW) - (spacing * 5)) / 6; // 6 ช่อง/แถว
+        final boxSide =
+            ((maxW) - (spacing * 5)) / 6; // 6 ช่อง/แถว (ปรับตามจำนวนจริงได้)
         final side = boxSide.clamp(32.0, 56.0);
 
         return SizedBox(
-          width: maxW, // กว้างเต็ม เพื่อให้ alignment มีผล
+          width: maxW,
           child: Wrap(
-            alignment: WrapAlignment.start, // ชิดขวา
+            alignment: WrapAlignment.start,
             spacing: spacing,
             runSpacing: spacing,
             children: List.generate(widget.controllers.length, (i) {
               final c = widget.controllers[i];
               final isLast = i == lastIndex;
 
+              // ----- ช่องขีด แสดงอย่างเดียว -----
+              if (_isHyphen(i)) {
+                return SizedBox(
+                  width: side,
+                  height: side,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      border: Border.all(color: Colors.grey.shade400),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Center(
+                      child: Text('-',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                );
+              }
+
+              // ----- ช่องปกติ -----
               return SizedBox(
                 width: side,
                 height: side,
@@ -493,14 +553,34 @@ class _OtpBoxesRowState extends State<_OtpBoxesRow> {
                       isLast ? TextInputAction.done : TextInputAction.next,
                   textCapitalization: TextCapitalization.characters,
                   keyboardType: TextInputType.visiblePassword,
-                  onTap: () => c.selection =
-                      TextSelection(baseOffset: 0, extentOffset: c.text.length),
+                  onTap: () => c.selection = TextSelection(
+                    baseOffset: 0,
+                    extentOffset: c.text.length,
+                  ),
                   inputFormatters: [
                     LengthLimitingTextInputFormatter(1),
                     FilteringTextInputFormatter.allow(regex),
                   ],
                   onChanged: (val) {
-                    // อัปเดตตัวอักษรให้เป็นตัวพิมพ์ใหญ่เสมอ
+                    final was = _lastValues[i];
+
+                    // ❶ เคสกดลบ (soft keyboard): เดิมมีตัว ตอนนี้ว่าง → ถอยไปช่องก่อนหน้าแล้วลบต่อ
+                    if (was.isNotEmpty && val.isEmpty) {
+                      final p = _prevEditable(i);
+                      if (p >= 0) {
+                        _nodes[p].requestFocus();
+                        final prevCtrl = widget.controllers[p];
+                        if (prevCtrl.text.isNotEmpty) {
+                          prevCtrl.clear();
+                          _lastValues[p] = '';
+                        }
+                        widget.onChanged?.call(_joined());
+                        _lastValues[i] = val;
+                        return;
+                      }
+                    }
+
+                    // ❷ พิมพ์ตัวใหม่ → uppercase + ไปช่องถัดไป
                     if (val.isNotEmpty) {
                       final upper = val.toUpperCase();
                       if (upper != val) {
@@ -513,18 +593,13 @@ class _OtpBoxesRowState extends State<_OtpBoxesRow> {
                       _moveToNext(i);
                     }
 
-                    // ยิง onChanged พร้อมค่าสตริงที่รวมทุกช่อง
                     widget.onChanged?.call(_joined());
+                    if (_allFilled()) widget.onSubmitted?.call(_joined());
 
-                    // ถ้ากรอกครบทุกช่องแล้ว ยิง onSubmitted ด้วย
-                    if (_allFilled()) {
-                      widget.onSubmitted?.call(_joined());
-                    }
+                    _lastValues[i] = c.text; // เก็บค่าไว้เทียบครั้งถัดไป
                   },
                   onFieldSubmitted: (_) {
-                    if (isLast) {
-                      widget.onSubmitted?.call(_joined());
-                    }
+                    if (isLast) widget.onSubmitted?.call(_joined());
                   },
                   decoration: InputDecoration(
                     contentPadding: EdgeInsets.zero,

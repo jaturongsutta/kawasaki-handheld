@@ -53,14 +53,23 @@ class CYHLeakTestSerialController extends GetxController {
 
   Future<void> scanAndFill(OcrMode mode) async {
     print('scan in ');
-    final result = await Get.to<String>(() => OcrView(mode: mode));
-    if (result == null || result.isEmpty) return;
+    final r = await Get.to<String>(() => OcrView(mode: mode));
+    if (r == null || r.isEmpty) return;
+
+    final result = r.replaceAll(RegExp(r'\s+'), '');
 
     List<TextEditingController> target = mcDateCtrls;
     int cellCount = 0;
     if (mode == OcrMode.mcDate18) {
       target = mcDateCtrls;
       cellCount = 18;
+
+      selectedMCDate.value = result.toUpperCase();
+      getGSCount();
+      checkIsEnabledButton();
+    } else {
+      target = moldCtrls;
+      cellCount = 12;
     }
 
     final chars = result.toUpperCase().characters.toList();
@@ -68,13 +77,8 @@ class CYHLeakTestSerialController extends GetxController {
       target[i].text = i < chars.length ? chars[i] : '';
     }
 
-    selectedMCDate.value = result.toUpperCase();
-    getGSCount();
-    checkIsEnabledButton();
     print("ToTal value => ${selectedMCDate.value}");
   }
-
-  void clearMCDate() => mcDateCtrls.forEach((c) => c.clear());
 
   void openFilterSheet() {
     Get.bottomSheet(
@@ -172,7 +176,10 @@ class CYHLeakTestSerialController extends GetxController {
   }
 
   void checkIsEnabledButton() {
-    isEnabled.value = mcDateCtrls.isNotEmpty;
+    isEnabled.value = selectedMCDate.value.trim().isNotEmpty;// mcDateCtrls.isNotEmpty;
+    print("selectedMCDate => ${ selectedMCDate.value.trim()}");
+    print("isElable => ${isEnabled}");
+
   }
 
   void confirmForm() async {
@@ -205,8 +212,8 @@ class CYHLeakTestSerialController extends GetxController {
 
       final res = await service.insertLeakTest(model);
 
-  print('result-> ${res['result']}');
-    print('type-> ${res['type']}');
+      print('result-> ${res['result']}');
+      print('type-> ${res['type']}');
 
       if (res['result'] == true && res['type'] == 'OK') {
         EasyLoading.showSuccess('บันทึกสำเร็จ',
@@ -248,6 +255,17 @@ class CYHLeakTestSerialController extends GetxController {
   }
 
   void clearMold() => moldCtrls.forEach((c) => c.clear());
+  void clearMCDate() => mcDateCtrls.forEach((c) => c.clear());
+  void clearCANo() => caNoCtrls.forEach((c) => c.clear());
+
+  void clearCADate() {
+    for (final c in caDateCtrls) {
+      c.clear();
+    }
+    // ใส่ขีดใหม่ให้ช่องที่ 3 ด้วย
+    if (caDateCtrls.length > 2) caDateCtrls[2].text = '-';
+    selectedCADate.value = '';
+  }
 
   void resetForm() {
     workTypeController.clear();

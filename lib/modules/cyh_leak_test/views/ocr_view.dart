@@ -224,10 +224,10 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
     }
 
     final modeLabel = {
-      OcrMode.mcDate18: 'M/C Date',
+      OcrMode.mcDate18: 'Scan M/C Date',
       OcrMode.no2: 'Scan No. (2 digits)',
       OcrMode.serial11: 'Scan Serial (12-34-56#4A)',
-      OcrMode.mold12: 'Scan Mold (เช่น K9,3)',
+      OcrMode.mold12: 'Scan Mold No', //'Scan Mold (เช่น K9,3)',
       OcrMode.machine5: 'Scan Machine (เช่น KMT-7)',
     }[widget.mode]!;
 

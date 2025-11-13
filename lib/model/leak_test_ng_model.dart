@@ -1,6 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
 part 'leak_test_ng_model.g.dart';
+
 @JsonSerializable()
 class LeakTestNgModel {
   @JsonKey(name: 'Id')
@@ -36,6 +37,12 @@ class LeakTestNgModel {
   @JsonKey(name: 'NG_P3_color')
   final String? ngP3Color;
 
+  @JsonKey(name: 'NG_P4')
+  final String? ngP4;
+
+  @JsonKey(name: 'NG_P4_color')
+  final String? ngP4Color;
+
   @JsonKey(name: 'NG_TB')
   final String? ngTb;
 
@@ -64,6 +71,8 @@ class LeakTestNgModel {
     this.ngP2Color,
     this.ngP3,
     this.ngP3Color,
+    this.ngP4,
+    this.ngP4Color,
     this.ngTb,
     this.ngTbColor,
     this.caNo,
@@ -76,4 +85,3 @@ class LeakTestNgModel {
 
   Map<String, dynamic> toJson() => _$LeakTestNgModelToJson(this);
 }
-

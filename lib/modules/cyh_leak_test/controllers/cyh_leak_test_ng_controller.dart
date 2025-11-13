@@ -22,7 +22,6 @@ class CYHLeakTestNGController extends GetxController {
   final machineController = TextEditingController();
   final gsController = TextEditingController();
   final isEnabled = false.obs;
-  final mcDateCtrls = List.generate(18, (_) => TextEditingController());
   final dataModel = Rxn<LeakTestNgModel>();
 
   final castingDateCtrls = List.generate(6, (_) => TextEditingController());
@@ -50,8 +49,6 @@ class CYHLeakTestNGController extends GetxController {
     ]);
   }
 
-  void clearMCDate() => mcDateCtrls.forEach((c) => c.clear());
-
   void openFilterSheet() {
     Get.bottomSheet(
       Container(
@@ -74,32 +71,6 @@ class CYHLeakTestNGController extends GetxController {
     String norm(String s) => s.replaceAll(RegExp(r'\s+'), '').toLowerCase();
     final target = norm(code);
 
-    // if (machines.isEmpty) {
-    //   final line = Get.find<GetStorage>().read('selectedLine')?.toString();
-    //   // await loadMachines(lineCd: line);
-    // }
-
-    // final found = machines.firstWhereOrNull(
-    //   (m) => norm(m.machineNo) == target,
-    // );
-
-    // if (found != null) {
-    //   selectedMachineNo.value = found.machineNo;
-    //   Get.snackbar('Selected', 'Machine: ${found.machineNo}', snackPosition: SnackPosition.BOTTOM);
-    // } else {
-    //   final fuzzy = machines.firstWhereOrNull(
-    //     (m) => norm(m.machineNo).contains(target),
-    //   );
-
-    //   if (fuzzy != null) {
-    //     selectedMachineNo.value = fuzzy.machineNo;
-    //     Get.snackbar('Selected (≈)', 'Machine: ${fuzzy.machineNo}',
-    //         snackPosition: SnackPosition.BOTTOM);
-    //   } else {
-    //     Get.snackbar('Not found', 'ไม่พบเครื่องที่ตรงกับ: $code',
-    //         snackPosition: SnackPosition.BOTTOM);
-    //   }
-    // }
   }
 
   void initFormFromArgs() {
@@ -122,10 +93,19 @@ class CYHLeakTestNGController extends GetxController {
 
       final plant = args['plant-result'];
       plantResultModel.value = plant;
+
+      initTextField(dataModel.value?.caNo ?? '', caNoCtrls);
+      initTextField(dataModel.value?.caDate ?? '', castingDateCtrls);
+      initTextField(dataModel.value?.moldNo ?? '', moldCtrls);
+
+      checkIsEnabledButton();
     }
   }
 
   Color hexToColor(String hex) {
+    if (hex.isEmpty) {
+      return Colors.white;
+    }
     // ลบ # ถ้ามี
     hex = hex.replaceAll('#', '');
 
@@ -139,8 +119,9 @@ class CYHLeakTestNGController extends GetxController {
   }
 
   void checkIsEnabledButton() {
-    isEnabled.value =
-        selectedmoldCtrls.isNotEmpty && selectedcastingDate.isNotEmpty;
+    isEnabled.value = selectedCANo.trim().isNotEmpty &&
+        selectedmoldCtrls.trim().isNotEmpty &&
+        selectedcastingDate.trim().isNotEmpty;
   }
 
   void confirmForm() async {
@@ -192,18 +173,20 @@ class CYHLeakTestNGController extends GetxController {
   }
 
   Future<void> scanAndFill(OcrMode mode) async {
-    final result = await Get.to<String>(() => OcrView(mode: mode));
-    if (result == null || result.isEmpty) return;
+    final r = await Get.to<String>(() => OcrView(mode: mode));
+    if (r == null || r.isEmpty) return;
 
-    List<TextEditingController> target;
-    int cellCount;
-    if (mode == OcrMode.castingDate6) {
-      target = castingDateCtrls;
-      cellCount = 6;
-    } else {
-      target = moldCtrls;
-      cellCount = 12;
-    }
+    final result = r.replaceAll(RegExp(r'\s+'), '');
+
+    List<TextEditingController> target = moldCtrls;
+    int cellCount = 12;
+    // if (mode == OcrMode.castingDate6) {
+    //   target = castingDateCtrls;
+    //   cellCount = 6;
+    // } else {
+    //   target = moldCtrls;
+    //   cellCount = 12;
+    // }
     // switch (mode) {
     //   case OcrMode.castingDate6:
     //     target = castingDateCtrls;
@@ -237,6 +220,22 @@ class CYHLeakTestNGController extends GetxController {
     }
   }
 
+  void initTextField(String text, List<TextEditingController> widget) {
+    final len = text.length;
+    final max = widget.length;
+
+    final limit = len < max ? len : max; // min(len, max)
+
+    for (var i = 0; i < limit; i++) {
+      widget[i].text = text[i];
+    }
+
+    for (var i = limit; i < max; i++) {
+      widget[i].clear();
+    }
+  }
+
+  void clearCANo() => caNoCtrls.forEach((c) => c.clear());
   void clearCastingDate() => castingDateCtrls.forEach((c) => c.clear());
   void clearMold() => moldCtrls.forEach((c) => c.clear());
 
@@ -244,7 +243,6 @@ class CYHLeakTestNGController extends GetxController {
     workTypeController.clear();
     machineController.clear();
     plantResultModel.value = null;
-    mcDateCtrls.clear();
     gsController.clear();
   }
 }
