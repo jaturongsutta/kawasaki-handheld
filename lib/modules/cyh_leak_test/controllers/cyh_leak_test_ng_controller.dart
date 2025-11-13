@@ -38,9 +38,9 @@ class CYHLeakTestNGController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    initFormFromArgs(); 
+    initFormFromArgs();
   }
-  
+
   Future<void> scanQrForMachine(String code) async {
     if (code.trim().isEmpty) {
       Get.snackbar('Invalid', 'QR ว่าง');
@@ -54,6 +54,10 @@ class CYHLeakTestNGController extends GetxController {
   void initFormFromArgs() {
     final args = Get.arguments as Map<String, dynamic>?;
     print("init => ");
+
+    clearCANo();
+    clearCastingDate();
+    clearMold();
 
     if (args != null) {
       final data = args['ng-result'];
@@ -165,7 +169,13 @@ class CYHLeakTestNGController extends GetxController {
     }
   }
 
-  void initTextField(String text, List<TextEditingController> widget) {
+  void initTextField(String? text, List<TextEditingController> widget) {
+    // เคสที่ต้องเคลียร์หมดเลย
+    if (text == null || text.isEmpty || text == 'null') {
+      for (var c in widget) c.clear();
+      return;
+    }
+
     final len = text.length;
     final max = widget.length;
 
@@ -175,6 +185,7 @@ class CYHLeakTestNGController extends GetxController {
       widget[i].text = text[i];
     }
 
+    // clear ช่องที่เหลือ
     for (var i = limit; i < max; i++) {
       widget[i].clear();
     }

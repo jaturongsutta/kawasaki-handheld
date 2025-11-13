@@ -13,7 +13,7 @@ class LeakTestNgModel {
   @JsonKey(name: 'Model_CD')
   final String? modelCd;
 
-  @JsonKey(name: 'Serial')
+  @JsonKey(name: 'Serial_No')
   final String? serial;
 
   @JsonKey(name: 'Result')
