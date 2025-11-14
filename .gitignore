@@ -55,3 +55,51 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+.dart_tool/
+
+android/.gradle
+android/.idea
+
+
+# Flutter specific
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/.symlinks/
+ios/Pods/
+ios/Runner.xcworkspace/
+ios/Runner.xcodeproj/project.xcworkspace/
+ios/Runner.xcodeproj/xcuserdata/
+android/.gradle/
+android/app/build/
+android/local.properties
+
+# Dart tool
+.dart_tool/
+.dart_tool/package_config.json
+.dart_tool/package_config_subset
+.dart_tool/version
+
+# Dependency lock files (optional: include or ignore)
+pubspec.lock
+
+# Generated plugin symlinks
+.**/.plugin_symlinks/
+.**/.plugin_symlinks/**
+**/.plugin_symlinks/**
+**/.plugin_symlinks/
+
+# IDEs
+.vscode/
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
