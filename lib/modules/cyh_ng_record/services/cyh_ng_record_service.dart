@@ -1,13 +1,12 @@
 import 'package:get/get.dart';
 import 'package:kmt/model/leak_no_plan_model.dart';
-import 'package:kmt/model/leak_test_running_model.dart';
-import 'package:kmt/model/machine_model.dart';
+import 'package:kmt/model/leak_test_ng_model.dart';
 import 'package:kmt/services/base_service.dart';
 import 'package:kmt/enum/dio_type.dart';
 
-class CYHLeakTestService extends GetxService {
+class CYHNGRecordService extends GetxService {
   final BaseService baseService;
-  CYHLeakTestService(this.baseService);
+  CYHNGRecordService(this.baseService);
 
   Future<List<String>> fetchWorkType() async {
     final res = await baseService.apiRequest(
@@ -23,40 +22,39 @@ class CYHLeakTestService extends GetxService {
     return <String>[];
   }
 
-  Future<ApiResponse<List<LeakTestRunningModel>>> fetchRunningList(
+  Future<ApiResponse<List<LeakTestNgModel>>> fetchNGCYH(
       {required String? machineNo, required String? workType}) async {
     try {
       final res = await baseService.apiRequest(
-        '/leak/production-list-running',
+        '/leak/search-ng-cyh',
         queryType: QueryType.post,
-        data: {'Machine_No': machineNo, 'Work_Type': workType},
+        data: {'Machine_No': machineNo},
       );
-      print('coming up fetchRunningList');
+      print('coming up fetchNGCYH');
       print('res ===> $res');
-
       if (res != null && res['result'] == true && res['data'] != null) {
         final list = res['data'] as List;
 
         final value = list
-            .map((e) => LeakTestRunningModel.fromJson(
+            .map((e) => LeakTestNgModel.fromJson(
                   Map<String, dynamic>.from(e),
                 ))
             .toList();
 
-        return ApiResponse<List<LeakTestRunningModel>>(
+        return ApiResponse<List<LeakTestNgModel>>(
           ok: true,
           message: '',
           data: value,
         );
       }
-      return ApiResponse<List<LeakTestRunningModel>>(
+      return ApiResponse<List<LeakTestNgModel>>(
         ok: false,
         message: res['message'],
         data: [],
       );
     } catch (e) {
-      print('fetchRunningList error: $e\n');
-      return ApiResponse<List<LeakTestRunningModel>>(
+      print('fetchNGCYH error: $e\n');
+      return ApiResponse<List<LeakTestNgModel>>(
         ok: false,
         message: e.toString(),
         data: [],

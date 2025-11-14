@@ -5,6 +5,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:kmt/global_widgets/header_kmt.dart';
 import 'package:kmt/modules/alert/controllers/notification_controller.dart';
 import 'package:kmt/modules/cyh_leak_test/controllers/cyh_leak_test_controller.dart';
+import 'package:kmt/modules/cyh_ng_record/controllers/cyh_ng_record_controller.dart';
 import 'package:kmt/modules/cyh_no_plan/controllers/cyh_no_plan_controller.dart';
 import 'package:kmt/modules/line_stop_information/controllers/line_stop_information_controller.dart';
 import 'package:kmt/modules/login/controllers/login_controller.dart';
@@ -172,6 +173,17 @@ class _MenuTwoViewState extends State<MenuTwoView> {
                           await Future.delayed(const Duration(seconds: 1));
                           loadingController.hideLoading();
                           Get.delete<CYHLeakTestController>();
+
+                          scannerKey.currentState?.initSensorReader();
+                        });
+                      }),
+                        const SizedBox(height: 16),
+                      _buildFixedSizeButton("CYH NG Record", buttonWidth, buttonHeight, () {
+                        loadingController.showLoading();
+                        Get.toNamed('/cyh-ng-record')?.then((_) async {
+                          await Future.delayed(const Duration(seconds: 1));
+                          loadingController.hideLoading();
+                          Get.delete<CYHNGRecordController>();
 
                           scannerKey.currentState?.initSensorReader();
                         });
