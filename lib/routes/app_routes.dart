@@ -11,4 +11,8 @@ abstract class AppRoutes {
   static const test = '/test';
   static const cyhNoPlan = '/cyh-no-plan';
   static const cyhNoPlanForm = '/cyh-no-plan/form';
+  static const cyhLeakTest = '/cyh-leak-test';
+  static const cyhLeakTestSerial = '/cyh-leak-test-serial';
+  static const cyhLeakTestNG = '/cyh-leak-test-ng';
+  static const cyhLeakTestOK = '/cyh-leak-test-ok';
 }
