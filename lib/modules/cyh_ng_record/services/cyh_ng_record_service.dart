@@ -23,7 +23,7 @@ class CYHNGRecordService extends GetxService {
   }
 
   Future<ApiResponse<List<LeakTestNgModel>>> fetchNGCYH(
-      {required String? machineNo, required String? workType}) async {
+      {required String? machineNo}) async {
     try {
       final res = await baseService.apiRequest(
         '/leak/search-ng-cyh',

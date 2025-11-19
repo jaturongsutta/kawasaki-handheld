@@ -37,8 +37,8 @@ class LeakTestModel {
   @JsonKey(name: 'NG_Id')
   final String ngId;
 
-  @JsonKey(name: 'Plant_Id')
-  final int plantId;
+  @JsonKey(name: 'Plan_Id')
+  final int planId;
 
   @JsonKey(name: 'Mold_No')
   final String moldNo;
@@ -61,7 +61,7 @@ class LeakTestModel {
       required this.gsNo,
       required this.lineCd,
       required this.ngId,
-      required this.plantId,
+      required this.planId,
       required this.moldNo,
       required this.caDate,
       required this.caNo});

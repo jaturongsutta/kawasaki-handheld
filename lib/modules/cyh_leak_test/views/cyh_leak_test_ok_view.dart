@@ -77,7 +77,7 @@ class CYHLeakTestOKView extends GetView<CYHLeakTestOKController> {
                                   _buildRowField(
                                     label: 'Serial',
                                     child: Text(
-                                        controller.dataModel.value?.serial ??
+                                        controller.dataModel.value?.serialNo ??
                                             '',
                                         style: const TextStyle(fontSize: 16)),
                                     labelStyle: labelStyle,

@@ -7,6 +7,9 @@ class LeakTestNgModel {
   @JsonKey(name: 'Id')
   final String? id;
 
+  @JsonKey(name: 'plan_id')
+  final int? planId;
+
   @JsonKey(name: 'Machine_No')
   final String? machineNo;
 
@@ -14,6 +17,9 @@ class LeakTestNgModel {
   final String? modelCd;
 
   @JsonKey(name: 'Serial_No')
+  final String? serialNo;
+
+  @JsonKey(name: 'Serial')
   final String? serial;
 
   @JsonKey(name: 'Result')
@@ -61,8 +67,10 @@ class LeakTestNgModel {
   // ✅ Constructor ไม่ต้อง required
   const LeakTestNgModel({
     this.id,
+    this.planId,
     this.machineNo,
     this.modelCd,
+    this.serialNo,
     this.serial,
     this.result,
     this.ngP1,

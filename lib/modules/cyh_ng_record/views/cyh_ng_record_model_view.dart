@@ -9,7 +9,6 @@ import 'package:kmt/modules/cyh_leak_test/widgets/tab_selector.dart';
 import 'package:kmt/modules/cyh_ng_record/controllers/cyh_ng_record_model_controller.dart';
 import 'package:kmt/widgets/KeyenceScanner.dart';
 
-
 class CYHNGRecordModelView extends GetView<CYHNGRecordModelController> {
   CYHNGRecordModelView({super.key});
 
@@ -35,18 +34,18 @@ class CYHNGRecordModelView extends GetView<CYHNGRecordModelController> {
       // เปิดให้เลื่อนอัตโนมัติเวลาเปิดคีย์บอร์ด
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        title: const Text('Leak Test',
+        title: const Text('NG Leak Test',
             style: TextStyle(fontWeight: FontWeight.w700)),
         centerTitle: true,
       ),
       body: Obx(() {
         return KeyenceScanner(
           onBarcodeScanned: (String scannedCode) {
-            if (scannedCode.isNotEmpty) {
-              controller.selectedMCDate.value = scannedCode;
-              controller.getGSCount();
-              controller.checkIsEnabledButton();
-            }
+            // if (scannedCode.isNotEmpty) {
+            //   controller.selectedMCDate.value = scannedCode;
+            //   controller.getGSCount();
+            //   controller.checkIsEnabledButton();
+            // }
           },
           child: SafeArea(
             child: Stack(
@@ -105,13 +104,11 @@ class CYHNGRecordModelView extends GetView<CYHNGRecordModelController> {
                                   child: AbsorbPointer(
                                     absorbing: false,
                                     child: DropdownButtonFormField<String>(
-                                      isExpanded:
-                                          controller.isModelReadOnly.value,
+                                      isExpanded: false,
                                       value: controller
                                           .selectedModel.value?.modelCd,
                                       items: controller.models
                                           .map((m) => m.modelCd)
-                                          // .where((cd) => cd.isNotEmpty?)
                                           .toSet() // <-- ตรงนี้แปลงเป็น Set เพื่อกันซ้ำ
                                           .map((cd) => DropdownMenuItem<String>(
                                                 value: cd,
@@ -124,15 +121,17 @@ class CYHNGRecordModelView extends GetView<CYHNGRecordModelController> {
                                               controller.models.firstWhere(
                                             (m) => m.modelCd == val,
                                             orElse: () => const LeakTestNgModel(
-                                              // id: 0,
-                                              // lineCd: '',
-                                              // lineName: '',
-                                              // modelCd: '',
-                                              // partNo: '',
-                                            ),
+                                                // id: 0,
+                                                // lineCd: '',
+                                                // lineName: '',
+                                                // modelCd: '',
+                                                // partNo: '',
+                                                ),
                                           );
                                           controller.selectedModel.value =
                                               model;
+                                          controller.selectedSerial.value =
+                                              null;
                                         }
                                       },
                                       decoration: InputDecoration(
@@ -147,20 +146,23 @@ class CYHNGRecordModelView extends GetView<CYHNGRecordModelController> {
                                     ),
                                   ),
                                 ),
-                                  const SizedBox(height: 12),
+                                const SizedBox(height: 12),
                                 _LabeledField(
                                   label: 'M/C Date',
                                   child: AbsorbPointer(
                                     absorbing: false,
                                     child: DropdownButtonFormField<String>(
-                                      isExpanded:
-                                          controller.isModelReadOnly.value,
+                                      isExpanded: false,
                                       value: controller
-                                          .selectedModel.value?.modelCd,
+                                          .selectedSerial.value?.serial,
                                       items: controller.models
-                                          .map((m) => m.modelCd)
-                                          // .where((cd) => cd.isNotEmpty?)
-                                          .toSet() // <-- ตรงนี้แปลงเป็น Set เพื่อกันซ้ำ
+                                          .where((e) =>
+                                              e.modelCd ==
+                                              controller
+                                                  .selectedModel.value?.modelCd)
+                                          .map((e) => e.serial)
+                                          .toList()
+                                          .toSet()
                                           .map((cd) => DropdownMenuItem<String>(
                                                 value: cd,
                                                 child: Text(cd ?? ''),
@@ -168,19 +170,24 @@ class CYHNGRecordModelView extends GetView<CYHNGRecordModelController> {
                                           .toList(),
                                       onChanged: (val) {
                                         if (val != null) {
-                                          final model =
+                                          final serial =
                                               controller.models.firstWhere(
-                                            (m) => m.modelCd == val,
+                                            (m) =>
+                                                m.modelCd ==
+                                                    controller.selectedModel
+                                                        .value?.modelCd &&
+                                                m.serial == val,
                                             orElse: () => const LeakTestNgModel(
-                                              // id: 0,
-                                              // lineCd: '',
-                                              // lineName: '',
-                                              // modelCd: '',
-                                              // partNo: '',
-                                            ),
+                                                // id: 0,
+                                                // lineCd: '',
+                                                // lineName: '',
+                                                // modelCd: '',
+                                                // partNo: '',
+                                                ),
                                           );
-                                          controller.selectedModel.value =
-                                              model;
+                                          controller.selectedSerial.value =
+                                              serial;
+                                          controller.checkIsEnabledButton();
                                         }
                                       },
                                       decoration: InputDecoration(
@@ -199,7 +206,6 @@ class CYHNGRecordModelView extends GetView<CYHNGRecordModelController> {
                             ),
                           ),
                         ),
-                        
                         const SizedBox(height: 16),
                         SizedBox(
                           height: 44,
@@ -237,35 +243,6 @@ class CYHNGRecordModelView extends GetView<CYHNGRecordModelController> {
 // -------------------- helper widgets --------------------
 const double kLabelWidth = 92;
 
-class _FormRowCard extends StatelessWidget {
-  final String label;
-  final Widget child;
-  const _FormRowCard({required this.label, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final labelStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
-          fontWeight: FontWeight.w700,
-        );
-
-    return Card(
-      elevation: 0.5,
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            SizedBox(width: kLabelWidth, child: Text(label, style: labelStyle)),
-            Expanded(child: child),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _LabeledField extends StatelessWidget {
   final String label;
   final Widget child;
@@ -285,122 +262,6 @@ class _LabeledField extends StatelessWidget {
     );
   }
 }
-
-Widget _rowCard({
-  required String label,
-  required Widget boxes,
-  required VoidCallback onScan,
-  required VoidCallback onClear,
-  required TextStyle labelStyle,
-}) {
-  return Card(
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    elevation: 0.5,
-    margin: const EdgeInsets.symmetric(vertical: 8),
-    child: Padding(
-      padding:
-          const EdgeInsets.fromLTRB(12, 8, 12, 12), // ✅ padding ซ้ายขวาเท่ากัน
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ---------- Header ----------
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              SizedBox(width: 72, child: Text(label, style: labelStyle)),
-              const SizedBox(width: 100),
-              IconButton(
-                onPressed: onScan,
-                icon: const Icon(Icons.center_focus_strong, color: Colors.blue),
-                tooltip: 'Scan',
-              ),
-              IconButton(
-                onPressed: onClear,
-                icon: const Icon(Icons.delete, color: Colors.red),
-                tooltip: 'Clear',
-              ),
-            ],
-          ),
-
-          // ---------- Boxes ----------
-          LayoutBuilder(
-            builder: (context, constraints) {
-              // ✅ ใช้ LayoutBuilder เพื่อให้ยืดหยุ่นตามความกว้างจริงของ Card
-
-              // เพิ่มระยะห่างขวาให้เท่ากับขอบกล่องบน
-              return Padding(
-                padding: const EdgeInsets.only(left: 0, top: 4),
-                // ประมาณ 4% ของความกว้าง (responsive)
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: boxes,
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 12),
-          // gs,
-          // const SizedBox(height: 4),
-        ],
-      ),
-    ),
-  );
-}
-
-Widget _rowCardSimple({
-  required String label,
-  required Widget boxes,
-  required VoidCallback onClear,
-  required TextStyle labelStyle,
-}) {
-  return Card(
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    elevation: 0.5,
-    margin: const EdgeInsets.symmetric(vertical: 8),
-    child: Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ---------- Header ----------
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // label ด้านซ้าย
-              Expanded(
-                child: Text(
-                  label,
-                  style: labelStyle,
-                ),
-              ),
-              // ปุ่มลบด้านขวา
-              IconButton(
-                onPressed: onClear,
-                icon: const Icon(Icons.delete, color: Colors.red),
-                tooltip: 'Clear',
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 4),
-
-          // ---------- Boxes ----------
-          Padding(
-            padding: const EdgeInsets.only(left: 0, top: 4),
-            child: Align(
-              alignment: Alignment.centerLeft, // ✅ ชิดซ้าย
-              child: boxes,
-            ),
-          ),
-
-          const SizedBox(height: 4),
-        ],
-      ),
-    ),
-  );
-}
-
 
 class OtpBoxesRow extends StatefulWidget {
   final List<TextEditingController> controllers;

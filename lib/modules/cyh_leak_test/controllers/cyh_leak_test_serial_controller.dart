@@ -158,7 +158,7 @@ class CYHLeakTestSerialController extends GetxController {
         moldNo: selectedmoldCtrls.value,
         scanDate: now,
         createdBy: createdBy,
-        plantId: 0,
+        planId: 0,
         lineCd: '',
         ngId: '',
         updatedBy: createdBy,
@@ -171,20 +171,16 @@ class CYHLeakTestSerialController extends GetxController {
             duration: const Duration(seconds: 1), dismissOnTap: false);
 
         await Future.delayed(const Duration(seconds: 1));
-        Get.toNamed(AppRoutes.cyhLeakTestOK, arguments: {
-          'ng-result': res['data'],
-          'plant-result': selectedModel.value
-        });
+        Get.toNamed(AppRoutes.cyhLeakTestOK,
+            arguments: {'ng-result': res['data'], 'page-type': 'cyh-leak'});
       } else if (res['result'] == true &&
           (res['data'] as Map<String, dynamic>).isNotEmpty) {
         EasyLoading.showSuccess('บันทึกสำเร็จ',
             duration: const Duration(seconds: 1), dismissOnTap: false);
 
         await Future.delayed(const Duration(seconds: 1));
-        Get.toNamed(AppRoutes.cyhLeakTestNG, arguments: {
-          'ng-result': res['data'],
-          'plant-result': selectedModel.value
-        });
+        Get.toNamed(AppRoutes.cyhLeakTestNG,
+            arguments: {'ng-result': res['data'], 'page-type': 'cyh-leak'});
       } else {
         EasyLoading.dismiss();
         EasyLoading.showInfo(res['message'] ?? 'บันทึกล้มเหลว',

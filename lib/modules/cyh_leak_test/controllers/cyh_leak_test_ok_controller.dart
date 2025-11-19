@@ -28,8 +28,6 @@ class CYHLeakTestOKController extends GetxController {
   final castingDateCtrls = List.generate(6, (_) => TextEditingController());
   final moldCtrls = List.generate(12, (_) => TextEditingController());
 
-  final plantResultModel = Rxn<LeakTestRunningModel>();
-
   final mcDateCtrls = List.generate(18, (_) => TextEditingController());
   final selectedmoldCtrls = ''.obs;
 
@@ -76,9 +74,6 @@ class CYHLeakTestOKController extends GetxController {
       selectedCANo.value = dataModel.value?.caNo ?? '';
       selectedcastingDate.value = dataModel.value?.caDate ?? '';
       selectedmoldCtrls.value = dataModel.value?.moldNo ?? '';
-
-      final plant = args['plant-result'];
-      plantResultModel.value = plant;
 
       initTextField(dataModel.value?.caNo ?? '', caNoCtrls);
       initTextField(dataModel.value?.caDate ?? '', castingDateCtrls);
@@ -143,7 +138,7 @@ class CYHLeakTestOKController extends GetxController {
         caNo: selectedCANo.value,
         caDate: selectedcastingDate.value,
         moldNo: selectedmoldCtrls.value,
-        plantId: plantResultModel.value?.id ?? 0,
+        planId: dataModel.value?.planId ?? 0,
         lineCd: box.read('selectedLine'),
         ngId: dataModel.value?.id ?? '',
         updatedBy: updatedBy,
@@ -199,7 +194,6 @@ class CYHLeakTestOKController extends GetxController {
   void resetForm() {
     workTypeController.clear();
     machineController.clear();
-    plantResultModel.value = null;
     gsController.clear();
     moldCtrls.clear();
     caNoCtrls.clear();

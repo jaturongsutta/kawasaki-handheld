@@ -17,5 +17,4 @@ abstract class AppRoutes {
   static const cyhLeakTestOK = '/cyh-leak-test-ok';
   static const cyhNGRecord = '/cyh-ng-record';
   static const cyhNGRecordModel = '/cyh-ng-record-model';
-  static const cyhNGRecordResult = '/cyh-ng-record-result';
 }

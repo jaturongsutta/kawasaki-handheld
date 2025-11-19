@@ -77,8 +77,10 @@ class CYHLeakTestNGView extends GetView<CYHLeakTestNGController> {
                                   _buildRowField(
                                     label: 'Serial',
                                     child: Text(
-                                        controller.dataModel.value?.serial ??
-                                            '',
+                                        controller.dataModel.value?.serialNo ??
+                                            controller
+                                                .dataModel.value?.serial ??
+                                            "",
                                         style: const TextStyle(fontSize: 16)),
                                     labelStyle: labelStyle,
                                   ),
@@ -441,9 +443,6 @@ Widget _rowCardSimple({
     ),
   );
 }
-
-
-
 
 class OtpBoxesRow extends StatefulWidget {
   final List<TextEditingController> controllers;

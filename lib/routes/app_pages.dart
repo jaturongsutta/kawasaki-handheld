@@ -11,9 +11,7 @@ import 'package:kmt/modules/cyh_leak_test/views/cyh_leak_test_serial_view.dart';
 import 'package:kmt/modules/cyh_leak_test/views/cyh_leak_test_view.dart';
 import 'package:kmt/modules/cyh_ng_record/bindings/cyh_ng_record_binding.dart';
 import 'package:kmt/modules/cyh_ng_record/bindings/cyh_ng_record_model_binding.dart';
-import 'package:kmt/modules/cyh_ng_record/bindings/cyh_ng_record_result_binding.dart';
 import 'package:kmt/modules/cyh_ng_record/views/cyh_ng_record_model_view.dart';
-import 'package:kmt/modules/cyh_ng_record/views/cyh_ng_record_result_view.dart';
 import 'package:kmt/modules/cyh_ng_record/views/cyh_ng_record_view.dart';
 import 'package:kmt/modules/cyh_no_plan/bindings/cyh_no_plan_binding.dart';
 import 'package:kmt/modules/cyh_no_plan/views/cyh_no_plan_form_view.dart';
@@ -115,11 +113,6 @@ class AppPages {
       name: AppRoutes.cyhNGRecordModel,
       page: () => CYHNGRecordModelView(),
       binding: CYHNGRecordModelBinding(),
-    ),
-    GetPage(
-      name: AppRoutes.cyhNGRecordResult,
-      page: () => const CYHNGRecordResultView(),
-      binding: CYHNGRecordResultBinding(),
     ),
   ];
 }

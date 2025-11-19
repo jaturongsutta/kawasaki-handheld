@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-
-import 'package:kmt/modules/cyh_leak_test/widgets/tab_selector.dart';
 import 'package:kmt/modules/cyh_ng_record/controllers/cyh_ng_record_controller.dart';
 import 'package:kmt/widgets/KeyenceScanner.dart';
 
@@ -62,7 +60,7 @@ class CYHNGRecordView extends GetView<CYHNGRecordController> {
                           height: 44,
                           child: FilledButton(
                             onPressed: controller.isEnabled.value
-                                ? controller.goToSerial
+                                ? controller.goToModel
                                 : null,
                             child: const Text('Confirm'),
                           ),
@@ -120,51 +118,6 @@ class _FormRowCard extends StatelessWidget {
       ),
     );
   }
-}
-
-Widget _rowCard({
-  required String label,
-  required Widget boxes,
-  required VoidCallback onScan,
-  required VoidCallback onClear,
-  required TextStyle labelStyle,
-}) {
-  return Card(
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    elevation: 0.5,
-    margin: const EdgeInsets.symmetric(vertical: 8),
-    child: Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 8, 12),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              SizedBox(width: 72, child: Text(label, style: labelStyle)),
-              const SizedBox(width: 100),
-              IconButton(
-                onPressed: onScan,
-                icon: const Icon(Icons.center_focus_strong, color: Colors.blue),
-                tooltip: 'Scan',
-              ),
-              IconButton(
-                onPressed: onClear,
-                icon: const Icon(Icons.delete, color: Colors.red),
-                tooltip: 'Clear',
-              ),
-            ],
-          ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(child: boxes),
-            ],
-          ),
-        ],
-      ),
-    ),
-  );
 }
 
 /// กล่องกรอกแบบ OTP: 1 ช่อง = 1 ตัวอักษร

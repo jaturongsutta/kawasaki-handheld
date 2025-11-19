@@ -9,9 +9,11 @@ part of 'leak_test_ng_model.dart';
 LeakTestNgModel _$LeakTestNgModelFromJson(Map<String, dynamic> json) =>
     LeakTestNgModel(
       id: json['Id'].toString(),
+      planId: json['plan_id'] as int?,
       machineNo: json['Machine_No'] as String?,
       modelCd: json['Model_CD'] as String?,
-      serial: json['Serial_No'] as String?,
+      serialNo: json['Serial_No'] as String?,
+      serial: json['Serial'] as String?,
       result: json['Result'] as String?,
       ngP1: json['NG_P1'] as String?,
       ngP1Color: json['NG_P1_color'] as String?,
@@ -31,9 +33,11 @@ LeakTestNgModel _$LeakTestNgModelFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$LeakTestNgModelToJson(LeakTestNgModel instance) =>
     <String, dynamic>{
       'Id': instance.id,
+      'plan_id': instance.planId,
       'Machine_No': instance.machineNo,
       'Model_CD': instance.modelCd,
-      'Serial_No': instance.serial,
+      'Serial_No': instance.serialNo,
+      'Serial': instance.serial,
       'Result': instance.result,
       'NG_P1': instance.ngP1,
       'NG_P1_color': instance.ngP1Color,
