@@ -15,13 +15,18 @@ class CYHLeakTestNGView extends GetView<CYHLeakTestNGController> {
       fontWeight: FontWeight.w600,
     );
 
+    // ✅ ระยะด้านล่างเมื่อคีย์บอร์ดโผล่ (ใช้ดัน ScrollView ขึ้น)
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF4F5FB),
-      // เปิดให้เลื่อนอัตโนมัติเวลาเปิดคีย์บอร์ด
-      resizeToAvoidBottomInset: false,
+      // ✅ เปิดให้เลื่อนอัตโนมัติเวลาเปิดคีย์บอร์ด
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: const Text('NG Leak Test',
-            style: TextStyle(fontWeight: FontWeight.w700)),
+        title: const Text(
+          'NG Leak Test',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
         centerTitle: true,
       ),
       body: Obx(() {
@@ -36,231 +41,235 @@ class CYHLeakTestNGView extends GetView<CYHLeakTestNGController> {
                 Padding(
                   padding: const EdgeInsets.all(10),
                   child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(0),
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.onDrag,
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white, // ✅ พื้นหลังสีขาว
-                                borderRadius:
-                                    BorderRadius.circular(12), // ✅ มุมโค้ง
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    // ✅ กันโดนคีย์บอร์ดทับ
+                    padding: EdgeInsets.only(bottom: bottomInset + 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white, // ✅ พื้นหลังสีขาว
+                            borderRadius:
+                                BorderRadius.circular(12), // ✅ มุมโค้ง
+                          ),
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _buildRowField(
+                                label: 'Machine',
+                                child: Text(
+                                  controller.dataModel.value?.machineNo ?? '',
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                                labelStyle: labelStyle,
                               ),
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                              const SizedBox(height: 8),
+
+                              // ================= Model =================
+                              _buildRowField(
+                                label: 'Model',
+                                child: Text(
+                                  controller.dataModel.value?.modelCd ?? '',
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                                labelStyle: labelStyle,
+                              ),
+                              const SizedBox(height: 8),
+
+                              // ================= Serial =================
+                              _buildRowField(
+                                label: 'Serial',
+                                child: Text(
+                                  controller.dataModel.value?.serialNo ??
+                                      controller.dataModel.value?.serial ??
+                                      "",
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                                labelStyle: labelStyle,
+                              ),
+                              const SizedBox(height: 8),
+
+                              // ================= Result =================
+                              _buildRowField(
+                                label: 'Result',
+                                child: const Text(
+                                  'NG',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                labelStyle: labelStyle,
+                              ),
+                              const SizedBox(height: 12),
+
+                              // ================= Buttons =================
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
                                 children: [
-                                  _buildRowField(
-                                    label: 'Machine',
-                                    child: Text(
-                                        controller.dataModel.value?.machineNo ??
-                                            '',
-                                        style: const TextStyle(fontSize: 16)),
-                                    labelStyle: labelStyle,
-                                  ),
-                                  const SizedBox(height: 8),
-
-                                  // ================= Model =================
-                                  _buildRowField(
-                                    label: 'Model',
-                                    child: Text(
-                                        controller.dataModel.value?.modelCd ??
-                                            '',
-                                        style: const TextStyle(fontSize: 16)),
-                                    labelStyle: labelStyle,
-                                  ),
-                                  const SizedBox(height: 8),
-
-                                  // ================= Serial =================
-                                  _buildRowField(
-                                    label: 'Serial',
-                                    child: Text(
-                                        controller.dataModel.value?.serialNo ??
-                                            controller
-                                                .dataModel.value?.serial ??
-                                            "",
-                                        style: const TextStyle(fontSize: 16)),
-                                    labelStyle: labelStyle,
-                                  ),
-                                  const SizedBox(height: 8),
-
-                                  // ================= Result =================
-                                  _buildRowField(
-                                    label: 'Result',
-                                    child: const Text(
-                                      'NG',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.red,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                  _resultButton(
+                                    controller.dataModel.value?.ngP1 ?? '',
+                                    controller.hexToColor(
+                                      controller
+                                              .dataModel.value?.ngP1Color ??
+                                          '#FFFFFF',
                                     ),
-                                    labelStyle: labelStyle,
                                   ),
-                                  const SizedBox(height: 12),
-
-                                  // ================= Buttons =================
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: [
-                                      _resultButton(
-                                          controller.dataModel.value?.ngP1 ??
-                                              '',
-                                          controller.hexToColor(controller
-                                                  .dataModel.value?.ngP1Color ??
-                                              '#FFFFFF')),
-                                      _resultButton(
-                                          controller.dataModel.value?.ngP2 ??
-                                              '',
-                                          controller.hexToColor(controller
-                                                  .dataModel.value?.ngP2Color ??
-                                              '#FFFFFF')),
-                                      _resultButton(
-                                          controller.dataModel.value?.ngP3 ??
-                                              '',
-                                          controller.hexToColor(controller
-                                                  .dataModel.value?.ngP3Color ??
-                                              '#FFFFFF')),
-                                      _resultButton(
-                                          controller.dataModel.value?.ngP4 ??
-                                              '',
-                                          controller.hexToColor(controller
-                                                  .dataModel.value?.ngP4Color ??
-                                              '#FFFFFF')),
-                                      _resultButton(
-                                        controller.dataModel.value?.ngTb ?? '',
-                                        controller.hexToColor(controller
-                                                .dataModel.value?.ngTbColor ??
-                                            '#FFFFFF'),
-                                      ),
-                                    ],
+                                  _resultButton(
+                                    controller.dataModel.value?.ngP2 ?? '',
+                                    controller.hexToColor(
+                                      controller
+                                              .dataModel.value?.ngP2Color ??
+                                          '#FFFFFF',
+                                    ),
+                                  ),
+                                  _resultButton(
+                                    controller.dataModel.value?.ngP3 ?? '',
+                                    controller.hexToColor(
+                                      controller
+                                              .dataModel.value?.ngP3Color ??
+                                          '#FFFFFF',
+                                    ),
+                                  ),
+                                  _resultButton(
+                                    controller.dataModel.value?.ngP4 ?? '',
+                                    controller.hexToColor(
+                                      controller
+                                              .dataModel.value?.ngP4Color ??
+                                          '#FFFFFF',
+                                    ),
+                                  ),
+                                  _resultButton(
+                                    controller.dataModel.value?.ngTb ?? '',
+                                    controller.hexToColor(
+                                      controller
+                                              .dataModel.value?.ngTbColor ??
+                                          '#FFFFFF',
+                                    ),
                                   ),
                                 ],
                               ),
-                            ),
-                            _rowCardSimple(
-                              label: 'C/A No',
-                              boxes: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  OtpBoxesRow(
-                                    controllers:
-                                        controller.caNoCtrls.sublist(0, 3),
-                                    allowedPattern: r'[0-9]',
-                                    onChanged: (value) {
-                                      print('changed yes: $value');
-                                      if (value.isNotEmpty) {
-                                        controller.selectedCANo.value = value;
-                                        controller.checkIsEnabledButton();
-                                      }
-                                    },
-                                    onSubmitted: (value) {
-                                      print('submitted yes: $value');
-                                      if (value.isNotEmpty) {
-                                        controller.selectedCANo.value = value;
-                                        controller.checkIsEnabledButton();
-                                      }
-                                    },
-                                  ),
-                                ],
+                            ],
+                          ),
+                        ),
+                        _rowCardSimple(
+                          label: 'C/A No',
+                          boxes: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              OtpBoxesRow(
+                                controllers:
+                                    controller.caNoCtrls.sublist(0, 3),
+                                allowedPattern: r'[0-9]',
+                                onChanged: (value) {
+                                  if (value.isNotEmpty) {
+                                    controller.selectedCANo.value = value;
+                                    controller.checkIsEnabledButton();
+                                  }
+                                },
+                                onSubmitted: (value) {
+                                  if (value.isNotEmpty) {
+                                    controller.selectedCANo.value = value;
+                                    controller.checkIsEnabledButton();
+                                  }
+                                },
                               ),
-                              onClear: () {
-                                controller.clearCANo();
-                                controller.selectedCANo.value = '';
-                                controller.checkIsEnabledButton();
-                              },
-                              labelStyle: labelStyle,
-                            ),
-                            _rowCardSimple(
-                              label: 'C/A Date',
-                              boxes: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  OtpBoxesRow(
-                                    controllers: controller.castingDateCtrls
-                                        .sublist(0, 6),
-                                    allowedPattern: r'[A-Za-z0-9#-]',
-                                    hyphenIndex: 2,
-                                    onChanged: (value) {
-                                      print('changed yes: $value');
-                                      if (value.isNotEmpty) {
-                                        controller.selectedcastingDate.value =
-                                            value;
-                                        controller.checkIsEnabledButton();
-                                      }
-                                    },
-                                    onSubmitted: (value) {
-                                      print('submitted yes: $value');
-                                      if (value.isNotEmpty) {
-                                        controller.selectedcastingDate.value =
-                                            value;
-                                        controller.checkIsEnabledButton();
-                                      }
-                                    },
-                                  ),
-                                ],
+                            ],
+                          ),
+                          onClear: () {
+                            controller.clearCANo();
+                            controller.selectedCANo.value = '';
+                            controller.checkIsEnabledButton();
+                          },
+                          labelStyle: labelStyle,
+                        ),
+                        _rowCardSimple(
+                          label: 'C/A Date',
+                          boxes: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              OtpBoxesRow(
+                                controllers:
+                                    controller.castingDateCtrls.sublist(0, 6),
+                                allowedPattern: r'[A-Za-z0-9#-]',
+                                hyphenIndex: 2,
+                                onChanged: (value) {
+                                  if (value.isNotEmpty) {
+                                    controller.selectedcastingDate.value =
+                                        value;
+                                    controller.checkIsEnabledButton();
+                                  }
+                                },
+                                onSubmitted: (value) {
+                                  if (value.isNotEmpty) {
+                                    controller.selectedcastingDate.value =
+                                        value;
+                                    controller.checkIsEnabledButton();
+                                  }
+                                },
                               ),
-                              onClear: () {
-                                controller.clearCastingDate();
-                                controller.selectedcastingDate.value = '';
-                                controller.checkIsEnabledButton();
-                              },
-                              labelStyle: labelStyle,
-                            ),
-                            _rowCard(
-                              label: 'Mold No',
-                              boxes: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  OtpBoxesRow(
-                                    controllers:
-                                        controller.moldCtrls.sublist(0, 12),
-                                    allowedPattern: r'[A-Za-z0-9#-]',
-                                    onChanged: (value) {
-                                      print('changed yes: $value');
-                                      if (value.isNotEmpty) {
-                                        controller.selectedmoldCtrls.value =
-                                            value;
-                                        controller.checkIsEnabledButton();
-                                      }
-                                    },
-                                    onSubmitted: (value) {
-                                      print('submitted yes: $value');
-                                      if (value.isNotEmpty) {
-                                        controller.selectedmoldCtrls.value =
-                                            value;
-                                        controller.checkIsEnabledButton();
-                                      }
-                                    },
-                                  ),
-                                ],
+                            ],
+                          ),
+                          onClear: () {
+                            controller.clearCastingDate();
+                            controller.selectedcastingDate.value = '';
+                            controller.checkIsEnabledButton();
+                          },
+                          labelStyle: labelStyle,
+                        ),
+                        _rowCard(
+                          label: 'Mold No',
+                          boxes: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              OtpBoxesRow(
+                                controllers:
+                                    controller.moldCtrls.sublist(0, 12),
+                                allowedPattern: r'[A-Za-z0-9#-]',
+                                onChanged: (value) {
+                                  if (value.isNotEmpty) {
+                                    controller.selectedmoldCtrls.value = value;
+                                    controller.checkIsEnabledButton();
+                                  }
+                                },
+                                onSubmitted: (value) {
+                                  if (value.isNotEmpty) {
+                                    controller.selectedmoldCtrls.value = value;
+                                    controller.checkIsEnabledButton();
+                                  }
+                                },
                               ),
-                              onScan: () =>
-                                  controller.scanAndFill(OcrMode.mold12),
-                              onClear: () {
-                                controller.clearMold();
-                                controller.selectedmoldCtrls.value = '';
-                                controller.checkIsEnabledButton();
-                              },
-                              labelStyle: labelStyle,
-                            ),
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              height: 44,
-                              child: FilledButton(
-                                onPressed: controller.isEnabled.value
-                                    ? controller.confirmForm
-                                    : null,
-                                child: const Text('Confirm'),
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-                          ])),
+                            ],
+                          ),
+                          onScan: () =>
+                              controller.scanAndFill(OcrMode.mold12),
+                          onClear: () {
+                            controller.clearMold();
+                            controller.selectedmoldCtrls.value = '';
+                            controller.checkIsEnabledButton();
+                          },
+                          labelStyle: labelStyle,
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          height: 44,
+                          child: FilledButton(
+                            onPressed: controller.isEnabled.value
+                                ? controller.confirmForm
+                                : null,
+                            child: const Text('Confirm'),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                      ],
+                    ),
+                  ),
                 ),
-                //  ),
 
                 // ---------- LOADING BAR ----------
                 if (controller.isLoading.value)
@@ -305,7 +314,6 @@ Widget _resultButton(
   Color? textColor,
   Color? borderColor,
 }) {
-  // ตรวจว่าพื้นหลังเป็นสีขาวหรือไม่ (รวมถึง #FFFFFF, 0xFFFFFFFF)
   final bool isWhite = bgColor.value == const Color(0xFFFFFFFF).value;
 
   final effectiveBorderColor =
@@ -343,8 +351,7 @@ Widget _rowCard({
     elevation: 0.5,
     margin: const EdgeInsets.symmetric(vertical: 8),
     child: Padding(
-      padding:
-          const EdgeInsets.fromLTRB(12, 8, 12, 12), // ✅ padding ซ้ายขวาเท่ากัน
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -371,11 +378,8 @@ Widget _rowCard({
           // ---------- Boxes ----------
           LayoutBuilder(
             builder: (context, constraints) {
-              // ✅ ใช้ LayoutBuilder เพื่อให้ยืดหยุ่นตามความกว้างจริงของ Card
-              // เพิ่มระยะห่างขวาให้เท่ากับขอบกล่องบน
               return Padding(
                 padding: const EdgeInsets.only(left: 0, top: 4),
-                // ประมาณ 4% ของความกว้าง (responsive)
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: boxes,
@@ -410,14 +414,12 @@ Widget _rowCardSimple({
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // label ด้านซ้าย
               Expanded(
                 child: Text(
                   label,
                   style: labelStyle,
                 ),
               ),
-              // ปุ่มลบด้านขวา
               IconButton(
                 onPressed: onClear,
                 icon: const Icon(Icons.delete, color: Colors.red),
@@ -428,11 +430,10 @@ Widget _rowCardSimple({
 
           const SizedBox(height: 4),
 
-          // ---------- Boxes ----------
           Padding(
             padding: const EdgeInsets.only(left: 0, top: 4),
             child: Align(
-              alignment: Alignment.centerLeft, // ✅ ชิดซ้าย
+              alignment: Alignment.centerLeft,
               child: boxes,
             ),
           ),
@@ -444,9 +445,10 @@ Widget _rowCardSimple({
   );
 }
 
+// ====== OtpBoxesRow (Done ทุกช่อง + auto move) ======
 class OtpBoxesRow extends StatefulWidget {
   final List<TextEditingController> controllers;
-  final String allowedPattern; // เช่น r'[0-9]' หรือ r'[A-Za-z0-9]'
+  final String allowedPattern; // เช่น r'[0-9]' หรือ r'[A-Za-z0-9#-]'
   final int hyphenIndex; // ช่องที่จะเป็นขีด (index เริ่มที่ 0), -1 = ไม่มีขีด
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
@@ -475,13 +477,11 @@ class _OtpBoxesRowState extends State<OtpBoxesRow> {
     _nodes = List.generate(widget.controllers.length, (_) => FocusNode());
     _lastValues = List.generate(widget.controllers.length, (_) => '');
 
-    // ถ้ามี hyphen ให้ set ก่อน
     if (widget.hyphenIndex >= 0 &&
         widget.hyphenIndex < widget.controllers.length) {
       widget.controllers[widget.hyphenIndex].text = '-';
     }
 
-    // 🔥 สำคัญ: sync ค่าเริ่มต้นจาก controller มาที่ _lastValues
     for (var i = 0; i < widget.controllers.length; i++) {
       _lastValues[i] = widget.controllers[i].text;
     }
@@ -489,19 +489,21 @@ class _OtpBoxesRowState extends State<OtpBoxesRow> {
 
   @override
   void dispose() {
-    for (final n in _nodes) n.dispose();
+    for (final n in _nodes) {
+      n.dispose();
+    }
     super.dispose();
   }
 
   int _nextEditable(int i) {
     var n = i + 1;
-    if (n < _nodes.length && _isHyphen(n)) n++; // ข้ามช่องขีด
+    if (n < _nodes.length && _isHyphen(n)) n++;
     return n;
   }
 
   int _prevEditable(int i) {
     var p = i - 1;
-    if (p >= 0 && _isHyphen(p)) p--; // ข้ามช่องขีด
+    if (p >= 0 && _isHyphen(p)) p--;
     return p;
   }
 
@@ -522,14 +524,12 @@ class _OtpBoxesRowState extends State<OtpBoxesRow> {
   @override
   Widget build(BuildContext context) {
     final regex = RegExp(widget.allowedPattern);
-    final lastIndex = widget.controllers.length - 1;
     const spacing = 8.0;
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxW = constraints.maxWidth;
-        final boxSide =
-            ((maxW) - (spacing * 5)) / 6; // สมมติ 6 ช่อง/แถว ปรับได้
+        final boxSide = (maxW - (spacing * 5)) / 6;
         final side = boxSide.clamp(32.0, 56.0);
 
         return SizedBox(
@@ -540,9 +540,7 @@ class _OtpBoxesRowState extends State<OtpBoxesRow> {
             runSpacing: spacing,
             children: List.generate(widget.controllers.length, (i) {
               final c = widget.controllers[i];
-              final isLast = i == lastIndex;
 
-              // ---------- ช่องขีด ----------
               if (_isHyphen(i)) {
                 return SizedBox(
                   width: side,
@@ -563,7 +561,6 @@ class _OtpBoxesRowState extends State<OtpBoxesRow> {
                 );
               }
 
-              // ---------- ช่องปกติ ----------
               return SizedBox(
                 width: side,
                 height: side,
@@ -571,8 +568,7 @@ class _OtpBoxesRowState extends State<OtpBoxesRow> {
                   focusNode: _nodes[i],
                   controller: c,
                   textAlign: TextAlign.center,
-                  textInputAction:
-                      isLast ? TextInputAction.done : TextInputAction.next,
+                  textInputAction: TextInputAction.done,
                   textCapitalization: TextCapitalization.characters,
                   keyboardType: TextInputType.visiblePassword,
                   inputFormatters: [
@@ -586,7 +582,6 @@ class _OtpBoxesRowState extends State<OtpBoxesRow> {
                   onChanged: (val) {
                     final was = _lastValues[i];
 
-                    // ❶ เคส backspace: เดิมมีตัว → ตอนนี้ว่าง → ย้ายโฟกัสไปช่องก่อนหน้า (แต่ไม่ลบช่องก่อนหน้า)
                     if (was.isNotEmpty && val.isEmpty) {
                       final p = _prevEditable(i);
                       if (p >= 0) {
@@ -597,7 +592,6 @@ class _OtpBoxesRowState extends State<OtpBoxesRow> {
                       return;
                     }
 
-                    // ❷ พิมพ์ตัวใหม่ → ทำเป็น UPPERCASE แล้วขยับไปช่องถัดไป
                     if (val.isNotEmpty) {
                       final upper = val.toUpperCase();
                       if (upper != val) {
@@ -612,12 +606,15 @@ class _OtpBoxesRowState extends State<OtpBoxesRow> {
                     }
 
                     widget.onChanged?.call(_joined());
-                    if (_allFilled()) widget.onSubmitted?.call(_joined());
 
-                    _lastValues[i] = c.text; // เก็บไว้เทียบรอบหน้า
+                    if (_allFilled()) {
+                      widget.onSubmitted?.call(_joined());
+                    }
+
+                    _lastValues[i] = c.text;
                   },
                   onFieldSubmitted: (_) {
-                    if (isLast) widget.onSubmitted?.call(_joined());
+                    widget.onSubmitted?.call(_joined());
                   },
                   decoration: InputDecoration(
                     contentPadding: EdgeInsets.zero,

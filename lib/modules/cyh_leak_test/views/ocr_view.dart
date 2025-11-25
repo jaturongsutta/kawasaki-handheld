@@ -16,7 +16,7 @@ import 'package:permission_handler/permission_handler.dart';
 /// ---------- LOGIC SPACE ----------
 const int SCREEN_WIDTH = 320;
 const int SCREEN_HEIGHT = 480;
-const Rect kType1RectLogical = Rect.fromLTWH(20, 190, 280, 100);
+const Rect kType1RectLogical = Rect.fromLTWH(20, 190, 280, 124);
 
 /// interval การสแกนแบบอัตโนมัติ (ms)
 const int kAutoScanIntervalMs = 700;
@@ -277,11 +277,11 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      _detectedText,
-                      style:
-                          const TextStyle(color: Colors.white70, fontSize: 12),
-                    ),
+                    // Text(
+                    //   _detectedText,
+                    //   style:
+                    //       const TextStyle(color: Colors.white70, fontSize: 12),
+                    // ),
                   ],
                 ),
               ),

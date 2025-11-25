@@ -9,7 +9,6 @@ import 'package:kmt/modules/cyh_leak_test/views/ocr_view.dart';
 import 'package:kmt/modules/cyh_leak_test/widgets/tab_selector.dart';
 import 'package:kmt/widgets/KeyenceScanner.dart';
 
-
 class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
   CYHLeakTestSerialView({super.key});
 
@@ -17,29 +16,30 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
   Widget build(BuildContext context) {
     controller.initFormFromArgs();
 
-    final theme = Theme.of(context);
     const labelStyle = TextStyle(
-      // color: Colors.blue[700],
       fontSize: 16,
       fontWeight: FontWeight.w600,
     );
 
-    // ระยะ padding ด้านล่างเมื่อคีย์บอร์ดโผล่ขึ้นมา (กันล้น)
+    // ระยะ padding ด้านล่างเมื่อคีย์บอร์ดโผล่ขึ้นมา (กันล้น + กันโดนทับ)
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
-
-    final gsText = controller.gsCheck.value.trim();
-    final gsValue = int.tryParse(gsText) ?? 0;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F5FB),
-      // เปิดให้เลื่อนอัตโนมัติเวลาเปิดคีย์บอร์ด
-      resizeToAvoidBottomInset: false,
+      // ✅ ให้ Scaffold ขยับตามคีย์บอร์ด
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: const Text('Leak Test',
-            style: TextStyle(fontWeight: FontWeight.w700)),
+        title: const Text(
+          'Leak Test',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
         centerTitle: true,
       ),
       body: Obx(() {
+        // ✅ เอามาไว้ใน Obx เพื่อให้ react ตามค่า gsCheck
+        final gsText = controller.gsCheck.value.trim();
+        final gsValue = int.tryParse(gsText) ?? 0;
+
         return KeyenceScanner(
           onBarcodeScanned: (String scannedCode) {
             if (scannedCode.isNotEmpty) {
@@ -51,23 +51,25 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
           child: SafeArea(
             child: Stack(
               children: [
-                // ---------- BODY ----------
                 Padding(
                   padding: const EdgeInsets.all(10),
                   child: SingleChildScrollView(
-                    padding: EdgeInsets.all(0),
                     keyboardDismissBehavior:
                         ScrollViewKeyboardDismissBehavior.onDrag,
+                    // ✅ กันโดนคีย์บอร์ดทับ + เลื่อนให้พ้น
+                    padding: EdgeInsets.only(bottom: bottomInset + 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         WorkTypeSelector(
-                            value: controller.workType.value,
-                            onChanged: (v) => {}),
+                          value: controller.workType.value,
+                          onChanged: (v) => {},
+                        ),
                         Card(
                           elevation: 0.5,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           margin: const EdgeInsets.symmetric(vertical: 10),
                           child: Padding(
                             padding: const EdgeInsets.all(12),
@@ -92,8 +94,9 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
                                                     horizontal: 12,
                                                     vertical: 10),
                                             border: OutlineInputBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(8)),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
                                             isDense: true,
                                           ),
                                         ),
@@ -101,55 +104,73 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
                                     ],
                                   ),
                                 ),
-
                                 const SizedBox(height: 12),
-                                _LabeledField(
-                                  label: 'Model',
-                                  child: AbsorbPointer(
-                                    absorbing: controller.isModelReadOnly.value,
-                                    child: DropdownButtonFormField<String>(
-                                      isExpanded:
-                                          controller.isModelReadOnly.value,
-                                      value: controller
-                                          .selectedModel.value?.modelCd,
-                                      items: controller.models
-                                          .map((m) => m.modelCd)
-                                          .where((cd) => cd.isNotEmpty)
-                                          .toSet() // <-- ตรงนี้แปลงเป็น Set เพื่อกันซ้ำ
-                                          .map((cd) => DropdownMenuItem<String>(
-                                                value: cd,
-                                                child: Text(cd),
-                                              ))
-                                          .toList(),
-                                      onChanged: (val) {
-                                        if (val != null) {
-                                          final model =
-                                              controller.models.firstWhere(
-                                            (m) => m.modelCd == val,
-                                            orElse: () => LeakTestRunningModel(
-                                              id: 0,
-                                              lineCd: '',
-                                              lineName: '',
-                                              modelCd: '',
-                                              partNo: '',
+                                controller.isModelReadOnly.value
+                                    ? _buildRowField(
+                                        label: 'Model',
+                                        child: Text(
+                                          controller.selectedModel.value
+                                                  ?.modelCd ??
+                                              '',
+                                          style: const TextStyle(fontSize: 16),
+                                        ),
+                                        labelStyle: labelStyle,
+                                      )
+                                    : _LabeledField(
+                                        label: 'Model',
+                                        child: AbsorbPointer(
+                                          absorbing:
+                                              controller.isModelReadOnly.value,
+                                          child: DropdownButtonFormField<String>(
+                                            isExpanded: controller
+                                                .isModelReadOnly.value,
+                                            value: controller
+                                                .selectedModel.value?.modelCd,
+                                            items: controller.models
+                                                .map((m) => m.modelCd)
+                                                .where((cd) => cd.isNotEmpty)
+                                                .toSet()
+                                                .map(
+                                                  (cd) => DropdownMenuItem<
+                                                      String>(
+                                                    value: cd,
+                                                    child: Text(cd),
+                                                  ),
+                                                )
+                                                .toList(),
+                                            onChanged: (val) {
+                                              if (val != null) {
+                                                final model = controller.models
+                                                    .firstWhere(
+                                                  (m) => m.modelCd == val,
+                                                  orElse: () =>
+                                                      LeakTestRunningModel(
+                                                    id: 0,
+                                                    lineCd: '',
+                                                    lineName: '',
+                                                    modelCd: '',
+                                                    partNo: '',
+                                                  ),
+                                                );
+                                                controller.selectedModel.value =
+                                                    model;
+                                              }
+                                            },
+                                            decoration: InputDecoration(
+                                              contentPadding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 12,
+                                                vertical: 10,
+                                              ),
+                                              border: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              isDense: true,
                                             ),
-                                          );
-                                          controller.selectedModel.value =
-                                              model;
-                                        }
-                                      },
-                                      decoration: InputDecoration(
-                                        contentPadding:
-                                            const EdgeInsets.symmetric(
-                                                horizontal: 12, vertical: 10),
-                                        border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8)),
-                                        isDense: true,
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  ),
-                                ),
                               ],
                             ),
                           ),
@@ -164,12 +185,10 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
                                     controller.mcDateCtrls.sublist(0, 18),
                                 allowedPattern: r'[A-Za-z0-9#-]',
                                 onChanged: (value) {
-                                  print('MC Date changed: $value');
                                   controller.selectedMCDate.value = value;
                                   controller.checkGetGSCount();
                                 },
                                 onSubmitted: (value) {
-                                  print('MC Date submitted: $value');
                                   if (value.isNotEmpty) {
                                     controller.selectedMCDate.value = value;
                                     controller.getGSCount();
@@ -198,12 +217,10 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
                                 controllers: controller.caNoCtrls.sublist(0, 3),
                                 allowedPattern: r'[0-9]',
                                 onChanged: (value) {
-                                  print('C/A No changed: $value');
-                                   controller.selectedCANo.value = value;
+                                  controller.selectedCANo.value = value;
                                 },
                                 onSubmitted: (value) {
-                                  print('C/A No submitted: $value');
-                                   controller.selectedCANo.value = value;
+                                  controller.selectedCANo.value = value;
                                 },
                               ),
                               const SizedBox(height: 8),
@@ -223,11 +240,9 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
                                 allowedPattern: r'[A-Za-z0-9#-]',
                                 hyphenIndex: 2,
                                 onChanged: (value) {
-                                  print('C/A Date changed: $value');
                                   controller.selectedCADate.value = value;
                                 },
                                 onSubmitted: (value) {
-                                  print('C/A Date submitted: $value');
                                   controller.selectedCADate.value = value;
                                 },
                               ),
@@ -247,13 +262,11 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
                                     controller.moldCtrls.sublist(0, 12),
                                 allowedPattern: r'[A-Za-z0-9#-]',
                                 onChanged: (value) {
-                                  print('changed yes: $value');
                                   if (value.isNotEmpty) {
                                     controller.selectedmoldCtrls.value = value;
                                   }
                                 },
                                 onSubmitted: (value) {
-                                  print('submitted yes: $value');
                                   if (value.isNotEmpty) {
                                     controller.selectedmoldCtrls.value = value;
                                   }
@@ -270,23 +283,24 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
                                 label: 'G/S',
                                 child: TextField(
                                   controller: controller.gsController,
-                                  keyboardType: TextInputType
-                                      .number, // แสดงคีย์บอร์ดตัวเลข
+                                  keyboardType: TextInputType.number,
                                   inputFormatters: [
-                                    FilteringTextInputFormatter
-                                        .digitsOnly, // ✅ อนุญาตเฉพาะตัวเลข 0–9
+                                    FilteringTextInputFormatter.digitsOnly,
                                   ],
                                   decoration: InputDecoration(
                                     contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 10, vertical: 8),
+                                      horizontal: 10,
+                                      vertical: 8,
+                                    ),
                                     border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8)),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
                                   ),
-                                  onSubmitted: (value) => {
-                                    controller.gsController.text = value,
+                                  onSubmitted: (value) {
+                                    controller.gsController.text = value;
                                   },
-                                  onChanged: (value) => {
-                                    controller.gsController.text = value,
+                                  onChanged: (value) {
+                                    controller.gsController.text = value;
                                   },
                                 ),
                               )
@@ -306,7 +320,6 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
                     ),
                   ),
                 ),
-                //  ),
 
                 // ---------- LOADING BAR ----------
                 if (controller.isLoading.value)
@@ -327,6 +340,23 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
 
 // -------------------- helper widgets --------------------
 const double kLabelWidth = 92;
+
+Widget _buildRowField({
+  required String label,
+  required Widget child,
+  required TextStyle labelStyle,
+}) {
+  return Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      SizedBox(
+        width: kLabelWidth,
+        child: Text(label, style: labelStyle),
+      ),
+      Expanded(child: child),
+    ],
+  );
+}
 
 class _FormRowCard extends StatelessWidget {
   final String label;
@@ -389,8 +419,7 @@ Widget _rowCard({
     elevation: 0.5,
     margin: const EdgeInsets.symmetric(vertical: 8),
     child: Padding(
-      padding:
-          const EdgeInsets.fromLTRB(12, 8, 12, 12), // ✅ padding ซ้ายขวาเท่ากัน
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -417,12 +446,8 @@ Widget _rowCard({
           // ---------- Boxes ----------
           LayoutBuilder(
             builder: (context, constraints) {
-              // ✅ ใช้ LayoutBuilder เพื่อให้ยืดหยุ่นตามความกว้างจริงของ Card
-
-              // เพิ่มระยะห่างขวาให้เท่ากับขอบกล่องบน
               return Padding(
                 padding: const EdgeInsets.only(left: 0, top: 4),
-                // ประมาณ 4% ของความกว้าง (responsive)
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: boxes,
@@ -431,8 +456,6 @@ Widget _rowCard({
             },
           ),
           const SizedBox(height: 12),
-          // gs,
-          // const SizedBox(height: 4),
         ],
       ),
     ),
@@ -458,14 +481,12 @@ Widget _rowCardSimple({
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // label ด้านซ้าย
               Expanded(
                 child: Text(
                   label,
                   style: labelStyle,
                 ),
               ),
-              // ปุ่มลบด้านขวา
               IconButton(
                 onPressed: onClear,
                 icon: const Icon(Icons.delete, color: Colors.red),
@@ -476,11 +497,10 @@ Widget _rowCardSimple({
 
           const SizedBox(height: 4),
 
-          // ---------- Boxes ----------
           Padding(
             padding: const EdgeInsets.only(left: 0, top: 4),
             child: Align(
-              alignment: Alignment.centerLeft, // ✅ ชิดซ้าย
+              alignment: Alignment.centerLeft,
               child: boxes,
             ),
           ),
@@ -492,11 +512,10 @@ Widget _rowCardSimple({
   );
 }
 
-
 class OtpBoxesRow extends StatefulWidget {
   final List<TextEditingController> controllers;
-  final String allowedPattern; // เช่น r'[0-9]' หรือ r'[A-Za-z0-9]'
-  final int hyphenIndex; // ช่องที่จะเป็นขีด (index เริ่มที่ 0), -1 = ไม่มีขีด
+  final String allowedPattern; // เช่น r'[0-9]' หรือ r'[A-Za-z0-9#-]'
+  final int hyphenIndex;       // ช่องที่จะเป็นขีด (index เริ่มที่ 0), -1 = ไม่มีขีด
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
 
@@ -524,13 +543,13 @@ class _OtpBoxesRowState extends State<OtpBoxesRow> {
     _nodes = List.generate(widget.controllers.length, (_) => FocusNode());
     _lastValues = List.generate(widget.controllers.length, (_) => '');
 
-    // ถ้ามี hyphen ให้ set ก่อน
+    // ถ้ามี hyphen ให้เซ็ตค่าเป็น '-' ตั้งแต่แรก
     if (widget.hyphenIndex >= 0 &&
         widget.hyphenIndex < widget.controllers.length) {
       widget.controllers[widget.hyphenIndex].text = '-';
     }
 
-    // 🔥 สำคัญ: sync ค่าเริ่มต้นจาก controller มาที่ _lastValues
+    // sync ค่าเริ่มต้นจาก controller มาที่ _lastValues
     for (var i = 0; i < widget.controllers.length; i++) {
       _lastValues[i] = widget.controllers[i].text;
     }
@@ -538,7 +557,9 @@ class _OtpBoxesRowState extends State<OtpBoxesRow> {
 
   @override
   void dispose() {
-    for (final n in _nodes) n.dispose();
+    for (final n in _nodes) {
+      n.dispose();
+    }
     super.dispose();
   }
 
@@ -577,8 +598,8 @@ class _OtpBoxesRowState extends State<OtpBoxesRow> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxW = constraints.maxWidth;
-        final boxSide =
-            ((maxW) - (spacing * 5)) / 6; // สมมติ 6 ช่อง/แถว ปรับได้
+        // สมมติประมาณ 6 ช่องต่อแถว (ปรับได้ตามดีไซน์)
+        final boxSide = (maxW - (spacing * 5)) / 6;
         final side = boxSide.clamp(32.0, 56.0);
 
         return SizedBox(
@@ -620,8 +641,7 @@ class _OtpBoxesRowState extends State<OtpBoxesRow> {
                   focusNode: _nodes[i],
                   controller: c,
                   textAlign: TextAlign.center,
-                  textInputAction:
-                      isLast ? TextInputAction.done : TextInputAction.next,
+                  textInputAction:TextInputAction.done ,
                   textCapitalization: TextCapitalization.characters,
                   keyboardType: TextInputType.visiblePassword,
                   inputFormatters: [
@@ -635,7 +655,7 @@ class _OtpBoxesRowState extends State<OtpBoxesRow> {
                   onChanged: (val) {
                     final was = _lastValues[i];
 
-                    // ❶ เคส backspace: เดิมมีตัว → ตอนนี้ว่าง → ย้ายโฟกัสไปช่องก่อนหน้า (แต่ไม่ลบช่องก่อนหน้า)
+                    // เคส backspace: เดิมมีตัว → ตอนนี้ว่าง → ย้ายโฟกัสไปช่องก่อนหน้า
                     if (was.isNotEmpty && val.isEmpty) {
                       final p = _prevEditable(i);
                       if (p >= 0) {
@@ -646,7 +666,7 @@ class _OtpBoxesRowState extends State<OtpBoxesRow> {
                       return;
                     }
 
-                    // ❷ พิมพ์ตัวใหม่ → ทำเป็น UPPERCASE แล้วขยับไปช่องถัดไป
+                    // ถ้าพิมพ์ตัวใหม่ → บังคับเป็น uppercase แล้วเลื่อนไปช่องถัดไป
                     if (val.isNotEmpty) {
                       final upper = val.toUpperCase();
                       if (upper != val) {
@@ -661,12 +681,17 @@ class _OtpBoxesRowState extends State<OtpBoxesRow> {
                     }
 
                     widget.onChanged?.call(_joined());
-                    if (_allFilled()) widget.onSubmitted?.call(_joined());
 
-                    _lastValues[i] = c.text; // เก็บไว้เทียบรอบหน้า
+                    // ถ้าทุกช่องไม่ว่างแล้วให้ยิง onSubmitted ด้วย (เช่น auto confirm)
+                    if (_allFilled()) {
+                      widget.onSubmitted?.call(_joined());
+                    }
+
+                    _lastValues[i] = c.text;
                   },
+                  // ✅ กด Done จากช่องไหนก็ยิง onSubmitted ได้เลย
                   onFieldSubmitted: (_) {
-                    if (isLast) widget.onSubmitted?.call(_joined());
+                    widget.onSubmitted?.call(_joined());
                   },
                   decoration: InputDecoration(
                     contentPadding: EdgeInsets.zero,
@@ -683,3 +708,4 @@ class _OtpBoxesRowState extends State<OtpBoxesRow> {
     );
   }
 }
+
