@@ -41,6 +41,38 @@ class CYHLeakTestNGController extends GetxController {
     initFormFromArgs();
   }
 
+  String pad3Int(String value) {
+    return value.toString().padLeft(3, '0');
+  }
+
+  Future<LeakTestNgModel?> checkGetNGData(machineNo) async {
+    isLoading.value = true;
+    EasyLoading.show(status: 'Loading...', maskType: EasyLoadingMaskType.black);
+
+    try {
+      final result = await service.getOKNG(machineNo: machineNo);
+      if (result.isNotEmpty) {
+        LeakTestNgModel v = result[0];
+        // selectedCANo.value = v.caNo ?? '';
+        // selectedcastingDate.value = v.caDate ?? '';
+        // selectedmoldCtrls.value = v.moldNo ?? '';
+
+        // initTextField(pad3Int(v.caNo ?? ''), caNoCtrls);
+        // initTextField(v.caDate ?? '', castingDateCtrls);
+        // initTextField(v.moldNo ?? '', moldCtrls);
+
+        // checkIsEnabledButton();
+        return v;
+      }
+      return null;
+    } catch (_) {
+      print("catch checkGetNGData ${_}");
+    } finally {
+      isLoading.value = false;
+      EasyLoading.dismiss();
+    }
+  }
+
   Future<void> scanQrForMachine(String code) async {
     if (code.trim().isEmpty) {
       Get.snackbar('Invalid', 'QR ว่าง');
@@ -51,7 +83,7 @@ class CYHLeakTestNGController extends GetxController {
     final target = norm(code);
   }
 
-  void initFormFromArgs() {
+  void initFormFromArgs() async {
     final args = Get.arguments as Map<String, dynamic>?;
     print("init => ");
 
@@ -70,15 +102,19 @@ class CYHLeakTestNGController extends GetxController {
         dataModel.value = model;
         print('model is => ${model.toJson()}');
       } else {
-        print('❌ ng-result is not a Map, got: ${data.runtimeType}');
+        // print('❌ ng-result is not a Map, got: ${data.runtimeType}');
       }
 
       pageType.value = args['page-type'];
+      if (pageType.value == 'cyh-main') {
+        print("page type mainn reall ");
+        dataModel.value = await checkGetNGData(args['machine']);
+      }
       selectedCANo.value = dataModel.value?.caNo ?? '';
       selectedcastingDate.value = dataModel.value?.caDate ?? '';
       selectedmoldCtrls.value = dataModel.value?.moldNo ?? '';
 
-      initTextField(dataModel.value?.caNo ?? '', caNoCtrls);
+      initTextField(pad3Int(dataModel.value?.caNo ?? ''), caNoCtrls);
       initTextField(dataModel.value?.caDate ?? '', castingDateCtrls);
       initTextField(dataModel.value?.moldNo ?? '', moldCtrls);
 

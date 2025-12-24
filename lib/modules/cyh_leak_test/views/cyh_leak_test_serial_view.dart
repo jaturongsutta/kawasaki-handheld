@@ -192,6 +192,7 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
                                   if (value.isNotEmpty) {
                                     controller.selectedMCDate.value = value;
                                     controller.getGSCount();
+                                    controller.checkGetLeakCYH();
                                     controller.checkIsEnabledButton();
                                   }
                                 },

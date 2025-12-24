@@ -100,12 +100,60 @@ class CYHLeakTestSerialController extends GetxController {
       selectedMCDate,
       (_) async {
         if (selectedMCDate.isNotEmpty) {
+          checkGetLeakCYH();
           await getGSCount();
         }
         checkIsEnabledButton();
       },
       time: const Duration(milliseconds: 400),
     );
+  }
+
+  Future<void> checkGetLeakCYH() async {
+    isLoading.value = true;
+    EasyLoading.show(status: 'Loading...', maskType: EasyLoadingMaskType.black);
+
+    try {
+      final result = await service.getLeakCYH(
+          modelCd: selectedModel.value?.modelCd,
+          serialNo: selectedMCDate.value);
+      if (result.isNotEmpty) {
+        initTextField(pad3Int(result[0].castingNo ?? 0).toString(), caNoCtrls);
+        initTextField(result[0].castingDate.toString(), caDateCtrls);
+        initTextField(result[0].moldNo.toString(), moldCtrls);
+      }
+    } catch (_) {
+      print("catch checkGetLeakCYH ${_}");
+    } finally {
+      isLoading.value = false;
+      EasyLoading.dismiss();
+    }
+  }
+
+  String pad3Int(int value) {
+    return value.toString().padLeft(3, '0');
+  }
+
+  void initTextField(String? text, List<TextEditingController> widget) {
+    // เคสที่ต้องเคลียร์หมดเลย
+    if (text == null || text.isEmpty || text == 'null') {
+      for (var c in widget) c.clear();
+      return;
+    }
+
+    final len = text.length;
+    final max = widget.length;
+
+    final limit = len < max ? len : max; // min(len, max)
+
+    for (var i = 0; i < limit; i++) {
+      widget[i].text = text[i];
+    }
+
+    // clear ช่องที่เหลือ
+    for (var i = limit; i < max; i++) {
+      widget[i].clear();
+    }
   }
 
   Future<void> getGSCount() async {
