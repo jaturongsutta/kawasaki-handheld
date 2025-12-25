@@ -53,15 +53,6 @@ class CYHLeakTestNGController extends GetxController {
       final result = await service.getOKNG(machineNo: machineNo);
       if (result.isNotEmpty) {
         LeakTestNgModel v = result[0];
-        // selectedCANo.value = v.caNo ?? '';
-        // selectedcastingDate.value = v.caDate ?? '';
-        // selectedmoldCtrls.value = v.moldNo ?? '';
-
-        // initTextField(pad3Int(v.caNo ?? ''), caNoCtrls);
-        // initTextField(v.caDate ?? '', castingDateCtrls);
-        // initTextField(v.moldNo ?? '', moldCtrls);
-
-        // checkIsEnabledButton();
         return v;
       }
       return null;
@@ -107,7 +98,6 @@ class CYHLeakTestNGController extends GetxController {
 
       pageType.value = args['page-type'];
       if (pageType.value == 'cyh-main') {
-        print("page type mainn reall ");
         dataModel.value = await checkGetNGData(args['machine']);
       }
       selectedCANo.value = dataModel.value?.caNo ?? '';
@@ -194,6 +184,10 @@ class CYHLeakTestNGController extends GetxController {
       EasyLoading.dismiss();
       Get.snackbar('Error', e.toString());
     }
+  }
+
+  void goToLeakTest () {
+     Get.offAllNamed(AppRoutes.cyhLeakTest);
   }
 
   Future<void> scanAndFill(OcrMode mode) async {

@@ -16,7 +16,7 @@ class CYHLeakTestView extends GetView<CYHLeakTestController> {
   void _handleEnter() {
     // กันกด Enter แล้วไปหน้าถัดไปทั้งที่ยังไม่พร้อม
     if (!controller.isEnabled.value) return;
-    controller.goToSerial();
+    controller.checkTestResult();
   }
 
   @override

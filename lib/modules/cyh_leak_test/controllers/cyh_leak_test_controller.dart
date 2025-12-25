@@ -25,7 +25,6 @@ class CYHLeakTestController extends GetxController {
   }
 
   void checkIsEnabledButton() {
-    print('asdfasdf ${selectedMachineNo.value!}');
     isEnabled.value = (selectedWorkType.value ?? '').isNotEmpty &&
         selectedMachineNo.value!.isNotEmpty;
   }
@@ -60,17 +59,20 @@ class CYHLeakTestController extends GetxController {
   Future<void> checkTestResult() async {
     isLoading.value = true;
     try {
+      EasyLoading.show(
+          dismissOnTap: false, maskType: EasyLoadingMaskType.black);
       final list =
           await service.checkTestResult(machineNo: selectedMachineNo.value);
+      EasyLoading.dismiss();
       if (list.isNotEmpty) {
         if (list[0].testedStatus == 1) {
-          Get.toNamed(AppRoutes.cyhLeakTestOK, arguments: {
+          Get.offAllNamed(AppRoutes.cyhLeakTestOK, arguments: {
             'workType': selectedWorkType.value,
             'machine': selectedMachineNo.value,
             'page-type': 'cyh-main'
           });
         } else {
-          Get.toNamed(AppRoutes.cyhLeakTestNG, arguments: {
+          Get.offAllNamed(AppRoutes.cyhLeakTestNG, arguments: {
             'workType': selectedWorkType.value,
             'machine': selectedMachineNo.value,
             'page-type': 'cyh-main'

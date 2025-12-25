@@ -6,13 +6,16 @@ import 'package:kmt/services/base_service.dart';
 class CYHLeakTestBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<BaseService>(() => BaseService());
+    Get.lazyPut<BaseService>(() => BaseService(), fenix: true);
+
     Get.lazyPut<CYHLeakTestService>(
       () => CYHLeakTestService(Get.find<BaseService>()),
+      fenix: true,
     );
+
     Get.lazyPut<CYHLeakTestController>(
       () => CYHLeakTestController(Get.find<CYHLeakTestService>()),
+      fenix: true,
     );
-    Get.lazyPut<CYHLeakTestController>(() => CYHLeakTestController(Get.find()));
   }
 }

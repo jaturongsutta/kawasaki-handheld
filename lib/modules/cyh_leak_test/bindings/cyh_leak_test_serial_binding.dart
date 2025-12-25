@@ -6,13 +6,16 @@ import 'package:kmt/services/base_service.dart';
 class CYHLeakTestSerialBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<BaseService>(() => BaseService());
+    Get.lazyPut<BaseService>(() => BaseService(), fenix: true);
+
     Get.lazyPut<CYHLeakTestSerialService>(
       () => CYHLeakTestSerialService(Get.find<BaseService>()),
+      fenix: true,
     );
+
     Get.lazyPut<CYHLeakTestSerialController>(
       () => CYHLeakTestSerialController(Get.find<CYHLeakTestSerialService>()),
+      fenix: true,
     );
-    Get.lazyPut<CYHLeakTestSerialController>(() => CYHLeakTestSerialController(Get.find()));
   }
 }

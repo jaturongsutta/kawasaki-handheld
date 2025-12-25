@@ -27,6 +27,26 @@ class CYHLeakTestOKService extends GetxService {
     return '0';
   }
 
+  Future<List<LeakTestNgModel>> getOKNG({required String? machineNo}) async {
+    try {
+      final res = await baseService.apiRequest(
+        '/leak/get-ok-ng',
+        queryType: QueryType.post,
+        data: {'Machine_No': machineNo},
+      );
+      print('get-ok-ng API');
+      print('res ===> $res');
+      if (res['result'] == true && res['data'] != null) {
+        final list = (res['data'] as List).cast<Map<String, dynamic>>();
+        return list.map(LeakTestNgModel.fromJson).toList();
+      }
+      return <LeakTestNgModel>[];
+    } catch (e) {
+      print("error ${e}");
+      return <LeakTestNgModel>[];
+    }
+  }
+
   Future<Map<String, dynamic>> updateLeakTestOK(LeakTestModel model) async {
     try {
       final res = await baseService.apiRequest(

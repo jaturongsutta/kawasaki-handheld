@@ -219,7 +219,7 @@ class CYHLeakTestSerialController extends GetxController {
             duration: const Duration(seconds: 1), dismissOnTap: false);
 
         await Future.delayed(const Duration(seconds: 1));
-        Get.toNamed(AppRoutes.cyhLeakTestOK,
+        Get.offAllNamed(AppRoutes.cyhLeakTestOK,
             arguments: {'ng-result': res['data'], 'page-type': 'cyh-leak'});
       } else if (res['result'] == true &&
           (res['data'] as Map<String, dynamic>).isNotEmpty) {
@@ -227,7 +227,7 @@ class CYHLeakTestSerialController extends GetxController {
             duration: const Duration(seconds: 1), dismissOnTap: false);
 
         await Future.delayed(const Duration(seconds: 1));
-        Get.toNamed(AppRoutes.cyhLeakTestNG,
+        Get.offAllNamed(AppRoutes.cyhLeakTestNG,
             arguments: {'ng-result': res['data'], 'page-type': 'cyh-leak'});
       } else {
         EasyLoading.dismiss();
@@ -259,6 +259,15 @@ class CYHLeakTestSerialController extends GetxController {
     selectedModel.value = null;
     mcDateCtrls.clear();
     gsController.clear();
+  }
+
+  @override
+  void onInit() {
+    clearMCDate();
+    clearCANo();
+    clearCADate();
+    clearMold();
+    super.onInit();
   }
 
   @override

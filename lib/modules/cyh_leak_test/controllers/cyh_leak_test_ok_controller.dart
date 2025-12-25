@@ -36,6 +36,7 @@ class CYHLeakTestOKController extends GetxController {
 
   final caDateCtrls = List.generate(6, (_) => TextEditingController());
   final selectedcastingDate = ''.obs;
+  final pageType = ''.obs;
 
   @override
   void onInit() {
@@ -53,7 +54,7 @@ class CYHLeakTestOKController extends GetxController {
     final target = norm(code);
   }
 
-  void initFormFromArgs() {
+  void initFormFromArgs() async {
     final args = Get.arguments as Map<String, dynamic>?;
     print("init => ");
 
@@ -71,15 +72,43 @@ class CYHLeakTestOKController extends GetxController {
       } else {
         print('❌ ng-result is not a Map, got: ${data.runtimeType}');
       }
+
+      pageType.value = args['page-type'];
+      if (pageType.value == 'cyh-main') {
+        dataModel.value = await checkGetNGData(args['machine']);
+      }
       selectedCANo.value = dataModel.value?.caNo ?? '';
       selectedcastingDate.value = dataModel.value?.caDate ?? '';
       selectedmoldCtrls.value = dataModel.value?.moldNo ?? '';
 
-      initTextField(dataModel.value?.caNo ?? '', caNoCtrls);
+      initTextField(pad3Int(dataModel.value?.caNo ?? ''), caNoCtrls);
       initTextField(dataModel.value?.caDate ?? '', castingDateCtrls);
       initTextField(dataModel.value?.moldNo ?? '', moldCtrls);
 
       checkIsEnabledButton();
+    }
+  }
+
+  String pad3Int(String value) {
+    return value.toString().padLeft(3, '0');
+  }
+
+  Future<LeakTestNgModel?> checkGetNGData(machineNo) async {
+    isLoading.value = true;
+    EasyLoading.show(status: 'Loading...', maskType: EasyLoadingMaskType.black);
+
+    try {
+      final result = await service.getOKNG(machineNo: machineNo);
+      if (result.isNotEmpty) {
+        LeakTestNgModel v = result[0];
+        return v;
+      }
+      return null;
+    } catch (_) {
+      print("catch checkGetNGData ${_}");
+    } finally {
+      isLoading.value = false;
+      EasyLoading.dismiss();
     }
   }
 
@@ -170,6 +199,10 @@ class CYHLeakTestOKController extends GetxController {
       EasyLoading.dismiss();
       Get.snackbar('Error', e.toString());
     }
+  }
+
+  void goToLeakTest() {
+    Get.offAllNamed(AppRoutes.cyhLeakTest);
   }
 
   Future<void> scanAndFill(OcrMode mode) async {

@@ -114,8 +114,7 @@ class CYHLeakTestOKView extends GetView<CYHLeakTestOKController> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               OtpBoxesRow(
-                                controllers:
-                                    controller.caNoCtrls.sublist(0, 3),
+                                controllers: controller.caNoCtrls.sublist(0, 3),
                                 allowedPattern: r'[0-9]',
                                 onChanged: (value) {
                                   if (value.isNotEmpty) {
@@ -197,8 +196,7 @@ class CYHLeakTestOKView extends GetView<CYHLeakTestOKController> {
                               ),
                             ],
                           ),
-                          onScan: () =>
-                              controller.scanAndFill(OcrMode.mold12),
+                          onScan: () => controller.scanAndFill(OcrMode.mold12),
                           onClear: () {
                             controller.clearMold();
                             controller.selectedmoldCtrls.value = '';
@@ -210,10 +208,22 @@ class CYHLeakTestOKView extends GetView<CYHLeakTestOKController> {
                         SizedBox(
                           height: 44,
                           child: FilledButton(
-                            onPressed: controller.isEnabled.value
-                                ? controller.confirmForm
-                                : null,
+                            onPressed: controller.confirmForm,
                             child: const Text('Confirm'),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          height: 44,
+                          child: FilledButton(
+                            onPressed: controller.goToLeakTest,
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.orange,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: Colors.orange.shade200,
+                              disabledForegroundColor: Colors.white70,
+                            ),
+                            child: const Text('Later'),
                           ),
                         ),
                         const SizedBox(height: 32),

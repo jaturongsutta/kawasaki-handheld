@@ -115,40 +115,35 @@ class CYHLeakTestNGView extends GetView<CYHLeakTestNGController> {
                                   _resultButton(
                                     controller.dataModel.value?.ngP1 ?? '',
                                     controller.hexToColor(
-                                      controller
-                                              .dataModel.value?.ngP1Color ??
+                                      controller.dataModel.value?.ngP1Color ??
                                           '#FFFFFF',
                                     ),
                                   ),
                                   _resultButton(
                                     controller.dataModel.value?.ngP2 ?? '',
                                     controller.hexToColor(
-                                      controller
-                                              .dataModel.value?.ngP2Color ??
+                                      controller.dataModel.value?.ngP2Color ??
                                           '#FFFFFF',
                                     ),
                                   ),
                                   _resultButton(
                                     controller.dataModel.value?.ngP3 ?? '',
                                     controller.hexToColor(
-                                      controller
-                                              .dataModel.value?.ngP3Color ??
+                                      controller.dataModel.value?.ngP3Color ??
                                           '#FFFFFF',
                                     ),
                                   ),
                                   _resultButton(
                                     controller.dataModel.value?.ngP4 ?? '',
                                     controller.hexToColor(
-                                      controller
-                                              .dataModel.value?.ngP4Color ??
+                                      controller.dataModel.value?.ngP4Color ??
                                           '#FFFFFF',
                                     ),
                                   ),
                                   _resultButton(
                                     controller.dataModel.value?.ngTb ?? '',
                                     controller.hexToColor(
-                                      controller
-                                              .dataModel.value?.ngTbColor ??
+                                      controller.dataModel.value?.ngTbColor ??
                                           '#FFFFFF',
                                     ),
                                   ),
@@ -163,8 +158,7 @@ class CYHLeakTestNGView extends GetView<CYHLeakTestNGController> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               OtpBoxesRow(
-                                controllers:
-                                    controller.caNoCtrls.sublist(0, 3),
+                                controllers: controller.caNoCtrls.sublist(0, 3),
                                 allowedPattern: r'[0-9]',
                                 onChanged: (value) {
                                   if (value.isNotEmpty) {
@@ -246,8 +240,7 @@ class CYHLeakTestNGView extends GetView<CYHLeakTestNGController> {
                               ),
                             ],
                           ),
-                          onScan: () =>
-                              controller.scanAndFill(OcrMode.mold12),
+                          onScan: () => controller.scanAndFill(OcrMode.mold12),
                           onClear: () {
                             controller.clearMold();
                             controller.selectedmoldCtrls.value = '';
@@ -263,6 +256,20 @@ class CYHLeakTestNGView extends GetView<CYHLeakTestNGController> {
                                 ? controller.confirmForm
                                 : null,
                             child: const Text('Confirm'),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          height: 44,
+                          child: FilledButton(
+                            onPressed: controller.goToLeakTest,
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.orange,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: Colors.orange.shade200,
+                              disabledForegroundColor: Colors.white70,
+                            ),
+                            child: const Text('Later'),
                           ),
                         ),
                         const SizedBox(height: 32),
