@@ -37,6 +37,29 @@ class CYHLeakTestController extends GetxController {
     ]);
   }
 
+  Future<void> checkMachine() async {
+    isLoading.value = true;
+    try {
+      EasyLoading.show(
+          dismissOnTap: false, maskType: EasyLoadingMaskType.black);
+      final list =
+          await service.checkMachine(machineNo: selectedMachineNo.value);
+      EasyLoading.dismiss();
+      if (list.isNotEmpty) {
+        checkIsEnabledButton();
+      } else {
+        isEnabled.value = false;
+        EasyLoading.showError('Invalid Machine!',
+            duration: const Duration(seconds: 2), dismissOnTap: false);
+      }
+    } catch (_) {
+      EasyLoading.showError('Something went wrong.',
+          duration: const Duration(seconds: 2), dismissOnTap: false);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   Future<void> loadMachines() async {
     isLoading.value = true;
     try {
@@ -44,7 +67,7 @@ class CYHLeakTestController extends GetxController {
       machines.assignAll(list);
       if (machines.isNotEmpty) {
         selectedMachineNo.value = machines.first.value;
-        checkIsEnabledButton();
+        checkMachine();
       } else {
         selectedMachineNo.value = null;
       }
@@ -97,8 +120,11 @@ class CYHLeakTestController extends GetxController {
     final target = norm(code);
 
     selectedMachineNo.value = target;
-    checkIsEnabledButton();
-    checkTestResult();
+    await checkMachine();
+
+    if (isEnabled.value) {
+      checkTestResult();
+    }
   }
 
   void goToSerial() async {

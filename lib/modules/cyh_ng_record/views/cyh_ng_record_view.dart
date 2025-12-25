@@ -11,7 +11,9 @@ class CYHNGRecordView extends GetView<CYHNGRecordController> {
       FocusNode(debugLabel: 'CYHNGRecordViewPageFocus');
 
   void _handleEnter() {
-    controller.checkMachine();
+    if (controller.isEnabled.value) {
+      controller.goToModel();
+    }
   }
 
   @override

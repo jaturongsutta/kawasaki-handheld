@@ -10,8 +10,6 @@ class CYHNGRecordController extends GetxController {
   CYHNGRecordController(this.service);
   final selectedMachineNo = RxnString();
   final isLoading = false.obs;
-
-  // final machineController = TextEditingController();
   final isEnabled = false.obs;
   final workType = WorkTab.Production.obs;
   final machines = <MachinePredefineModel>[].obs;

@@ -14,9 +14,7 @@ class CYHLeakTestView extends GetView<CYHLeakTestController> {
   final FocusNode _pageFocus = FocusNode(debugLabel: 'CYHLeakTestPageFocus');
 
   void _handleEnter() {
-    // กันกด Enter แล้วไปหน้าถัดไปทั้งที่ยังไม่พร้อม
-    if (!controller.isEnabled.value) return;
-    controller.checkTestResult();
+    controller.confirmForm();
   }
 
   @override
@@ -82,7 +80,7 @@ class CYHLeakTestView extends GetView<CYHLeakTestController> {
                                       .toList(),
                                   onChanged: (val) => {
                                     controller.selectedMachineNo.value = val,
-                                    controller.checkIsEnabledButton(),
+                                    controller.checkMachine(),
                                   },
                                   decoration: InputDecoration(
                                     contentPadding: const EdgeInsets.symmetric(
@@ -116,7 +114,9 @@ class CYHLeakTestView extends GetView<CYHLeakTestController> {
                             SizedBox(
                               height: 44,
                               child: FilledButton(
-                                onPressed: controller.confirmForm,
+                                onPressed: controller.isEnabled.value
+                                    ? controller.confirmForm
+                                    : null,
                                 child: const Text('Confirm'),
                               ),
                             ),

@@ -5,16 +5,18 @@ import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:kmt/model/leak_history_item_model.dart';
 import 'package:kmt/model/leak_no_plan_model.dart';
-import 'package:kmt/model/machine_model.dart';
+import 'package:kmt/model/machine_predefine_model.dart';
 import 'package:kmt/routes/app_routes.dart';
 import '../services/cyh_no_plan_service.dart';
 
-class CYHNoPlanController extends GetxController with GetSingleTickerProviderStateMixin {
+class CYHNoPlanController extends GetxController
+    with GetSingleTickerProviderStateMixin {
   final CYHNoPlanService service;
   CYHNoPlanController(this.service);
 
+  final isEnabled = false.obs;
   final isLoading = false.obs;
-  final machines = <MachineModel>[].obs;
+  final machines = <MachinePredefineModel>[].obs;
   final selectedMachineNo = RxnString();
   final startDate = Rx<DateTime>(DateTime.now());
   final endDate = Rx<DateTime>(DateTime.now());
@@ -22,7 +24,8 @@ class CYHNoPlanController extends GetxController with GetSingleTickerProviderSta
   final endTime = Rx<TimeOfDay>(const TimeOfDay(hour: 17, minute: 0));
   final startTimeController =
       TextEditingController(text: DateFormat('HH:mm').format(DateTime.now()));
-  final endTimeController = TextEditingController(text: DateFormat('HH:mm').format(DateTime.now()));
+  final endTimeController =
+      TextEditingController(text: DateFormat('HH:mm').format(DateTime.now()));
   late TabController tabController;
 
   final historyDate = Rx<DateTime>(DateTime.now());
@@ -70,7 +73,9 @@ class CYHNoPlanController extends GetxController with GetSingleTickerProviderSta
   }
 
   Future<void> loadHistoricalMore() async {
-    if (isHistoryLoading.value || isHistoryLoadingMore.value || !historyHasMore.value) {
+    if (isHistoryLoading.value ||
+        isHistoryLoadingMore.value ||
+        !historyHasMore.value) {
       return;
     }
     final nextPage = historyPage.value + 1;
@@ -88,16 +93,44 @@ class CYHNoPlanController extends GetxController with GetSingleTickerProviderSta
   Future<void> loadMachines({required String? lineCd}) async {
     isLoading.value = true;
     try {
-      final list = await service.fetchMachines(lineCd: lineCd);
+      final list = await service.fetchMachinesAll();
       machines.assignAll(list);
       if (machines.isNotEmpty) {
-        selectedMachineNo.value = machines.first.machineNo;
+        selectedMachineNo.value = machines.first.value;
+        checkMachine();
       } else {
         selectedMachineNo.value = null;
       }
     } catch (_) {
       machines.clear();
       selectedMachineNo.value = null;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  void checkIsEnabledButton() {
+    isEnabled.value = selectedMachineNo.value!.isNotEmpty;
+  }
+
+  Future<void> checkMachine() async {
+    isLoading.value = true;
+    try {
+      EasyLoading.show(
+          dismissOnTap: false, maskType: EasyLoadingMaskType.black);
+      final list =
+          await service.checkMachine(machineNo: selectedMachineNo.value);
+      EasyLoading.dismiss();
+      if (list.isNotEmpty) {
+        checkIsEnabledButton();
+      } else {
+        isEnabled.value = false;
+        EasyLoading.showError('Invalid Machine!',
+            duration: const Duration(seconds: 2), dismissOnTap: false);
+      }
+    } catch (_) {
+      EasyLoading.showError('Something went wrong.',
+          duration: const Duration(seconds: 2), dismissOnTap: false);
     } finally {
       isLoading.value = false;
     }
@@ -122,35 +155,37 @@ class CYHNoPlanController extends GetxController with GetSingleTickerProviderSta
       return;
     }
 
-    String norm(String s) => s.replaceAll(RegExp(r'\s+'), '').toLowerCase();
+    String norm(String s) => s.replaceAll(RegExp(r'\s+'), '').toUpperCase();
     final target = norm(code);
 
-    if (machines.isEmpty) {
-      final line = Get.find<GetStorage>().read('selectedLine')?.toString();
-      await loadMachines(lineCd: line);
+    selectedMachineNo.value = target;
+    await checkMachine();
+
+    if (isEnabled.value) {
+      goToForm();
     }
 
-    final found = machines.firstWhereOrNull(
-      (m) => norm(m.machineNo) == target,
-    );
+    // final found = machines.firstWhereOrNull(
+    //   (m) => norm(m.machineNo) == target,
+    // );
 
-    if (found != null) {
-      selectedMachineNo.value = found.machineNo;
-      Get.snackbar('Selected', 'Machine: ${found.machineNo}', snackPosition: SnackPosition.BOTTOM);
-    } else {
-      final fuzzy = machines.firstWhereOrNull(
-        (m) => norm(m.machineNo).contains(target),
-      );
+    // if (found != null) {
+    //   selectedMachineNo.value = found.machineNo;
+    //   Get.snackbar('Selected', 'Machine: ${found.machineNo}', snackPosition: SnackPosition.BOTTOM);
+    // } else {
+    //   final fuzzy = machines.firstWhereOrNull(
+    //     (m) => norm(m.machineNo).contains(target),
+    //   );
 
-      if (fuzzy != null) {
-        selectedMachineNo.value = fuzzy.machineNo;
-        Get.snackbar('Selected (≈)', 'Machine: ${fuzzy.machineNo}',
-            snackPosition: SnackPosition.BOTTOM);
-      } else {
-        Get.snackbar('Not found', 'ไม่พบเครื่องที่ตรงกับ: $code',
-            snackPosition: SnackPosition.BOTTOM);
-      }
-    }
+    //   if (fuzzy != null) {
+    //     selectedMachineNo.value = fuzzy.machineNo;
+    //     Get.snackbar('Selected (≈)', 'Machine: ${fuzzy.machineNo}',
+    //         snackPosition: SnackPosition.BOTTOM);
+    //   } else {
+    //     Get.snackbar('Not found', 'ไม่พบเครื่องที่ตรงกับ: $code',
+    //         snackPosition: SnackPosition.BOTTOM);
+    //   }
+    // }
   }
 
   void initFormFromArgs() {
@@ -211,7 +246,8 @@ class CYHNoPlanController extends GetxController with GetSingleTickerProviderSta
 
   void confirmForm() async {
     try {
-      EasyLoading.show(status: 'กำลังบันทึก...', maskType: EasyLoadingMaskType.black);
+      EasyLoading.show(
+          status: 'กำลังบันทึก...', maskType: EasyLoadingMaskType.black);
 
       final box = GetStorage();
       final user = box.read('user');
@@ -348,7 +384,8 @@ class CYHNoPlanController extends GetxController with GetSingleTickerProviderSta
     }
   }
 
-  String get historyDateDisplay => DateFormat('dd/MM/yyyy').format(historyDate.value);
+  String get historyDateDisplay =>
+      DateFormat('dd/MM/yyyy').format(historyDate.value);
 
   void resetForm() {
     selectedMachineNo.value = null;

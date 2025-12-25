@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:kmt/widgets/KeyenceScanner.dart';
@@ -16,7 +17,8 @@ class CYHNoPlanView extends GetView<CYHNoPlanController> {
       child: Scaffold(
         backgroundColor: const Color(0xFFF4F5FB),
         appBar: AppBar(
-          title: const Text('No Plan', style: TextStyle(fontWeight: FontWeight.w700)),
+          title: const Text('No Plan',
+              style: TextStyle(fontWeight: FontWeight.w700)),
           centerTitle: true,
           bottom: TabBar(
             controller: controller.tabController,
@@ -40,11 +42,19 @@ class CYHNoPlanView extends GetView<CYHNoPlanController> {
 }
 
 class _RecordTab extends StatelessWidget {
-  const _RecordTab({
+  _RecordTab({
     super.key,
     required this.controller,
     required this.theme,
   });
+
+  final FocusNode _pageFocus = FocusNode(debugLabel: 'CYHNoPlanViewPageFocus');
+
+  void _handleEnter() {
+    if (controller.isEnabled.value) {
+      controller.goToForm();
+    }
+  }
 
   final CYHNoPlanController controller;
   final ThemeData theme;
@@ -52,97 +62,117 @@ class _RecordTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      return KeyenceScanner(
-        onBarcodeScanned: (String scannedCode) {
-          controller.scanQrForMachine(scannedCode);
-        },
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(24),
-                    topRight: Radius.circular(24),
-                    bottomLeft: Radius.circular(12),
-                    bottomRight: Radius.circular(12),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    )
-                  ],
-                ),
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        SizedBox(
-                          width: 82,
-                          child: Text(
-                            'Machine',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            isExpanded: true,
-                            value: controller.selectedMachineNo.value,
-                            items: controller.machines
-                                .map((m) => DropdownMenuItem<String>(
-                                      value: m.machineNo,
-                                      child: Text(m.machineNo),
-                                    ))
-                                .toList(),
-                            onChanged: (val) => controller.selectedMachineNo.value = val,
-                            decoration: InputDecoration(
-                              contentPadding:
-                                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              isDense: true,
-                            ),
-                          ),
-                        ),
-                        // const SizedBox(width: 8),
-                        // IconButton(
-                        //   onPressed: controller.scanQrForMachine,
-                        //   icon: const Icon(Icons.qr_code_2_rounded),
-                        //   tooltip: 'Scan QR',
-                        // ),
+      return Focus(
+          autofocus: true,
+          focusNode: _pageFocus,
+          onKeyEvent: (node, event) {
+            // จับเฉพาะตอนกดลง (กันยิงซ้ำตอน KeyUp)
+            if (event is KeyDownEvent) {
+              final key = event.logicalKey;
+              if (key == LogicalKeyboardKey.enter ||
+                  key == LogicalKeyboardKey.numpadEnter) {
+                _handleEnter();
+                return KeyEventResult.handled;
+              }
+            }
+            return KeyEventResult.ignored;
+          },
+          child: KeyenceScanner(
+            onBarcodeScanned: (String scannedCode) {
+              controller.scanQrForMachine(scannedCode);
+            },
+            child: Stack(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(24),
+                        topRight: Radius.circular(24),
+                        bottomLeft: Radius.circular(12),
+                        bottomRight: Radius.circular(12),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        )
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      height: 44,
-                      child: FilledButton(
-                        onPressed: controller.goToForm,
-                        child: const Text('Confirm'),
-                      ),
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            SizedBox(
+                              width: 82,
+                              child: Text(
+                                'Machine',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: DropdownButtonFormField<String>(
+                                isExpanded: true,
+                                value: controller.selectedMachineNo.value,
+                                items: controller.machines
+                                    .map((m) => DropdownMenuItem<String>(
+                                          value: m.value,
+                                          child: Text(m.title ?? ''),
+                                        ))
+                                    .toList(),
+                                onChanged: (val) => {
+                                  controller.selectedMachineNo.value = val,
+                                  controller.checkMachine()
+                                },
+                                decoration: InputDecoration(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 10),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  isDense: true,
+                                ),
+                              ),
+                            ),
+                            // const SizedBox(width: 8),
+                            // IconButton(
+                            //   onPressed: controller.scanQrForMachine,
+                            //   icon: const Icon(Icons.qr_code_2_rounded),
+                            //   tooltip: 'Scan QR',
+                            // ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          height: 44,
+                          child: FilledButton(
+                            onPressed: controller.isEnabled.value
+                                ? controller.goToForm
+                                : null,
+                            child: const Text('Confirm'),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+                if (controller.isLoading.value)
+                  const Positioned(
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    child: LinearProgressIndicator(minHeight: 2),
+                  ),
+              ],
             ),
-            if (controller.isLoading.value)
-              const Positioned(
-                left: 0,
-                right: 0,
-                top: 0,
-                child: LinearProgressIndicator(minHeight: 2),
-              ),
-          ],
-        ),
-      );
+          ));
     });
   }
 }
@@ -179,7 +209,8 @@ class _HistoryTab extends GetView<CYHNoPlanController> {
                   () => InkWell(
                     onTap: () => controller.pickHistoryDate(context),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(color: Colors.grey),
@@ -209,7 +240,8 @@ class _HistoryTab extends GetView<CYHNoPlanController> {
                   children: [
                     Text(
                       'Line',
-                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w600),
                     ),
                     const Spacer(),
                     Column(
@@ -217,7 +249,8 @@ class _HistoryTab extends GetView<CYHNoPlanController> {
                       children: [
                         Text(
                           lineCd,
-                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                          style: theme.textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w600),
                         ),
                         Text(
                           'Total Loss Time: ${totalLoss.toStringAsFixed(0)} min',
@@ -237,7 +270,8 @@ class _HistoryTab extends GetView<CYHNoPlanController> {
           const Divider(),
           Expanded(
             child: Obx(() {
-              if (controller.isHistoryLoading.value && controller.historyItems.isEmpty) {
+              if (controller.isHistoryLoading.value &&
+                  controller.historyItems.isEmpty) {
                 return const Center(child: CircularProgressIndicator());
               }
 
@@ -317,7 +351,8 @@ class _HistoryTab extends GetView<CYHNoPlanController> {
                           const SizedBox(width: 4),
                           const Text(
                             'min',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                            style: TextStyle(
+                                fontSize: 13, fontWeight: FontWeight.w500),
                           ),
                         ],
                       ),

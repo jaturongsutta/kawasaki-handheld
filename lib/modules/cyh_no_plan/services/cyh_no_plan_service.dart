@@ -3,7 +3,9 @@ import 'package:intl/intl.dart';
 import 'package:kmt/model/leak_history_item_model.dart';
 import 'package:kmt/model/leak_history_response_model.dart';
 import 'package:kmt/model/leak_no_plan_model.dart';
+import 'package:kmt/model/leak_test_ng_model.dart';
 import 'package:kmt/model/machine_model.dart';
+import 'package:kmt/model/machine_predefine_model.dart';
 import 'package:kmt/services/base_service.dart';
 import 'package:kmt/enum/dio_type.dart';
 
@@ -26,6 +28,36 @@ class CYHNoPlanService extends GetxService {
       return list.map(MachineModel.fromJson).toList();
     }
     return <MachineModel>[];
+  }
+
+  Future<List<MachinePredefineModel>> fetchMachinesAll() async {
+    final res = await baseService.apiRequest(
+      '/leak/machine-all',
+      queryType: QueryType.post,
+    );
+    print('coming up fetchMachines all');
+    print('res ===> $res');
+    if (res['result'] == true && res['data'] != null) {
+      final list = (res['data'] as List).cast<Map<String, dynamic>>();
+      return list.map(MachinePredefineModel.fromJson).toList();
+    }
+    return <MachinePredefineModel>[];
+  }
+
+  Future<List<LeakTestNgModel>> checkMachine(
+      {required String? machineNo}) async {
+    final res = await baseService.apiRequest(
+      '/leak/check-machine',
+      queryType: QueryType.post,
+      data: {'Machine_No': machineNo},
+    );
+    print('coming up checkMachine all');
+    print('res ===> $res');
+    if (res['result'] == true && res['data'] != null) {
+      final list = (res['data'] as List).cast<Map<String, dynamic>>();
+      return list.map(LeakTestNgModel.fromJson).toList();
+    }
+    return <LeakTestNgModel>[];
   }
 
   Future<Map<String, dynamic>> insertLeakNoPlan(LeakNoPlanModel model) async {
