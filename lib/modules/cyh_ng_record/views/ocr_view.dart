@@ -1,13 +1,12 @@
 // lib/app/views/ocr_view.dart
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart'; // WriteBuffer, etc.
+import 'package:flutter/services.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
@@ -50,6 +49,9 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
   Timer? _scanTimer;
   bool _scanBusy = false;
 
+  // กันกด Enter / Continue ซ้ำ ๆ
+  bool _finishing = false;
+
   @override
   void initState() {
     super.initState();
@@ -73,7 +75,8 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
     if (!perm.isGranted) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('ต้องอนุญาตสิทธิ์กล้อง')));
+          const SnackBar(content: Text('ต้องอนุญาตสิทธิ์กล้อง')),
+        );
       }
       return;
     }
@@ -81,8 +84,9 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
     final cams = await availableCameras();
     if (cams.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('ไม่พบกล้องบนอุปกรณ์')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ไม่พบกล้องบนอุปกรณ์')),
+        );
       }
       return;
     }
@@ -105,7 +109,7 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
     _scanTimer = Timer.periodic(
       const Duration(milliseconds: kAutoScanIntervalMs),
       (_) async {
-        if (!mounted || _scanBusy) return;
+        if (!mounted || _scanBusy || _finishing) return;
         _scanBusy = true;
         try {
           await _captureScreenRoiAndOcr();
@@ -123,8 +127,9 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
       if (mounted) setState(() => _torchOn = !_torchOn);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('สลับแฟลชไม่สำเร็จ: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('สลับแฟลชไม่สำเร็จ: $e')),
+      );
     }
   }
 
@@ -167,19 +172,21 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
       final decoded = img.decodePng(pngBytes);
       if (decoded == null) return;
 
-      final safe = Rect.fromLTWH(
-        rectPx.left.clamp(0, decoded.width.toDouble()),
-        rectPx.top.clamp(0, decoded.height.toDouble()),
-        rectPx.width.clamp(1, decoded.width.toDouble()),
-        rectPx.height.clamp(1, decoded.height.toDouble()),
-      );
+      // clamp ให้ไม่เกินขอบภาพ
+      final left = rectPx.left.clamp(0, decoded.width.toDouble() - 1);
+      final top = rectPx.top.clamp(0, decoded.height.toDouble() - 1);
+      final right = rectPx.right.clamp(1, decoded.width.toDouble());
+      final bottom = rectPx.bottom.clamp(1, decoded.height.toDouble());
+
+      final w = (right - left).clamp(1, decoded.width.toDouble()).round();
+      final h = (bottom - top).clamp(1, decoded.height.toDouble()).round();
 
       final cropped = img.copyCrop(
         decoded,
-        x: safe.left.round(),
-        y: safe.top.round(),
-        width: safe.width.round(),
-        height: safe.height.round(),
+        x: left.round(),
+        y: top.round(),
+        width: w,
+        height: h,
       );
 
       // 4) เขียนไฟล์ temp แล้ว OCR ด้วย MLKit
@@ -192,16 +199,14 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
       final result = await _textRecognizer.processImage(input);
       final rawText = result.text.trim();
 
-      // 5) กรองตามแพทเทิร์นของงาน
-      // final filtered = _extractPattern(widget.mode, rawText) ?? '';
-
       if (!mounted) return;
+
       if (rawText.isNotEmpty) {
+        // เก็บ raw และ candidate (จะกรองตอนกด Continue)
         setState(() {
           _detectedText = rawText;
           _candidate = rawText;
         });
-        await Future.delayed(const Duration(seconds: 3));
       }
     } catch (_) {
       // เงียบเพื่อให้สแกนรอบถัดไป
@@ -209,10 +214,15 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
   }
 
   Future<void> _finish() async {
+    if (_finishing) return;
+    _finishing = true;
+
     try {
       await _camera?.setFlashMode(FlashMode.off);
     } catch (_) {}
+
     if (!mounted) return;
+
     final out = _extractPattern(widget.mode, _candidate) ?? _candidate;
     Navigator.of(context).pop(out);
   }
@@ -224,69 +234,87 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
     }
 
     final modeLabel = {
+      OcrMode.castingDate6: 'Scan Casting Date',
       OcrMode.mcDate18: 'Scan M/C Date',
       OcrMode.no2: 'Scan No. (2 digits)',
       OcrMode.serial11: 'Scan Serial (12-34-56#4A)',
-      OcrMode.mold12: 'Scan Mold No', //'Scan Mold (เช่น K9,3)',
+      OcrMode.mold12: 'Scan Mold No',
       OcrMode.machine5: 'Scan Machine (เช่น KMT-7)',
     }[widget.mode]!;
 
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(title: Text(modeLabel)),
-      body: RepaintBoundary(
-        key: _screenKey,
-        child: Stack(
-          children: [
-            // กล้อง: ใช้เล็งอย่างเดียว (ไม่สตรีมเข้า MLKit)
-            Positioned.fill(
-              child: _camera == null
-                  ? const SizedBox()
-                  : FullscreenCameraPreview(controller: _camera!),
-            ),
 
-            // มาส์กดำทึบ + กรอบแดง
-            Positioned.fill(
-              child: CustomPaint(
-                painter: _OverlayPainter(
-                  detectedText: _candidate.isEmpty ? _detectedText : _candidate,
+      // ✅ จับ Enter / NumpadEnter จาก hardkey แล้วเรียก _finish()
+      body: Focus(
+        autofocus: true,
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent) {
+            final k = event.logicalKey;
+            if (k == LogicalKeyboardKey.enter ||
+                k == LogicalKeyboardKey.numpadEnter) {
+              _finish();
+              return KeyEventResult.handled;
+            }
+          }
+          return KeyEventResult.ignored;
+        },
+        child: RepaintBoundary(
+          key: _screenKey,
+          child: Stack(
+            children: [
+              // กล้อง: ใช้เล็งอย่างเดียว (ไม่สตรีมเข้า MLKit)
+              Positioned.fill(
+                child: _camera == null
+                    ? const SizedBox()
+                    : FullscreenCameraPreview(controller: _camera!),
+              ),
+
+              // มาส์กดำทึบ + กรอบแดง
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _OverlayPainter(
+                    detectedText:
+                        _candidate.isEmpty ? _detectedText : _candidate,
+                  ),
                 ),
               ),
-            ),
 
-            // แผงผลลัพธ์ด้านล่าง
-            Positioned(
-              left: 12,
-              right: 12,
-              bottom: 94,
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.45),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'พบ: ${_candidate.isEmpty ? '-' : _candidate}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+              // แผงผลลัพธ์ด้านล่าง
+              Positioned(
+                left: 12,
+                right: 12,
+                bottom: 94,
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.45),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'พบ: ${_candidate.isEmpty ? '-' : _candidate}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _detectedText,
-                      style:
-                          const TextStyle(color: Colors.white70, fontSize: 12),
-                    ),
-                  ],
+                      const SizedBox(height: 4),
+                      Text(
+                        _detectedText,
+                        style:
+                            const TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
 
@@ -321,7 +349,7 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
     final text = plain.toUpperCase();
     switch (mode) {
       case OcrMode.castingDate6:
-       return RegExp(r'\b\d{2}-\d{2}-\d{2}#[A-Z0-9]{2}\b')
+        return RegExp(r'\b\d{2}-\d{2}-\d{2}#[A-Z0-9]{2}\b')
             .firstMatch(text)
             ?.group(0);
       case OcrMode.mcDate18:
@@ -331,33 +359,31 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
       case OcrMode.no2:
         return RegExp(r'\b\d{2}\b').firstMatch(text)?.group(0);
       case OcrMode.serial11:
-        // รูปแบบ 12-34-56#4A (รวม 11 ตัวอักษร)
+        // รูปแบบ 12-34-56#4A
         return RegExp(r'\b\d{2}-\d{2}-\d{2}#[A-Z0-9]{2}\b')
             .firstMatch(text)
             ?.group(0);
       case OcrMode.mold12:
-        // ตัวอย่าง K9,3 → ตัวแรกตัวอักษร/ตัวเลข 1 ตัว + ตัวเลข 1 ตัว + คอมมา + ตัวเลข 1 ตัว
-        return RegExp(r'\b[A-Z0-9][0-9],[0-9]\b').firstMatch(text)?.group(0);
+        // ตัวอย่าง K9,3
+        return RegExp(r'\b[A-Z0-9][0-9],[0-9]\b')
+            .firstMatch(text)
+            ?.group(0);
       case OcrMode.machine5:
-        // ตัวอย่าง KMT-7 → ตัวอักษร/เลข 3 ตัว + ขีด + 1 ตัว
-        return RegExp(r'\b[A-Z0-9]{3}-[A-Z0-9]\b').firstMatch(text)?.group(0);
+        // ตัวอย่าง KMT-7
+        return RegExp(r'\b[A-Z0-9]{3}-[A-Z0-9]\b')
+            .firstMatch(text)
+            ?.group(0);
     }
   }
 }
 
-/// ===== กล้องเต็มจอ (BoxFit.cover) =====
+/// ===== กล้องเต็มจอ (ตอนนี้ใช้ CameraPreview ตรง ๆ) =====
 class FullscreenCameraPreview extends StatelessWidget {
   final CameraController controller;
   const FullscreenCameraPreview({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {
-    final screen = MediaQuery.of(context).size;
-    final preview = controller.value.previewSize!;
-    // อัตราส่วนภาพกล้อง (portrait) = h/w
-    final cameraAspect = preview.height / preview.width;
-
-    // ใช้ FittedBox(BoxFit.cover) ให้ครอบเต็มทั้งจอ
     return CameraPreview(controller);
   }
 }
@@ -393,8 +419,7 @@ class _OverlayPainter extends CustomPainter {
     canvas.drawRect(
         Rect.fromLTWH(0, rect.top, rect.left, rect.height), _maskPaint);
     canvas.drawRect(
-        Rect.fromLTWH(
-            rect.right, rect.top, size.width - rect.right, rect.height),
+        Rect.fromLTWH(rect.right, rect.top, size.width - rect.right, rect.height),
         _maskPaint);
     canvas.drawRect(
         Rect.fromLTWH(0, rect.bottom, size.width, size.height - rect.bottom),
@@ -403,7 +428,7 @@ class _OverlayPainter extends CustomPainter {
     // กรอบสีแดง
     canvas.drawRect(rect, _rectPaint);
 
-    // ข้อความ debug ด้านบน (ตำแหน่งตาม logic space y=100)
+    // ข้อความ debug ด้านบน
     final textOffset = Offset(20 * wRatio, 100 * hRatio);
     _tp.text = TextSpan(
       style: const TextStyle(color: Colors.red, fontSize: 16),
