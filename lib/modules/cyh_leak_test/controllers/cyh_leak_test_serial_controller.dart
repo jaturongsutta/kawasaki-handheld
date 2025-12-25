@@ -221,17 +221,22 @@ class CYHLeakTestSerialController extends GetxController {
         await Future.delayed(const Duration(seconds: 1));
         Get.offAllNamed(AppRoutes.cyhLeakTestOK,
             arguments: {'ng-result': res['data'], 'page-type': 'cyh-leak'});
-      } else if (res['result'] == true &&
-          (res['data'] as Map<String, dynamic>).isNotEmpty) {
+      } else if (res['result'] == true && res['type'] == 'NG') {
         EasyLoading.showSuccess('บันทึกสำเร็จ',
             duration: const Duration(seconds: 1), dismissOnTap: false);
 
         await Future.delayed(const Duration(seconds: 1));
         Get.offAllNamed(AppRoutes.cyhLeakTestNG,
             arguments: {'ng-result': res['data'], 'page-type': 'cyh-leak'});
+      } else if (res['result'] == true && res['type'] == 'NULL') {
+        EasyLoading.showSuccess('บันทึกสำเร็จ',
+            duration: const Duration(seconds: 1), dismissOnTap: false);
+
+        await Future.delayed(const Duration(seconds: 1));
+        Get.offAllNamed(AppRoutes.cyhLeakTest);
       } else {
         EasyLoading.dismiss();
-        EasyLoading.showInfo(res['message'] ?? 'บันทึกล้มเหลว',
+        EasyLoading.showInfo('บันทึกล้มเหลว ${res['message']}',
             duration: const Duration(seconds: 2), dismissOnTap: false);
       }
     } catch (e) {

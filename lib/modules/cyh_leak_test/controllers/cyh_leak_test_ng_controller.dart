@@ -97,7 +97,7 @@ class CYHLeakTestNGController extends GetxController {
       }
 
       pageType.value = args['page-type'];
-      if (pageType.value == 'cyh-main') {
+      if (pageType.value == 'cyh-main' ) {
         dataModel.value = await checkGetNGData(args['machine']);
       }
       selectedCANo.value = dataModel.value?.caNo ?? '';
