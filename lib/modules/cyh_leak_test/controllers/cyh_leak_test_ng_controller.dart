@@ -97,7 +97,7 @@ class CYHLeakTestNGController extends GetxController {
       }
 
       pageType.value = args['page-type'];
-      if (pageType.value == 'cyh-main' ) {
+      if (pageType.value == 'cyh-main') {
         dataModel.value = await checkGetNGData(args['machine']);
       }
       selectedCANo.value = dataModel.value?.caNo ?? '';
@@ -186,8 +186,8 @@ class CYHLeakTestNGController extends GetxController {
     }
   }
 
-  void goToLeakTest () {
-     Get.offAllNamed(AppRoutes.cyhLeakTest);
+  void goToLeakTest() {
+    Get.offAllNamed(AppRoutes.cyhLeakTest);
   }
 
   Future<void> scanAndFill(OcrMode mode) async {
@@ -203,6 +203,8 @@ class CYHLeakTestNGController extends GetxController {
     for (var i = 0; i < cellCount; i++) {
       target[i].text = i < chars.length ? chars[i] : '';
     }
+    selectedmoldCtrls.value = result;
+    checkIsEnabledButton();
   }
 
   void initTextField(String? text, List<TextEditingController> widget) {

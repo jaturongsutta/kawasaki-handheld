@@ -1,21 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:characters/characters.dart';
 import 'package:get/get.dart';
-
-import 'package:kmt/modules/cyh_leak_test/views/ocr_view.dart';
 import 'package:kmt/modules/cyh_leak_test/widgets/tab_selector.dart';
 import 'package:kmt/widgets/KeyenceScanner.dart';
 import '../controllers/cyh_leak_test_controller.dart';
 
 class CYHLeakTestView extends GetView<CYHLeakTestController> {
-  CYHLeakTestView({super.key});
-
-  final FocusNode _pageFocus = FocusNode(debugLabel: 'CYHLeakTestPageFocus');
-
-  void _handleEnter() {
-    controller.confirmForm();
-  }
+  const CYHLeakTestView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -28,116 +19,102 @@ class CYHLeakTestView extends GetView<CYHLeakTestController> {
         centerTitle: true,
       ),
       body: Obx(() {
-        return Focus(
-            autofocus: true,
-            focusNode: _pageFocus,
-            onKeyEvent: (node, event) {
-              // จับเฉพาะตอนกดลง (กันยิงซ้ำตอน KeyUp)
-              if (event is KeyDownEvent) {
-                final key = event.logicalKey;
-                if (key == LogicalKeyboardKey.enter ||
-                    key == LogicalKeyboardKey.numpadEnter) {
-                  _handleEnter();
-                  return KeyEventResult.handled;
-                }
-              }
-              return KeyEventResult.ignored;
-            },
-            child: KeyenceScanner(
-              onBarcodeScanned: (String scannedCode) {
-                controller.scanQrForMachine(scannedCode);
-              },
-              child: SafeArea(
-                child: Stack(
-                  children: [
-                    // ---------- BODY ----------
-                    Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: SingleChildScrollView(
-                        padding: EdgeInsets.all(0),
-                        keyboardDismissBehavior:
-                            ScrollViewKeyboardDismissBehavior.onDrag,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            WorkTypeSelector(
-                                value: controller.workType.value,
-                                onChanged: (v) => {
-                                      controller.workType.value = v,
-                                      controller.selectedWorkType.value = v.name
-                                    }),
-                            _FormRowCard(
-                              label: 'Machine',
-                              child: Expanded(
-                                child: DropdownButtonFormField<String>(
-                                  isExpanded: true,
-                                  value: controller.selectedMachineNo.value,
-                                  items: controller.machines
-                                      .map((m) => DropdownMenuItem<String>(
-                                            value: m.value,
-                                            child: Text(m.title ?? ''),
-                                          ))
-                                      .toList(),
-                                  onChanged: (val) => {
-                                    controller.selectedMachineNo.value = val,
-                                    controller.checkMachine(),
-                                  },
-                                  decoration: InputDecoration(
-                                    contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 10),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    isDense: true,
-                                  ),
+        return KeyenceScanner(
+          onBarcodeScanned: (String scannedCode) {
+            controller.scanQrForMachine(scannedCode);
+          },
+          onEnterPressed: () => controller.confirmForm(),
+          child: SafeArea(
+            child: Stack(
+              children: [
+                // ---------- BODY ----------
+                Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.all(0),
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        WorkTypeSelector(
+                            value: controller.workType.value,
+                            onChanged: (v) => {
+                                  controller.workType.value = v,
+                                  controller.selectedWorkType.value = v.name
+                                }),
+                        _FormRowCard(
+                          label: 'Machine',
+                          child: Expanded(
+                            child: DropdownButtonFormField<String>(
+                              isExpanded: true,
+                              value: controller.selectedMachineNo.value,
+                              items: controller.machines
+                                  .map((m) => DropdownMenuItem<String>(
+                                        value: m.value,
+                                        child: Text(m.title ?? ''),
+                                      ))
+                                  .toList(),
+                              onChanged: (val) => {
+                                controller.selectedMachineNo.value = val,
+                                controller.checkMachine(),
+                              },
+                              decoration: InputDecoration(
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 10),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                              ),
-                              // TextField(
-                              //   controller: controller.machineController,
-                              //   decoration: InputDecoration(
-                              //     contentPadding: const EdgeInsets.symmetric(
-                              //         horizontal: 12, vertical: 10),
-                              //     border: OutlineInputBorder(
-                              //         borderRadius: BorderRadius.circular(8)),
-                              //   ),
-                              //   onSubmitted: (value) => {
-                              //     controller.machineController.text = value,
-                              //     controller.checkIsEnabledButton()
-                              //   },
-                              //   onChanged: (value) => {
-                              //     controller.machineController.text = value,
-                              //     controller.checkIsEnabledButton()
-                              //   },
-                              // ),
-                            ),
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              height: 44,
-                              child: FilledButton(
-                                onPressed: controller.isEnabled.value
-                                    ? controller.confirmForm
-                                    : null,
-                                child: const Text('Confirm'),
+                                isDense: true,
                               ),
                             ),
-                          ],
+                          ),
+                          // TextField(
+                          //   controller: controller.machineController,
+                          //   decoration: InputDecoration(
+                          //     contentPadding: const EdgeInsets.symmetric(
+                          //         horizontal: 12, vertical: 10),
+                          //     border: OutlineInputBorder(
+                          //         borderRadius: BorderRadius.circular(8)),
+                          //   ),
+                          //   onSubmitted: (value) => {
+                          //     controller.machineController.text = value,
+                          //     controller.checkIsEnabledButton()
+                          //   },
+                          //   onChanged: (value) => {
+                          //     controller.machineController.text = value,
+                          //     controller.checkIsEnabledButton()
+                          //   },
+                          // ),
                         ),
-                      ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          height: 44,
+                          child: FilledButton(
+                            onPressed: controller.isEnabled.value
+                                ? controller.confirmForm
+                                : null,
+                            child: const Text('Confirm'),
+                          ),
+                        ),
+                      ],
                     ),
-                    //  ),
-
-                    // ---------- LOADING BAR ----------
-                    if (controller.isLoading.value)
-                      const Positioned(
-                        left: 0,
-                        right: 0,
-                        top: 0,
-                        child: LinearProgressIndicator(minHeight: 2),
-                      ),
-                  ],
+                  ),
                 ),
-              ),
-            ));
+                //  ),
+
+                // ---------- LOADING BAR ----------
+                if (controller.isLoading.value)
+                  const Positioned(
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    child: LinearProgressIndicator(minHeight: 2),
+                  ),
+              ],
+            ),
+          ),
+        );
       }),
     );
   }

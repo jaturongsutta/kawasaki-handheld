@@ -42,19 +42,11 @@ class CYHNoPlanView extends GetView<CYHNoPlanController> {
 }
 
 class _RecordTab extends StatelessWidget {
-  _RecordTab({
+  const _RecordTab({
     super.key,
     required this.controller,
     required this.theme,
   });
-
-  final FocusNode _pageFocus = FocusNode(debugLabel: 'CYHNoPlanViewPageFocus');
-
-  void _handleEnter() {
-    if (controller.isEnabled.value) {
-      controller.goToForm();
-    }
-  }
 
   final CYHNoPlanController controller;
   final ThemeData theme;
@@ -62,117 +54,103 @@ class _RecordTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      return Focus(
-          autofocus: true,
-          focusNode: _pageFocus,
-          onKeyEvent: (node, event) {
-            // จับเฉพาะตอนกดลง (กันยิงซ้ำตอน KeyUp)
-            if (event is KeyDownEvent) {
-              final key = event.logicalKey;
-              if (key == LogicalKeyboardKey.enter ||
-                  key == LogicalKeyboardKey.numpadEnter) {
-                _handleEnter();
-                return KeyEventResult.handled;
-              }
-            }
-            return KeyEventResult.ignored;
-          },
-          child: KeyenceScanner(
-            onBarcodeScanned: (String scannedCode) {
-              controller.scanQrForMachine(scannedCode);
-            },
-            child: Stack(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(24),
-                        topRight: Radius.circular(24),
-                        bottomLeft: Radius.circular(12),
-                        bottomRight: Radius.circular(12),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        )
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+      return KeyenceScanner(
+        onBarcodeScanned: (String scannedCode) {
+          controller.scanQrForMachine(scannedCode);
+        },
+        onEnterPressed: () => controller.goToForm(),
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
+                    bottomLeft: Radius.circular(12),
+                    bottomRight: Radius.circular(12),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    )
+                  ],
+                ),
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
                       children: [
-                        Row(
-                          children: [
-                            SizedBox(
-                              width: 82,
-                              child: Text(
-                                'Machine',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: DropdownButtonFormField<String>(
-                                isExpanded: true,
-                                value: controller.selectedMachineNo.value,
-                                items: controller.machines
-                                    .map((m) => DropdownMenuItem<String>(
-                                          value: m.value,
-                                          child: Text(m.title ?? ''),
-                                        ))
-                                    .toList(),
-                                onChanged: (val) => {
-                                  controller.selectedMachineNo.value = val,
-                                  controller.checkMachine()
-                                },
-                                decoration: InputDecoration(
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 10),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  isDense: true,
-                                ),
-                              ),
-                            ),
-                            // const SizedBox(width: 8),
-                            // IconButton(
-                            //   onPressed: controller.scanQrForMachine,
-                            //   icon: const Icon(Icons.qr_code_2_rounded),
-                            //   tooltip: 'Scan QR',
-                            // ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
                         SizedBox(
-                          height: 44,
-                          child: FilledButton(
-                            onPressed: controller.isEnabled.value
-                                ? controller.goToForm
-                                : null,
-                            child: const Text('Confirm'),
+                          width: 82,
+                          child: Text(
+                            'Machine',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            isExpanded: true,
+                            value: controller.selectedMachineNo.value,
+                            items: controller.machines
+                                .map((m) => DropdownMenuItem<String>(
+                                      value: m.value,
+                                      child: Text(m.title ?? ''),
+                                    ))
+                                .toList(),
+                            onChanged: (val) => {
+                              controller.selectedMachineNo.value = val,
+                              controller.checkMachine()
+                            },
+                            decoration: InputDecoration(
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              isDense: true,
+                            ),
+                          ),
+                        ),
+                        // const SizedBox(width: 8),
+                        // IconButton(
+                        //   onPressed: controller.scanQrForMachine,
+                        //   icon: const Icon(Icons.qr_code_2_rounded),
+                        //   tooltip: 'Scan QR',
+                        // ),
                       ],
                     ),
-                  ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: 44,
+                      child: FilledButton(
+                        onPressed: controller.isEnabled.value
+                            ? controller.goToForm
+                            : null,
+                        child: const Text('Confirm'),
+                      ),
+                    ),
+                  ],
                 ),
-                if (controller.isLoading.value)
-                  const Positioned(
-                    left: 0,
-                    right: 0,
-                    top: 0,
-                    child: LinearProgressIndicator(minHeight: 2),
-                  ),
-              ],
+              ),
             ),
-          ));
+            if (controller.isLoading.value)
+              const Positioned(
+                left: 0,
+                right: 0,
+                top: 0,
+                child: LinearProgressIndicator(minHeight: 2),
+              ),
+          ],
+        ),
+      );
     });
   }
 }
