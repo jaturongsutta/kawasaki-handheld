@@ -89,13 +89,13 @@ class CYHLeakTestController extends GetxController {
       EasyLoading.dismiss();
       if (list.isNotEmpty) {
         if (list[0].testedStatus == 1) {
-          Get.offAllNamed(AppRoutes.cyhLeakTestOK, arguments: {
+          Get.offNamed(AppRoutes.cyhLeakTestOK, arguments: {
             'workType': selectedWorkType.value,
             'machine': selectedMachineNo.value,
             'page-type': 'cyh-main'
           });
         } else {
-          Get.offAllNamed(AppRoutes.cyhLeakTestNG, arguments: {
+          Get.offNamed(AppRoutes.cyhLeakTestNG, arguments: {
             'workType': selectedWorkType.value,
             'machine': selectedMachineNo.value,
             'page-type': 'cyh-main'

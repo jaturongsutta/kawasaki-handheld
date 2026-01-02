@@ -16,7 +16,6 @@ class CYHLeakTestSerialController extends GetxController {
 
   final isLoading = false.obs;
   final isModelReadOnly = true.obs;
-  final workTypeController = TextEditingController();
 
   final selectedModel = Rxn<LeakTestRunningModel>();
   final models = <LeakTestRunningModel>[].obs; // ถ้ามี list model
@@ -37,6 +36,7 @@ class CYHLeakTestSerialController extends GetxController {
 
   final gsCheck = '0'.obs;
   final workType = WorkTab.Production.obs;
+  final workTypeString = ''.obs;
   late Worker _mcDateWorker;
 
   Future<void> scanAndFill(OcrMode mode) async {
@@ -79,6 +79,7 @@ class CYHLeakTestSerialController extends GetxController {
       }
 
       workType.value = WorkTab.Master;
+      workTypeString.value = args['workType'];
       if (args['workType'] == 'Production') {
         workType.value = WorkTab.Production;
       }
@@ -121,6 +122,10 @@ class CYHLeakTestSerialController extends GetxController {
         initTextField(pad3Int(result[0].castingNo ?? 0).toString(), caNoCtrls);
         initTextField(result[0].castingDate.toString(), caDateCtrls);
         initTextField(result[0].moldNo.toString(), moldCtrls);
+
+        selectedCANo.value = pad3Int(result[0].castingNo ?? 0).toString();
+        selectedCADate.value = result[0].castingDate.toString();
+        selectedmoldCtrls.value = result[0].moldNo.toString();
       }
     } catch (_) {
       print("catch checkGetLeakCYH ${_}");
@@ -195,9 +200,10 @@ class CYHLeakTestSerialController extends GetxController {
 
       final now = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
       final model = LeakTestModel(
-        mappedPlanId: selectedModel.value?.id ?? 0,
+        mappedPlanId:
+            workType.value == WorkTab.Master ? null : selectedModel.value?.id,
         machineNo: machineController.text,
-        workType: workTypeController.text,
+        workType: workTypeString.value,
         modelCd: selectedModel.value?.modelCd ?? '',
         serialNo: selectedMCDate.value,
         gsNo: gsController.text.isEmpty ? '0' : gsController.text,
@@ -211,29 +217,40 @@ class CYHLeakTestSerialController extends GetxController {
         ngId: '',
         updatedBy: createdBy,
       );
+      print("Model ${model.workType}");
+      print("Model ${model.serialNo}");
+      print("json model ${model.toJson()}");
 
       final res = await service.insertLeakTest(model);
+      print("result is ${res}");
+      print("res valuetype ${res['type']}");
 
       if (res['result'] == true && res['type'] == 'OK') {
         EasyLoading.showSuccess('บันทึกสำเร็จ',
             duration: const Duration(seconds: 1), dismissOnTap: false);
 
         await Future.delayed(const Duration(seconds: 1));
-        Get.offAllNamed(AppRoutes.cyhLeakTestOK,
-            arguments: {'ng-result': res['data'], 'page-type': 'cyh-leak'});
+        Get.offNamed(AppRoutes.cyhLeakTestOK, arguments: {
+          'ng-result': res['data'],
+          'page-type': 'cyh-leak',
+          'machine': machineController.text
+        });
       } else if (res['result'] == true && res['type'] == 'NG') {
         EasyLoading.showSuccess('บันทึกสำเร็จ',
             duration: const Duration(seconds: 1), dismissOnTap: false);
 
         await Future.delayed(const Duration(seconds: 1));
-        Get.offAllNamed(AppRoutes.cyhLeakTestNG,
-            arguments: {'ng-result': res['data'], 'page-type': 'cyh-leak'});
-      } else if (res['result'] == true && res['type'] == 'NULL') {
+        Get.offNamed(AppRoutes.cyhLeakTestNG, arguments: {
+          'ng-result': res['data'],
+          'page-type': 'cyh-leak',
+          'machine': machineController.text
+        });
+      } else if (res['result'] == true && res['type'] == null) {
         EasyLoading.showSuccess('บันทึกสำเร็จ',
             duration: const Duration(seconds: 1), dismissOnTap: false);
 
         await Future.delayed(const Duration(seconds: 1));
-        Get.offAllNamed(AppRoutes.cyhLeakTest);
+        Get.offNamed(AppRoutes.cyhLeakTest);
       } else {
         EasyLoading.dismiss();
         EasyLoading.showInfo('บันทึกล้มเหลว ${res['message']}',
@@ -259,7 +276,6 @@ class CYHLeakTestSerialController extends GetxController {
   }
 
   void resetForm() {
-    workTypeController.clear();
     machineController.clear();
     selectedModel.value = null;
     mcDateCtrls.clear();
@@ -272,6 +288,10 @@ class CYHLeakTestSerialController extends GetxController {
     clearCANo();
     clearCADate();
     clearMold();
+    selectedMCDate.value = '';
+    selectedCANo.value = '';
+    selectedCADate.value = '';
+    selectedmoldCtrls.value = '';
     super.onInit();
   }
 

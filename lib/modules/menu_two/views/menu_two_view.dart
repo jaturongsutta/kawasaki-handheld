@@ -177,17 +177,17 @@ class _MenuTwoViewState extends State<MenuTwoView> {
                           scannerKey.currentState?.initSensorReader();
                         });
                       }),
-                        const SizedBox(height: 16),
-                      _buildFixedSizeButton("CYH NG Record", buttonWidth, buttonHeight, () {
-                        loadingController.showLoading();
-                        Get.toNamed('/cyh-ng-record')?.then((_) async {
-                          await Future.delayed(const Duration(seconds: 1));
-                          loadingController.hideLoading();
-                          Get.delete<CYHNGRecordController>();
+                      //   const SizedBox(height: 16),
+                      // _buildFixedSizeButton("CYH NG Record", buttonWidth, buttonHeight, () {
+                      //   loadingController.showLoading();
+                      //   Get.toNamed('/cyh-ng-record')?.then((_) async {
+                      //     await Future.delayed(const Duration(seconds: 1));
+                      //     loadingController.hideLoading();
+                      //     Get.delete<CYHNGRecordController>();
 
-                          scannerKey.currentState?.initSensorReader();
-                        });
-                      }),
+                      //     scannerKey.currentState?.initSensorReader();
+                      //   });
+                      // }),
                       const SizedBox(height: 16),
                       _buildFixedSizeButton("CYH No Plan", buttonWidth, buttonHeight, () {
                         loadingController.showLoading();

@@ -1,9 +1,6 @@
 import 'package:get/get.dart';
-import 'package:kmt/model/leak_no_plan_model.dart';
 import 'package:kmt/model/leak_test_model.dart';
 import 'package:kmt/model/leak_test_ng_model.dart';
-import 'package:kmt/model/leak_test_running_model.dart';
-import 'package:kmt/model/machine_model.dart';
 import 'package:kmt/services/base_service.dart';
 import 'package:kmt/enum/dio_type.dart';
 

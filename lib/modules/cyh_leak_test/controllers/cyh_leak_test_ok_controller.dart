@@ -63,20 +63,20 @@ class CYHLeakTestOKController extends GetxController {
     clearMold();
 
     if (args != null) {
-      final data = args['ng-result'];
+      // final data = args['ng-result'];
 
-      if (data is Map<String, dynamic>) {
-        final model = LeakTestNgModel.fromJson(data);
-        dataModel.value = model;
-        print('model is => ${model.toJson()}');
-      } else {
-        print('❌ ng-result is not a Map, got: ${data.runtimeType}');
-      }
+      // if (data is Map<String, dynamic>) {
+      //   final model = LeakTestNgModel.fromJson(data);
+      //   dataModel.value = model;
+      //   print('model is => ${model.toJson()}');
+      // } else {
+      //   print('❌ ng-result is not a Map, got: ${data.runtimeType}');
+      // }
 
       pageType.value = args['page-type'];
-      if (pageType.value == 'cyh-main') {
-        dataModel.value = await checkGetNGData(args['machine']);
-      }
+      // if (pageType.value == 'cyh-main') {
+      dataModel.value = await checkGetNGData(args['machine']);
+      // }
       selectedCANo.value = dataModel.value?.caNo ?? '';
       selectedcastingDate.value = dataModel.value?.caDate ?? '';
       selectedmoldCtrls.value = dataModel.value?.moldNo ?? '';

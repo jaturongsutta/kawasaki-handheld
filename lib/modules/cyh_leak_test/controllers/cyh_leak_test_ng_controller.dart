@@ -83,23 +83,23 @@ class CYHLeakTestNGController extends GetxController {
     clearMold();
 
     if (args != null) {
-      final data = args['ng-result'];
-      if (data is LeakTestNgModel) {
-        dataModel.value = data;
-        print('model from cyh ng record is => ${data.toJson()}');
-      }
-      if (data is Map<String, dynamic>) {
-        final model = LeakTestNgModel.fromJson(data);
-        dataModel.value = model;
-        print('model is => ${model.toJson()}');
-      } else {
-        // print('❌ ng-result is not a Map, got: ${data.runtimeType}');
-      }
+      // final data = args['ng-result'];
+      // if (data is LeakTestNgModel) {
+      //   dataModel.value = data;
+      //   print('model from cyh ng record is => ${data.toJson()}');
+      // }
+      // if (data is Map<String, dynamic>) {
+      //   final model = LeakTestNgModel.fromJson(data);
+      //   dataModel.value = model;
+      //   print('model is => ${model.toJson()}');
+      // } else {
+      //   // print('❌ ng-result is not a Map, got: ${data.runtimeType}');
+      // }
 
       pageType.value = args['page-type'];
-      if (pageType.value == 'cyh-main') {
-        dataModel.value = await checkGetNGData(args['machine']);
-      }
+      // if (pageType.value == 'cyh-main') {
+      dataModel.value = await checkGetNGData(args['machine']);
+      // }
       selectedCANo.value = dataModel.value?.caNo ?? '';
       selectedcastingDate.value = dataModel.value?.caDate ?? '';
       selectedmoldCtrls.value = dataModel.value?.moldNo ?? '';
@@ -170,11 +170,7 @@ class CYHLeakTestNGController extends GetxController {
 
         await Future.delayed(const Duration(seconds: 1));
         resetForm();
-        if (pageType.value == 'cyh-leak') {
-          Get.offAllNamed(AppRoutes.cyhLeakTest);
-        } else {
-          Get.offAllNamed(AppRoutes.cyhNGRecord);
-        }
+        Get.offAllNamed(AppRoutes.cyhLeakTest);
       } else {
         EasyLoading.dismiss();
         EasyLoading.showInfo(res['message'] ?? 'บันทึกล้มเหลว',

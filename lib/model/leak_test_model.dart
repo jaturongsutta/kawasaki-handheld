@@ -4,8 +4,8 @@ part 'leak_test_model.g.dart';
 
 @JsonSerializable()
 class LeakTestModel {
-  @JsonKey(name: 'Mapped_Plan_ID', defaultValue: '')
-  final int mappedPlanId;
+  @JsonKey(name: 'Mapped_Plan_ID', defaultValue: null)
+  final int? mappedPlanId;
 
   @JsonKey(name: 'Machine_No')
   final String machineNo;
