@@ -54,10 +54,12 @@ class CYHLeakTestSerialController extends GetxController {
 
       selectedMCDate.value = result.toUpperCase();
       getGSCount();
+      checkGetLeakCYH();
       checkIsEnabledButton();
     } else {
       target = moldCtrls;
       cellCount = 12;
+      selectedmoldCtrls.value = result.toUpperCase();
     }
 
     final chars = result.toUpperCase().characters.toList();

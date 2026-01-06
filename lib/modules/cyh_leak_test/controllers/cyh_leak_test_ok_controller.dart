@@ -217,6 +217,9 @@ class CYHLeakTestOKController extends GetxController {
     for (var i = 0; i < cellCount; i++) {
       target[i].text = i < chars.length ? chars[i] : '';
     }
+
+    selectedmoldCtrls.value = result;
+    checkIsEnabledButton();
   }
 
   void clearCANo() => caNoCtrls.forEach((c) => c.clear());
