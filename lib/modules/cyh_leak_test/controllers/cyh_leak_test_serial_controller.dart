@@ -5,6 +5,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:kmt/model/leak_test_model.dart';
 import 'package:kmt/model/leak_test_running_model.dart';
+import 'package:kmt/modules/cyh_leak_test/controllers/cyh_leak_test_controller.dart';
 import 'package:kmt/modules/cyh_leak_test/services/cyh_leak_test_serial_service.dart';
 import 'package:kmt/modules/cyh_leak_test/views/ocr_view.dart';
 import 'package:kmt/modules/cyh_leak_test/widgets/tab_selector.dart';
@@ -39,6 +40,8 @@ class CYHLeakTestSerialController extends GetxController {
   final workTypeString = ''.obs;
   late Worker _mcDateWorker;
 
+ 
+  
   Future<void> scanAndFill(OcrMode mode) async {
     print('scan in ');
     final r = await Get.to<String>(() => OcrView(mode: mode));
@@ -252,6 +255,7 @@ class CYHLeakTestSerialController extends GetxController {
             duration: const Duration(seconds: 1), dismissOnTap: false);
 
         await Future.delayed(const Duration(seconds: 1));
+        Get.delete<CYHLeakTestController>(force: true);
         Get.offNamed(AppRoutes.cyhLeakTest);
       } else {
         EasyLoading.dismiss();

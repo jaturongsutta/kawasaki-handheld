@@ -1,15 +1,17 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:kmt/model/machine_predefine_model.dart';
+import 'package:kmt/modules/cyh_leak_test/controllers/cyh_leak_test_serial_controller.dart';
 import 'package:kmt/modules/cyh_leak_test/widgets/tab_selector.dart';
 import 'package:kmt/routes/app_routes.dart';
+import 'package:kmt/widgets/KeyenceScanner.dart';
 import '../services/cyh_leak_test_service.dart';
 
 class CYHLeakTestController extends GetxController {
   final CYHLeakTestService service;
   CYHLeakTestController(this.service);
-
   final isLoading = false.obs;
   final selectedWorkType = RxnString("Production");
 
@@ -17,6 +19,17 @@ class CYHLeakTestController extends GetxController {
   final workType = WorkTab.Production.obs;
   final selectedMachineNo = RxnString();
   final machines = <MachinePredefineModel>[].obs;
+
+  final scannerKey = GlobalKey<KeyenceScannerState>();
+
+  @override
+  void onReady() {
+    super.onReady();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Future.delayed(const Duration(milliseconds: 300));
+      scannerKey.currentState?.initSensorReader();
+    });
+  }
 
   @override
   void onInit() {
@@ -141,7 +154,7 @@ class CYHLeakTestController extends GetxController {
           duration: const Duration(seconds: 2), dismissOnTap: false);
       return;
     }
-
+    Get.delete<CYHLeakTestSerialController>(force: true);
     Get.toNamed(AppRoutes.cyhLeakTestSerial, arguments: {
       'workType': selectedWorkType.value,
       'machine': selectedMachineNo.value,

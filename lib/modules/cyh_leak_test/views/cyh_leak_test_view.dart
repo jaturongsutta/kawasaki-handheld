@@ -10,6 +10,7 @@ class CYHLeakTestView extends GetView<CYHLeakTestController> {
 
   @override
   Widget build(BuildContext context) {
+    final c = controller;
     return Scaffold(
       backgroundColor: const Color(0xFFF4F5FB),
       resizeToAvoidBottomInset: false,
@@ -20,6 +21,7 @@ class CYHLeakTestView extends GetView<CYHLeakTestController> {
       ),
       body: Obx(() {
         return KeyenceScanner(
+          key: c.scannerKey,
           onBarcodeScanned: (String scannedCode) {
             controller.scanQrForMachine(scannedCode);
           },

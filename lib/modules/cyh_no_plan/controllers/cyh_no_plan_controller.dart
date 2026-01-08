@@ -7,6 +7,7 @@ import 'package:kmt/model/leak_history_item_model.dart';
 import 'package:kmt/model/leak_no_plan_model.dart';
 import 'package:kmt/model/machine_predefine_model.dart';
 import 'package:kmt/routes/app_routes.dart';
+import 'package:kmt/widgets/KeyenceScanner.dart';
 import '../services/cyh_no_plan_service.dart';
 
 class CYHNoPlanController extends GetxController
@@ -42,6 +43,17 @@ class CYHNoPlanController extends GetxController
   String get currentLineCd {
     final box = GetStorage();
     return box.read('selectedLine')?.toString() ?? '';
+  }
+
+  final scannerKey = GlobalKey<KeyenceScannerState>();
+
+  @override
+  void onReady() {
+    super.onReady();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Future.delayed(const Duration(milliseconds: 300));
+      scannerKey.currentState?.initSensorReader();
+    });
   }
 
   @override
@@ -295,6 +307,7 @@ class CYHNoPlanController extends GetxController
 
         await Future.delayed(const Duration(seconds: 1));
         resetForm();
+        Get.delete<CYHNoPlanController>(force: true);
         Get.offAllNamed(AppRoutes.cyhNoPlan);
       } else {
         EasyLoading.dismiss();

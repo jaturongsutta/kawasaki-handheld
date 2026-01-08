@@ -53,8 +53,10 @@ class _RecordTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c= controller;
     return Obx(() {
       return KeyenceScanner(
+         key: c.scannerKey,
         onBarcodeScanned: (String scannedCode) {
           controller.scanQrForMachine(scannedCode);
         },

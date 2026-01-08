@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:kmt/model/leak_test_model.dart';
 import 'package:kmt/model/leak_test_ng_model.dart';
 import 'package:kmt/model/leak_test_running_model.dart';
+import 'package:kmt/modules/cyh_leak_test/controllers/cyh_leak_test_controller.dart';
 import 'package:kmt/modules/cyh_leak_test/services/cyh_leak_test_ng_service.dart';
 import 'package:kmt/modules/cyh_leak_test/views/ocr_view.dart';
 import 'package:kmt/routes/app_routes.dart';
@@ -170,6 +171,7 @@ class CYHLeakTestNGController extends GetxController {
 
         await Future.delayed(const Duration(seconds: 1));
         resetForm();
+        Get.delete<CYHLeakTestController>(force: true);
         Get.offAllNamed(AppRoutes.cyhLeakTest);
       } else {
         EasyLoading.dismiss();
@@ -183,6 +185,7 @@ class CYHLeakTestNGController extends GetxController {
   }
 
   void goToLeakTest() {
+    Get.delete<CYHLeakTestController>(force: true);
     Get.offAllNamed(AppRoutes.cyhLeakTest);
   }
 
