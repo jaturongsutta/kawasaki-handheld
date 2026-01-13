@@ -259,7 +259,7 @@ class CYHLeakTestSerialController extends GetxController {
         Get.offNamed(AppRoutes.cyhLeakTest);
       } else {
         EasyLoading.dismiss();
-        EasyLoading.showInfo('บันทึกล้มเหลว ${res['message']}',
+        EasyLoading.showInfo('บันทึกล้มเหลว \n${res['message']}',
             duration: const Duration(seconds: 2), dismissOnTap: false);
       }
     } catch (e) {

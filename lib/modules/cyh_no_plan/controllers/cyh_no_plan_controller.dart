@@ -308,7 +308,7 @@ class CYHNoPlanController extends GetxController
         await Future.delayed(const Duration(seconds: 1));
         resetForm();
         Get.delete<CYHNoPlanController>(force: true);
-        Get.offAllNamed(AppRoutes.cyhNoPlan);
+        Get.offNamed(AppRoutes.cyhNoPlan);
       } else {
         EasyLoading.dismiss();
         Get.snackbar('Error', res['message'] ?? 'บันทึกล้มเหลว');
@@ -327,8 +327,8 @@ class CYHNoPlanController extends GetxController
   }
 
   Future<void> _fetchHistorical({required int page, bool clear = false}) async {
-    final line = currentLineCd;
-    if (line.isEmpty) return;
+    final machineNo = selectedMachineNo.value;
+    if ((machineNo ?? '').isEmpty) return;
 
     final from = (page - 1) * historyPageSize + 1;
     final to = page * historyPageSize;
@@ -343,7 +343,7 @@ class CYHNoPlanController extends GetxController
 
     try {
       final resp = await service.fetchHistoricalNoPlan(
-        lineCd: line,
+        machineNo: machineNo ?? '',
         date: historyDate.value,
         rowFrom: from,
         rowTo: to,

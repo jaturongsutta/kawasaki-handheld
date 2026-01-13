@@ -81,7 +81,7 @@ class CYHNoPlanService extends GetxService {
   }
 
   Future<LeakHistoryResponseModel?> fetchHistoricalNoPlan({
-    required String lineCd,
+    required String machineNo,
     required DateTime date,
     int rowFrom = 1,
     int rowTo = 10,
@@ -92,7 +92,7 @@ class CYHNoPlanService extends GetxService {
       '/leak/noplan-list-record',
       queryType: QueryType.post,
       data: {
-        'Line_CD': lineCd,
+        'machine_No': machineNo,
         'Date_NoPlan': dateStr,
         'Row_No_From': rowFrom,
         'Row_No_To': rowTo,
