@@ -256,7 +256,7 @@ class CYHLeakTestSerialController extends GetxController {
 
         await Future.delayed(const Duration(seconds: 1));
         Get.delete<CYHLeakTestController>(force: true);
-        Get.offNamed(AppRoutes.cyhLeakTest);
+        Get.offAllNamed(AppRoutes.cyhLeakTest);
       } else {
         EasyLoading.dismiss();
         EasyLoading.showInfo('บันทึกล้มเหลว \n${res['message']}',

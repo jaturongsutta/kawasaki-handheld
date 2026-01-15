@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:kmt/routes/app_routes.dart';
 import 'package:kmt/widgets/KeyenceScanner.dart';
 import '../controllers/cyh_no_plan_controller.dart';
 
@@ -13,31 +14,38 @@ class CYHNoPlanView extends GetView<CYHNoPlanController> {
     final theme = Theme.of(context);
 
     return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF4F5FB),
-        appBar: AppBar(
-          title: const Text('No Plan',
-              style: TextStyle(fontWeight: FontWeight.w700)),
-          centerTitle: true,
-          bottom: TabBar(
-            controller: controller.tabController,
-            tabs: const [
-              Tab(text: 'Records'),
-              Tab(text: 'Historical'),
-            ],
+        length: 2,
+        child: PopScope(
+          canPop: false,
+          child: Scaffold(
+            backgroundColor: const Color(0xFFF4F5FB),
+            appBar: AppBar(
+              automaticallyImplyLeading: false,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Get.offAllNamed(AppRoutes.menu),
+              ),
+              title: const Text('No Plan',
+                  style: TextStyle(fontWeight: FontWeight.w700)),
+              centerTitle: true,
+              bottom: TabBar(
+                controller: controller.tabController,
+                tabs: const [
+                  Tab(text: 'Records'),
+                  Tab(text: 'Historical'),
+                ],
+              ),
+            ),
+            body: TabBarView(
+              controller: controller.tabController,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                _RecordTab(controller: controller, theme: theme),
+                const _HistoryTab(),
+              ],
+            ),
           ),
-        ),
-        body: TabBarView(
-          controller: controller.tabController,
-          physics: const NeverScrollableScrollPhysics(),
-          children: [
-            _RecordTab(controller: controller, theme: theme),
-            const _HistoryTab(),
-          ],
-        ),
-      ),
-    );
+        ));
   }
 }
 
@@ -53,10 +61,10 @@ class _RecordTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c= controller;
+    final c = controller;
     return Obx(() {
       return KeyenceScanner(
-         key: c.scannerKey,
+        key: c.scannerKey,
         onBarcodeScanned: (String scannedCode) {
           controller.scanQrForMachine(scannedCode);
         },
@@ -218,20 +226,10 @@ class _HistoryTab extends GetView<CYHNoPlanController> {
               children: [
                 Row(
                   children: [
-                    Text(
-                      'Line',
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w600),
-                    ),
                     const Spacer(),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(
-                          lineCd,
-                          style: theme.textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w600),
-                        ),
                         Text(
                           'Total Loss Time: ${totalLoss.toStringAsFixed(0)} min',
                           style: const TextStyle(
