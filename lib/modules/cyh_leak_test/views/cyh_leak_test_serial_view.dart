@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:characters/characters.dart';
 import 'package:get/get.dart';
 import 'package:kmt/model/leak_test_running_model.dart';
+import 'package:kmt/modules/cyh_leak_test/capture/capture_view.dart';
 import 'package:kmt/modules/cyh_leak_test/controllers/cyh_leak_test_serial_controller.dart';
 
 import 'package:kmt/modules/cyh_leak_test/views/ocr_view.dart';
@@ -121,7 +122,8 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
                                         child: AbsorbPointer(
                                           absorbing:
                                               controller.isModelReadOnly.value,
-                                          child: DropdownButtonFormField<String>(
+                                          child:
+                                              DropdownButtonFormField<String>(
                                             isExpanded: controller
                                                 .isModelReadOnly.value,
                                             value: controller
@@ -131,8 +133,8 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
                                                 .where((cd) => cd.isNotEmpty)
                                                 .toSet()
                                                 .map(
-                                                  (cd) => DropdownMenuItem<
-                                                      String>(
+                                                  (cd) =>
+                                                      DropdownMenuItem<String>(
                                                     value: cd,
                                                     child: Text(cd),
                                                   ),
@@ -175,7 +177,7 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
                             ),
                           ),
                         ),
-                        _rowCard(
+                        _rowCardSpecial(
                           label: 'M/C Date',
                           boxes: Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
@@ -200,6 +202,7 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
                               const SizedBox(height: 8),
                             ],
                           ),
+                          onScanOCR: () => controller.scanAndFillWithOCR(),
                           onScan: () =>
                               controller.scanAndFill(OcrMode.mcDate18),
                           onClear: () {
@@ -408,6 +411,80 @@ class _LabeledField extends StatelessWidget {
   }
 }
 
+Widget _rowCardSpecial({
+  required String label,
+  required Widget boxes,
+  required VoidCallback onScanOCR,
+  required VoidCallback onScan,
+  required VoidCallback onClear,
+  required TextStyle labelStyle,
+}) {
+  return Card(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    elevation: 0.5,
+    margin: const EdgeInsets.symmetric(vertical: 8),
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ---------- Header ----------
+          Row(
+            children: [
+              SizedBox(
+                width: 80,
+                child: Text(label, style: labelStyle),
+              ),
+
+              const Spacer(), // 👈 ดันปุ่มไปขวาแบบยืดหยุ่น
+
+              IconButton(
+                onPressed: onScanOCR,
+                icon: const Icon(Icons.document_scanner_rounded,
+                    color: Colors.green),
+                tooltip: 'OCR',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+
+              IconButton(
+                onPressed: onScan,
+                icon: const Icon(Icons.center_focus_strong, color: Colors.blue),
+                tooltip: 'Scan',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+
+              IconButton(
+                onPressed: onClear,
+                icon: const Icon(Icons.delete, color: Colors.red),
+                tooltip: 'Clear',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
+          ),
+
+          // ---------- Boxes ----------
+          LayoutBuilder(
+            builder: (context, constraints) {
+              return Padding(
+                padding: const EdgeInsets.only(left: 0, top: 4),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: boxes,
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+        ],
+      ),
+    ),
+  );
+}
+
 Widget _rowCard({
   required String label,
   required Widget boxes,
@@ -516,7 +593,7 @@ Widget _rowCardSimple({
 class OtpBoxesRow extends StatefulWidget {
   final List<TextEditingController> controllers;
   final String allowedPattern; // เช่น r'[0-9]' หรือ r'[A-Za-z0-9#-]'
-  final int hyphenIndex;       // ช่องที่จะเป็นขีด (index เริ่มที่ 0), -1 = ไม่มีขีด
+  final int hyphenIndex; // ช่องที่จะเป็นขีด (index เริ่มที่ 0), -1 = ไม่มีขีด
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
 
@@ -642,7 +719,7 @@ class _OtpBoxesRowState extends State<OtpBoxesRow> {
                   focusNode: _nodes[i],
                   controller: c,
                   textAlign: TextAlign.center,
-                  textInputAction:TextInputAction.done ,
+                  textInputAction: TextInputAction.done,
                   textCapitalization: TextCapitalization.characters,
                   keyboardType: TextInputType.visiblePassword,
                   inputFormatters: [
@@ -709,4 +786,3 @@ class _OtpBoxesRowState extends State<OtpBoxesRow> {
     );
   }
 }
-
