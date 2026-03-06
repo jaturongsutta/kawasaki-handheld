@@ -144,7 +144,7 @@ class CaptureController extends GetxController {
       String ocrModel = config.ocrModel;
 
       if (res.type == LineType.doubleLine) {
-        ocrModel = 'model_all';
+        ocrModel = 'model_2line';
         print("2 บรรทัด: ${res.line1} / ${res.line2}");
       } else {
         print("1 บรรทัด: ${res.line1}");
