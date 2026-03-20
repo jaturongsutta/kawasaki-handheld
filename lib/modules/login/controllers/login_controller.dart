@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:kmt/enum/dio_type.dart';
 import 'package:kmt/model/user_model.dart';
 import 'package:kmt/services/base_service.dart';
@@ -15,9 +14,9 @@ class LoginController extends GetxController {
   final isLoading = false.obs;
   final selectedLine = ''.obs;
   final MethodChannel _channel = const MethodChannel('factory_alert_channel');
-  static const MethodChannel _methodChannel = MethodChannel('factory_alert_service');
+  static const MethodChannel _methodChannel =
+      MethodChannel('factory_alert_service');
 
-  final box = GetStorage();
   final lineList = <String>[].obs;
   final baseService = getIt<BaseService>();
 
@@ -28,7 +27,8 @@ class LoginController extends GetxController {
     if (usernameController.text.isEmpty ||
         passwordController.text.isEmpty ||
         selectedLine.value.isEmpty) {
-      Get.snackbar('Error', 'Please enter username, password, and select a line');
+      Get.snackbar(
+          'Error', 'Please enter username, password, and select a line');
       return;
     }
 
@@ -41,18 +41,40 @@ class LoginController extends GetxController {
         'lineCd': selectedLine.value,
       });
 
-      final response = await await baseService.apiRequest('/user/login',
+      final response = await baseService.apiRequest('/user/login',
           data: encodeData, queryType: QueryType.post);
 
-      final result = response;
+      if (response is! Map) {
+        Get.snackbar(
+          'Login Failed',
+          'รูปแบบข้อมูลตอบกลับไม่ถูกต้อง',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+
+      final result = Map<String, dynamic>.from(response);
 
       if (result['result']) {
-        final user = UserModel.fromJson(result['data']);
+        final token = (result['token'] ?? '').toString().trim();
+        if (token.isEmpty) {
+          Get.snackbar(
+            'Login Failed',
+            'ไม่พบ token จากระบบ กรุณาลองใหม่',
+            snackPosition: SnackPosition.BOTTOM,
+          );
+          return;
+        }
+        final user =
+            UserModel.fromJson(Map<String, dynamic>.from(result['data']));
 
-        box.write('isLoggedIn', true);
-        box.write('user', user.toJson());
-        box.write('selectedLine', selectedLine.value);
-        await sendLineCDToNative(selectedLine.value, user.username); // ✅ ส่งไป Native
+        await baseService.startSession(
+          token: token,
+          user: user.toJson(),
+          selectedLine: selectedLine.value,
+        );
+        await sendLineCDToNative(
+            selectedLine.value, user.username); // ✅ ส่งไป Native
         await _startService(); // ✅ สั่งเปิด Service บนอุปกรณ์
 
         Get.offAllNamed('/menu');
@@ -62,7 +84,8 @@ class LoginController extends GetxController {
       }
     } catch (e, s) {
       logger.i('starce ===> $s');
-      Get.snackbar('Error', 'Connection failed: $e', snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('Error', 'Connection failed: $e',
+          snackPosition: SnackPosition.BOTTOM);
     } finally {
       isLoading.value = false;
     }
@@ -70,7 +93,8 @@ class LoginController extends GetxController {
 
   void loadLines() async {
     try {
-      final response = await baseService.apiRequest('/user/lines', queryType: QueryType.post);
+      final response = await baseService.apiRequest('/user/lines',
+          queryType: QueryType.post);
 
       if (response['result']) {
         lineList.assignAll(List<String>.from(response['data']));

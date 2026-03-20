@@ -1,14 +1,16 @@
 package com.example.kmt;
 
 import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+
 import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.engine.FlutterEngine;
-import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.EventChannel;
-import android.util.Log;
+import io.flutter.plugin.common.MethodChannel;
+
 import com.example.kmt.MyForegroundService;
 import com.example.kmt.ScanKeyence;
-import android.os.Bundle;
 
 public class MainActivity extends FlutterActivity {
     private static final String startAlertCHANNEL = "factory_alert_service";

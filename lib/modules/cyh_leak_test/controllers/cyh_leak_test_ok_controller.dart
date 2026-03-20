@@ -7,6 +7,7 @@ import 'package:kmt/model/leak_test_model.dart';
 import 'package:kmt/model/leak_test_ng_model.dart';
 import 'package:kmt/model/leak_test_running_model.dart';
 import 'package:kmt/modules/cyh_leak_test/controllers/cyh_leak_test_controller.dart';
+import 'package:kmt/modules/cyh_leak_test/services/cyh_leak_test_flow_log_service.dart';
 import 'package:kmt/modules/cyh_leak_test/services/cyh_leak_test_ok_service.dart';
 import 'package:kmt/modules/cyh_leak_test/views/ocr_view.dart';
 import 'package:kmt/routes/app_routes.dart';
@@ -39,9 +40,36 @@ class CYHLeakTestOKController extends GetxController {
   final selectedcastingDate = ''.obs;
   final pageType = ''.obs;
 
+  CYHLeakTestFlowLogService get _flowLog {
+    if (Get.isRegistered<CYHLeakTestFlowLogService>()) {
+      return Get.find<CYHLeakTestFlowLogService>();
+    }
+    return Get.put(CYHLeakTestFlowLogService(), permanent: true);
+  }
+
+  void _log(String step, {Map<String, dynamic>? data}) {
+    final payload = data == null ? '' : ' | $data';
+    debugPrint('[CYHLeakTestOKController][$step]$payload');
+    _flowLog.add('CYHLeakTestOKController', step, data: data);
+  }
+
+  void _logError(
+    String step,
+    Object error,
+    StackTrace stackTrace, {
+    Map<String, dynamic>? data,
+  }) {
+    final payload = data == null ? '' : ' | $data';
+    debugPrint('[CYHLeakTestOKController][$step][ERROR] $error$payload');
+    debugPrint(stackTrace.toString());
+    _flowLog.addError('CYHLeakTestOKController', step, error, stackTrace,
+        data: data);
+  }
+
   @override
   void onInit() {
     super.onInit();
+    _log('onInit');
     initFormFromArgs();
   }
 
@@ -57,7 +85,10 @@ class CYHLeakTestOKController extends GetxController {
 
   void initFormFromArgs() async {
     final args = Get.arguments as Map<String, dynamic>?;
-    print("init => ");
+    _log('initFormFromArgs.start', data: {
+      'hasArgs': args != null,
+      'argKeys': args?.keys.toList(),
+    });
 
     clearCANo();
     clearCastingDate();
@@ -75,6 +106,10 @@ class CYHLeakTestOKController extends GetxController {
       // }
 
       pageType.value = args['page-type'];
+      _log('initFormFromArgs.args', data: {
+        'pageType': pageType.value,
+        'machine': args['machine'],
+      });
       // if (pageType.value == 'cyh-main') {
       dataModel.value = await checkGetNGData(args['machine']);
       // }
@@ -87,6 +122,13 @@ class CYHLeakTestOKController extends GetxController {
       initTextField(dataModel.value?.moldNo ?? '', moldCtrls);
 
       checkIsEnabledButton();
+      _log('initFormFromArgs.end', data: {
+        'model': dataModel.value?.modelCd,
+        'machine': dataModel.value?.machineNo,
+        'serial': dataModel.value?.serialNo,
+      });
+    } else {
+      _log('initFormFromArgs.end', data: {'reason': 'args-null'});
     }
   }
 
@@ -95,18 +137,31 @@ class CYHLeakTestOKController extends GetxController {
   }
 
   Future<LeakTestNgModel?> checkGetNGData(machineNo) async {
+    _log('checkGetNGData.start', data: {'machineNo': machineNo});
     isLoading.value = true;
     EasyLoading.show(status: 'Loading...', maskType: EasyLoadingMaskType.black);
 
     try {
       final result = await service.getOKNG(machineNo: machineNo);
+      print("checkGetNGData result OK => ${result.length}");
+      print("machineNo => ${machineNo}");
+      _log('checkGetNGData.response', data: {
+        'machineNo': machineNo,
+        'count': result.length,
+      });
+
       if (result.isNotEmpty) {
         LeakTestNgModel v = result[0];
+        _log('checkGetNGData.firstRecord', data: {
+          'machine': v.machineNo,
+          'model': v.modelCd,
+          'serial': v.serialNo,
+        });
         return v;
       }
       return null;
-    } catch (_) {
-      print("catch checkGetNGData ${_}");
+    } catch (e, st) {
+      _logError('checkGetNGData.catch', e, st, data: {'machineNo': machineNo});
     } finally {
       isLoading.value = false;
       EasyLoading.dismiss();

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:kmt/routes/app_routes.dart';
+import 'package:kmt/services/base_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -11,8 +11,6 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  final box = GetStorage();
-
   @override
   void initState() {
     super.initState();
@@ -20,11 +18,14 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   void _checkLoginStatus() async {
-    await Future.delayed(const Duration(seconds: 2)); // แสดง Splash อย่างน้อย 2 วิ
+    await Future.delayed(
+        const Duration(seconds: 2)); // แสดง Splash อย่างน้อย 2 วิ
 
-    final isLoggedIn = box.read('isLoggedIn') ?? false;
-
-    if (isLoggedIn) {
+    final hasSession = await baseService.restoreSessionFromStorage();
+    if (!mounted) {
+      return;
+    }
+    if (hasSession) {
       Get.offAllNamed(AppRoutes.menu); // ✅ ไปหน้าเมนู
     } else {
       Get.offAllNamed(AppRoutes.login); // ✅ ไปหน้า login

@@ -7,6 +7,7 @@ import 'package:kmt/modules/cyh_leak_test/capture/capture_view.dart';
 import 'package:kmt/modules/cyh_leak_test/controllers/cyh_leak_test_serial_controller.dart';
 
 import 'package:kmt/modules/cyh_leak_test/views/ocr_view.dart';
+import 'package:kmt/modules/cyh_leak_test/widgets/flow_log_button.dart';
 import 'package:kmt/modules/cyh_leak_test/widgets/tab_selector.dart';
 import 'package:kmt/widgets/KeyenceScanner.dart';
 
@@ -35,6 +36,7 @@ class CYHLeakTestSerialView extends GetView<CYHLeakTestSerialController> {
           style: TextStyle(fontWeight: FontWeight.w700),
         ),
         centerTitle: true,
+        actions: const [FlowLogButton()],
       ),
       body: Obx(() {
         // ✅ เอามาไว้ใน Obx เพื่อให้ react ตามค่า gsCheck

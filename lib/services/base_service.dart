@@ -1,106 +1,330 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-// import 'package:bmt_mobile/screen/LoginScreen.dart';
-// import 'package:bmt_mobile/services/inject.dart';
-// import 'package:bmt_mobile/services/user_service/user_service.dart';
-// import 'package:dio/dio.dart' as dio;
 
 import 'package:dio/dio.dart' as dio;
 import 'package:dio/io.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-// import 'package:get/get.dart';
 import 'package:injectable/injectable.dart';
-import 'package:kmt/enum/dialog_type.dart';
 import 'package:kmt/enum/dio_type.dart';
 import 'package:kmt/util/api_config.dart';
 import 'package:kmt/util/local_storage_util.dart';
 import 'package:kmt/widgets/customLog.dart';
-import 'package:stacked_services/stacked_services.dart';
 
 import 'inject.dart';
 
-final dialogService = getIt<DialogService>();
 final baseService = getIt<BaseService>();
 
 @lazySingleton
 class BaseService {
-  Timer? _idleTimer;
-  static const Duration idleTimeout = Duration(minutes: 60);
+  static const Duration _requestRefreshLeadTime = Duration(seconds: 30);
+  static const Duration _refreshLeadTime = Duration(minutes: 5);
 
-  int _idleGen = 0;
-  DateTime? _idleExpiresAt;
+  Timer? _sessionTimer;
+  Completer<String?>? _refreshCompleter;
+  bool _isHandlingSessionEnd = false;
 
-  void bumpIdle() => _startIdleTimer();
-
-  void _startIdleTimer() {
-    // 1) log ก่อน cancel
-    if (_idleTimer?.isActive ?? false) {
-      debugPrint('[idle] cancel timer(gen: $_idleGen) active=true');
-    } else {
-      debugPrint('[idle] no active timer to cancel (gen: $_idleGen)');
+  Future<void> startSession({
+    required String token,
+    Map<String, dynamic>? user,
+    String? selectedLine,
+  }) async {
+    final box = GetStorage();
+    await _saveToken(token);
+    box.write('token', token);
+    box.write('isLoggedIn', true);
+    if (user != null) {
+      box.write('user', user);
     }
+    if (selectedLine != null && selectedLine.isNotEmpty) {
+      box.write('selectedLine', selectedLine);
+    }
+    _startSessionTimer(token);
+  }
 
-    // 2) cancel timer เดิม
-    _idleTimer?.cancel();
-
-    // 3) เพิ่ม generation เพื่อกัน timer เก่าที่ยังยิง (เผื่อ timing race)
-    _idleGen++;
-    final myGen = _idleGen;
-
-    // 4) เก็บเวลาหมดอายุไว้ debug
-    _idleExpiresAt = DateTime.now().add(idleTimeout);
-    debugPrint('[idle] start timer(gen: $myGen) expiresAt: $_idleExpiresAt');
-
-    // 5) สร้าง timer ใหม่
-    _idleTimer = Timer(idleTimeout, () {
-      if (myGen != _idleGen) {
-        debugPrint('[idle] skip stale timer fire (myGen: $myGen, currentGen: $_idleGen)');
-        return;
+  Future<bool> restoreSessionFromStorage() async {
+    try {
+      String? token = await _getStoredToken();
+      if (token == null || token.trim().isEmpty) {
+        return false;
       }
-      debugPrint('[idle] timer fired (gen: $myGen) at: ${DateTime.now()}');
-      _onSessionExpired();
+
+      token = token.trim();
+      final remaining = _remainingDurationFromToken(token);
+      if (remaining == null || remaining <= _requestRefreshLeadTime) {
+        final refreshed =
+            await refreshAccessToken(force: true, currentToken: token);
+        if ((refreshed ?? '').trim().isNotEmpty) {
+          token = refreshed!.trim();
+        }
+      }
+
+      final finalRemaining = _remainingDurationFromToken(token);
+      if (finalRemaining == null || finalRemaining <= Duration.zero) {
+        await _clearSessionStorage();
+        return false;
+      }
+
+      GetStorage().write('isLoggedIn', true);
+      _startSessionTimer(token);
+      return true;
+    } catch (e) {
+      logger.e('[session][restore.error] $e');
+      await _clearSessionStorage();
+      return false;
+    }
+  }
+
+  Future<void> logout({
+    bool redirectToLogin = true,
+    bool showExpiredMessage = false,
+  }) async {
+    if (_isHandlingSessionEnd) {
+      return;
+    }
+    _isHandlingSessionEnd = true;
+    try {
+      _sessionTimer?.cancel();
+      _sessionTimer = null;
+      _refreshCompleter = null;
+      await _clearSessionStorage();
+      if (showExpiredMessage) {
+        await EasyLoading.showInfo('Session หมดเวลา กรุณาเข้าสู่ระบบใหม่');
+      }
+      if (redirectToLogin && Get.currentRoute != '/login') {
+        Get.offAllNamed('/login');
+      }
+    } finally {
+      _isHandlingSessionEnd = false;
+    }
+  }
+
+  Future<void> _handleSessionExpired() async {
+    await logout(
+      redirectToLogin: true,
+      showExpiredMessage: true,
+    );
+  }
+
+  void _startSessionTimer(String token) {
+    _sessionTimer?.cancel();
+    final remaining = _remainingDurationFromToken(token);
+    if (remaining == null || remaining <= Duration.zero) {
+      scheduleMicrotask(() async {
+        await _handleSessionExpired();
+      });
+      return;
+    }
+    _sessionTimer = Timer(remaining, () async {
+      await _handleSessionExpired();
     });
   }
 
-  void debugIdleState() {
-    debugPrint('[idle] active=${_idleTimer?.isActive ?? false}, '
-        'gen=$_idleGen, expiresAt=$_idleExpiresAt, instance=${identityHashCode(this)}');
+  Duration? _remainingDurationFromToken(String token) {
+    try {
+      final payload = _decodeJwtPayload(token);
+      if (payload == null) {
+        return null;
+      }
+      final exp = payload['exp'];
+      if (exp == null) {
+        return null;
+      }
+      final seconds = exp is int ? exp : int.tryParse(exp.toString());
+      if (seconds == null) {
+        return null;
+      }
+      final expDate = DateTime.fromMillisecondsSinceEpoch(seconds * 1000);
+      return expDate.difference(DateTime.now());
+    } catch (_) {
+      return null;
+    }
   }
 
-  void cancelIdleTimer() {
-    if (_idleTimer?.isActive ?? false) {
-      debugPrint('[idle] manual cancel timer(gen: $_idleGen)');
+  Map<String, dynamic>? _decodeJwtPayload(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length < 2) {
+        return null;
+      }
+      final normalized = base64Url.normalize(parts[1]);
+      final decoded = utf8.decode(base64Url.decode(normalized));
+      final json = jsonDecode(decoded);
+      if (json is Map<String, dynamic>) {
+        return json;
+      }
+      if (json is Map) {
+        return Map<String, dynamic>.from(json);
+      }
+      return null;
+    } catch (_) {
+      return null;
     }
-    _idleTimer?.cancel();
-    _idleTimer = null;
-    _idleExpiresAt = null;
   }
 
-  void _onSessionExpired() async {
-    cancelIdleTimer();
-    final box = Get.find<GetStorage>();
-    if (EasyLoading.isShow) {
-      await EasyLoading.dismiss();
-    }
+  bool _requiresAuth(String apiPath) {
+    return apiPath != '/user/login' &&
+        apiPath != '/auth/login' &&
+        apiPath != '/auth/refresh-token';
+  }
 
-    await dialogService.showCustomDialog(
-      variant: DialogType.icon,
-      data: {
-        'icon': const Icon(
-          Icons.warning,
-          color: Colors.red,
-          size: 52,
-        ),
+  dio.Dio _createDioClient() {
+    final dioClient = dio.Dio();
+    dioClient.httpClientAdapter = IOHttpClientAdapter(
+      createHttpClient: () {
+        final client = HttpClient();
+        client.badCertificateCallback =
+            (X509Certificate cert, String host, int port) => true;
+        return client;
       },
-      description: 'Session Expired',
     );
+    return dioClient;
+  }
 
+  Future<dio.Response> _executeRequest(
+    dio.Dio client, {
+    required String apiPath,
+    required String endpoint,
+    required QueryType queryType,
+    required dynamic data,
+    required Map<String, dynamic> headers,
+  }) async {
+    switch (queryType) {
+      case QueryType.get:
+        return client.get(
+          endpoint + apiPath,
+          queryParameters: data,
+          options: dio.Options(headers: headers),
+        );
+      case QueryType.post:
+        return client.post(
+          endpoint + apiPath,
+          data: data,
+          options: dio.Options(headers: headers),
+        );
+    }
+  }
+
+  dynamic _decodeResponseData(dynamic data) {
+    if (data is String) {
+      try {
+        return jsonDecode(data);
+      } catch (_) {
+        return data;
+      }
+    }
+    return data;
+  }
+
+  Map<String, dynamic>? _asMap(dynamic data) {
+    final decoded = _decodeResponseData(data);
+    if (decoded is Map<String, dynamic>) {
+      return decoded;
+    }
+    if (decoded is Map) {
+      return Map<String, dynamic>.from(decoded);
+    }
+    return null;
+  }
+
+  Future<void> _saveToken(String token) async {
+    await LocalStorage.setLocalStorage(key: 'token', object: token);
+  }
+
+  Future<String?> _getStoredToken() async {
+    final token = await LocalStorage.getLocalStorage(key: 'token');
+    if (token is String && token.trim().isNotEmpty) {
+      return token.trim();
+    }
+    final tokenFromBox = GetStorage().read('token');
+    if (tokenFromBox is String && tokenFromBox.trim().isNotEmpty) {
+      return tokenFromBox.trim();
+    }
+    return null;
+  }
+
+  Future<void> _clearSessionStorage() async {
+    final box = GetStorage();
+    await LocalStorage.removeLocalStorage(key: 'token');
+    box.remove('token');
+    box.remove('isLoggedIn');
     await box.erase();
-    Get.offAllNamed('/login');
+  }
+
+  Future<String?> refreshAccessToken({
+    bool force = false,
+    String? currentToken,
+  }) async {
+    Completer<String?>? ownerCompleter;
+    try {
+      String token = (currentToken ?? await _getStoredToken() ?? '').trim();
+      if (token.isEmpty) {
+        return null;
+      }
+
+      if (!force) {
+        final remaining = _remainingDurationFromToken(token);
+        if (remaining != null && remaining > _refreshLeadTime) {
+          return token;
+        }
+      }
+
+      if (_refreshCompleter != null && !_refreshCompleter!.isCompleted) {
+        return _refreshCompleter!.future;
+      }
+
+      ownerCompleter = Completer<String?>();
+      _refreshCompleter = ownerCompleter;
+
+      final dioClient = _createDioClient();
+      final endpoint = EndpointConfig.currentEndpoint.endpoint;
+
+      final response = await dioClient.get(
+        '$endpoint/auth/refresh-token',
+        options: dio.Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'accept': '*/*',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      final json = _asMap(response.data);
+      final status = json?['status'];
+      final accessToken = (json?['accessToken'] ?? '').toString().trim();
+      final isSuccess = status == 0 ||
+          status == '0' ||
+          status == true ||
+          (status is String && status.toLowerCase() == 'success');
+      if (!isSuccess || accessToken.isEmpty) {
+        if (!ownerCompleter.isCompleted) {
+          ownerCompleter.complete(null);
+        }
+        return null;
+      }
+
+      await _saveToken(accessToken);
+      GetStorage().write('token', accessToken);
+      _startSessionTimer(accessToken);
+      if (!ownerCompleter.isCompleted) {
+        ownerCompleter.complete(accessToken);
+      }
+      return accessToken;
+    } catch (e) {
+      logger.e('[session][refresh.error] $e');
+      if (ownerCompleter != null && !ownerCompleter.isCompleted) {
+        ownerCompleter.complete(null);
+      }
+      return null;
+    } finally {
+      if (ownerCompleter != null &&
+          identical(_refreshCompleter, ownerCompleter)) {
+        _refreshCompleter = null;
+      }
+    }
   }
 
   Future<dynamic> apiRequest(
@@ -111,61 +335,75 @@ class BaseService {
     String? title,
     QueryType queryType = QueryType.get,
   }) async {
-    final box = GetStorage();
-    final user = box.read('user');
-    if (user != null) {
-      _startIdleTimer();
-    }
-
     try {
-      final dio.Dio dioClient = dio.Dio();
-
-      (dioClient.httpClientAdapter as DefaultHttpClientAdapter).onHttpClientCreate =
-          (HttpClient client) {
-        client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
-        return client;
-      };
-
-      String? token = await LocalStorage.getLocalStorage(key: 'token');
+      final dio.Dio dioClient = _createDioClient();
       endpoint ??= EndpointConfig.currentEndpoint.endpoint;
       logger.i('api ==> ${endpoint + apiPath}');
+
+      final requiresAuth = _requiresAuth(apiPath);
+      String token = (await _getStoredToken() ?? '').trim();
+      if (requiresAuth && token.isNotEmpty) {
+        final remaining = _remainingDurationFromToken(token);
+        if (remaining == null || remaining <= _requestRefreshLeadTime) {
+          final refreshed =
+              await refreshAccessToken(force: true, currentToken: token);
+          if ((refreshed ?? '').trim().isNotEmpty) {
+            token = refreshed!.trim();
+          }
+        }
+      }
 
       headers ??= {
         'Content-Type': 'application/json',
         'accept': '*/*',
-        if (token != null) 'Authorization': 'Bearer $token',
+        if (token.isNotEmpty) 'Authorization': 'Bearer $token',
       };
 
       logger.i('data ==> $data');
 
-      dio.Response response;
-      switch (queryType) {
-        case QueryType.get:
-          response = await dioClient.get(
-            endpoint + apiPath,
-            queryParameters: data,
-            options: dio.Options(headers: headers),
-          );
-          break;
-        case QueryType.post:
-          response = await dioClient.post(
-            endpoint + apiPath,
+      dio.Response response = await _executeRequest(
+        dioClient,
+        apiPath: apiPath,
+        endpoint: endpoint,
+        queryType: queryType,
+        data: data,
+        headers: headers,
+      );
+
+      if (response.statusCode == 401 && requiresAuth) {
+        final refreshed =
+            await refreshAccessToken(force: true, currentToken: token);
+        if ((refreshed ?? '').trim().isNotEmpty) {
+          final retryHeaders = Map<String, dynamic>.from(headers);
+          retryHeaders['Authorization'] = 'Bearer ${refreshed!.trim()}';
+          final retryResponse = await _executeRequest(
+            dioClient,
+            apiPath: apiPath,
+            endpoint: endpoint,
+            queryType: queryType,
             data: data,
-            options: dio.Options(headers: headers),
+            headers: retryHeaders,
           );
-          break;
+          if (retryResponse.statusCode == 200 ||
+              retryResponse.statusCode == 201) {
+            return _decodeResponseData(retryResponse.data);
+          }
+          return _decodeResponseData(retryResponse.data);
+        }
+        await _handleSessionExpired();
+        return null;
       }
 
-      if (response.statusCode == 401) {
-        print('Unauthorized: Token may be invalid or expired.');
-      } else if (response.statusCode == 200 || response.statusCode == 201) {
-        return jsonDecode(response.toString());
-      } else {
-        print(response.statusMessage);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return _decodeResponseData(response.data);
       }
+
+      print(response.statusMessage);
+      return _decodeResponseData(response.data);
     } catch (e) {
       print('catch base_service ===> $e');
       EasyLoading.dismiss();
+      return null;
     }
   }
 }

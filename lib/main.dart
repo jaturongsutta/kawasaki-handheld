@@ -9,8 +9,8 @@ import 'package:kmt/modules/alert/controllers/notification_controller.dart';
 import 'package:kmt/modules/login/controllers/login_controller.dart';
 import 'package:kmt/routes/app_pages.dart';
 import 'package:kmt/routes/app_routes.dart';
-import 'package:kmt/services/base_service.dart';
 import 'package:kmt/services/inject.dart';
+import 'package:kmt/widgets/KeyenceScanner.dart';
 import 'package:kmt/widgets/customLog.dart';
 import 'package:kmt/widgets/setupDialogUi.dart';
 
@@ -39,18 +39,11 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   static const EventChannel _eventChannel = EventChannel('factory_alert_event');
-  final MethodChannel methodChannel = const MethodChannel('KeyenceChannel');
 
   @override
   void initState() {
     super.initState();
     _listenForAlerts();
-    // _listenForNotificationTap();
-    initSensorReader();
-  }
-
-  Future<void> initSensorReader() async {
-    return await methodChannel.invokeMethod('initializeSensor');
   }
 
   void _listenForAlerts() {
@@ -65,7 +58,8 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> setupLoggerAndErrorHandling() async {
     FlutterError.onError = (FlutterErrorDetails details) {
-      logger.e('Flutter Error', error: details.exception, stackTrace: details.stack);
+      logger.e('Flutter Error',
+          error: details.exception, stackTrace: details.stack);
       FlutterError.presentError(details);
     };
 
@@ -85,17 +79,10 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       builder: (context, child) {
-        final easy = EasyLoading.init()(context, child);
-        return Listener(
-          behavior: HitTestBehavior.translucent,
-          onPointerDown: (_) => baseService.bumpIdle(),
-          child: easy,
-        );
+        return EasyLoading.init()(context, child);
       },
       navigatorObservers: [
-        GetObserver((routing) {
-          baseService.bumpIdle();
-        }),
+        keyenceScannerRouteObserver,
       ],
 
       title: 'KMT',
@@ -124,7 +111,8 @@ class _MyAppState extends State<MyApp> {
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: Colors.grey.shade100,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
           ),
