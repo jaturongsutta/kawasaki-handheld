@@ -71,7 +71,20 @@ class _CameraPane extends GetView<CaptureController> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        Positioned.fill(child: CameraPreview(cam)),
+        Positioned.fill(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTapDown: (details) => controller.onPreviewTap(
+                  details.localPosition,
+                  constraints.biggest,
+                ),
+                child: CameraPreview(cam),
+              );
+            },
+          ),
+        ),
         Positioned.fill(
           child: IgnorePointer(
             child: CustomPaint(
@@ -82,6 +95,27 @@ class _CameraPane extends GetView<CaptureController> {
             ),
           ),
         ),
+        Obx(() {
+          final status = controller.focusStatus.value;
+          if (status.isEmpty) return const SizedBox.shrink();
+          final done = controller.isFocusDone.value;
+          return Positioned(
+            top: 12,
+            left: 12,
+            child: _FocusStatusBadge(text: status, done: done),
+          );
+        }),
+        Obx(() {
+          final point = controller.focusIndicatorPoint.value;
+          if (point == null) return const SizedBox.shrink();
+          final blinkOn = controller.isFocusBlinkOn.value;
+          final done = controller.isFocusDone.value;
+          return Positioned(
+            left: point.dx - 22,
+            top: point.dy - 22,
+            child: _FocusIndicator(active: blinkOn, done: done),
+          );
+        }),
         Positioned(
           left: 16,
           right: 16,
@@ -122,6 +156,63 @@ class _CameraPane extends GetView<CaptureController> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _FocusStatusBadge extends StatelessWidget {
+  final String text;
+  final bool done;
+  const _FocusStatusBadge({required this.text, required this.done});
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: (done ? Colors.green : Colors.red).withValues(alpha: 0.85),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Text(
+            text,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FocusIndicator extends StatelessWidget {
+  final bool active;
+  final bool done;
+  const _FocusIndicator({required this.active, required this.done});
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: AnimatedOpacity(
+        opacity: active ? 1.0 : 0.15,
+        duration: const Duration(milliseconds: 100),
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: (done ? Colors.green : Colors.red).withValues(alpha: 0.15),
+            border: Border.all(
+              color: done ? Colors.green : Colors.red,
+              width: 2.4,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

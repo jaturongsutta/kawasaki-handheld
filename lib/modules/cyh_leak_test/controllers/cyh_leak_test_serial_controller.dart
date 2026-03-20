@@ -7,6 +7,7 @@ import 'package:kmt/model/leak_test_model.dart';
 import 'package:kmt/model/leak_test_running_model.dart';
 import 'package:kmt/modules/cyh_leak_test/capture/capture_view.dart';
 import 'package:kmt/modules/cyh_leak_test/controllers/cyh_leak_test_controller.dart';
+import 'package:kmt/modules/cyh_leak_test/services/cyh_leak_test_flow_log_service.dart';
 import 'package:kmt/modules/cyh_leak_test/services/cyh_leak_test_serial_service.dart';
 import 'package:kmt/modules/cyh_leak_test/views/ocr_view.dart';
 import 'package:kmt/modules/cyh_leak_test/widgets/tab_selector.dart';
@@ -39,7 +40,20 @@ class CYHLeakTestSerialController extends GetxController {
   final gsCheck = '0'.obs;
   final workType = WorkTab.Production.obs;
   final workTypeString = ''.obs;
-  late Worker _mcDateWorker;
+  Worker? _mcDateWorker;
+
+  CYHLeakTestFlowLogService get _flowLog {
+    if (Get.isRegistered<CYHLeakTestFlowLogService>()) {
+      return Get.find<CYHLeakTestFlowLogService>();
+    }
+    return Get.put(CYHLeakTestFlowLogService(), permanent: true);
+  }
+
+  void _log(String step, {Map<String, dynamic>? data}) {
+    final payload = data == null ? '' : ' | $data';
+    debugPrint('[CYHLeakTestSerialController][$step]$payload');
+    _flowLog.add('CYHLeakTestSerialController', step, data: data);
+  }
 
   Future<void> scanAndFillWithOCR() async {
     final r = await Get.to<String>(() => CaptureView.withConfig());
@@ -100,12 +114,23 @@ class CYHLeakTestSerialController extends GetxController {
 
   void initFormFromArgs() {
     final args = Get.arguments as Map<String, dynamic>?;
+    _log('initFormFromArgs.start', data: {
+      'hasArgs': args != null,
+      'argKeys': args?.keys.toList(),
+    });
 
     if (args != null) {
       machineController.text = args['machine'] ?? '';
+      _log('initFormFromArgs.machineAssigned', data: {
+        'machine': machineController.text,
+      });
+
       if (args['running-list'] != null) {
         final list = args['running-list'] as List<LeakTestRunningModel>;
         models.assignAll(list);
+        _log('initFormFromArgs.runningListAssigned', data: {
+          'runningCount': list.length,
+        });
       }
 
       workType.value = WorkTab.Master;
@@ -123,10 +148,21 @@ class CYHLeakTestSerialController extends GetxController {
       } else {
         isModelReadOnly.value = false;
       }
+
+      _log('initFormFromArgs.end', data: {
+        'workType': workType.value.name,
+        'workTypeString': workTypeString.value,
+        'modelCount': models.length,
+        'selectedModel': selectedModel.value?.modelCd,
+        'isModelReadOnly': isModelReadOnly.value,
+      });
+    } else {
+      _log('initFormFromArgs.end', data: {'reason': 'args-null'});
     }
   }
 
   void checkGetGSCount() {
+    _mcDateWorker?.dispose();
     _mcDateWorker = debounce<String>(
       selectedMCDate,
       (_) async {
@@ -328,7 +364,7 @@ class CYHLeakTestSerialController extends GetxController {
 
   @override
   void onClose() {
-    _mcDateWorker.dispose();
+    _mcDateWorker?.dispose();
     super.onClose();
   }
 }

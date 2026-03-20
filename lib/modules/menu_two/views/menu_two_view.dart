@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:kmt/global_widgets/header_kmt.dart';
 import 'package:kmt/modules/alert/controllers/notification_controller.dart';
 import 'package:kmt/modules/cyh_leak_test/controllers/cyh_leak_test_controller.dart';
-import 'package:kmt/modules/cyh_ng_record/controllers/cyh_ng_record_controller.dart';
+import 'package:kmt/modules/cyh_leak_test/services/cyh_leak_test_flow_log_service.dart';
 import 'package:kmt/modules/cyh_no_plan/controllers/cyh_no_plan_controller.dart';
 import 'package:kmt/modules/line_stop_information/controllers/line_stop_information_controller.dart';
 import 'package:kmt/modules/login/controllers/login_controller.dart';
@@ -13,6 +12,7 @@ import 'package:kmt/modules/menu_two/controllers/menu_two_controller.dart';
 import 'package:kmt/modules/ng_information/controllers/ng_information_controller.dart';
 import 'package:kmt/modules/production_status_list/controllers/production_status_list_controller.dart';
 import 'package:kmt/routes/app_routes.dart';
+import 'package:kmt/services/base_service.dart';
 import 'package:kmt/widgets/KeyenceScanner.dart';
 import 'package:kmt/widgets/controller/loadingcontroller.dart';
 import 'package:kmt/widgets/globalLoading.dart';
@@ -24,17 +24,27 @@ class MenuTwoView extends StatefulWidget {
   State<MenuTwoView> createState() => _MenuTwoViewState();
 }
 
-class _MenuTwoViewState extends State<MenuTwoView> {
+class _MenuTwoViewState extends State<MenuTwoView> with RouteAware {
   final GlobalKey<KeyenceScannerState> scannerKey = GlobalKey();
   final loadingController = Get.put(LoadingController());
   final controller = Get.find<MenuTwoController>();
   final notificationController = Get.find<NotificationController>();
-  static const MethodChannel _navigateChannel = MethodChannel('navigate_channel');
+  static const MethodChannel _navigateChannel =
+      MethodChannel('navigate_channel');
   final LoginController loginController = Get.find<LoginController>();
+  ModalRoute<dynamic>? _route;
+
+  void _clearCYHLeakFlowLogs() {
+    if (!Get.isRegistered<CYHLeakTestFlowLogService>()) {
+      return;
+    }
+    Get.find<CYHLeakTestFlowLogService>().clearLogs();
+  }
 
   @override
   void initState() {
     super.initState();
+    _clearCYHLeakFlowLogs();
     notificationController.loadNotifications(reset: true);
     _navigateChannel.setMethodCallHandler((call) async {
       print('object ==> ${call.method}');
@@ -47,14 +57,34 @@ class _MenuTwoViewState extends State<MenuTwoView> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute && _route != route) {
+      if (_route != null) {
+        keyenceScannerRouteObserver.unsubscribe(this);
+      }
+      _route = route;
+      keyenceScannerRouteObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void didPopNext() {
+    _clearCYHLeakFlowLogs();
+  }
+
+  @override
   void dispose() {
+    keyenceScannerRouteObserver.unsubscribe(this);
     print('dispose');
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    print('controller.selectedLine.value ===> ${controller.selectedLine.value}');
+    print(
+        'controller.selectedLine.value ===> ${controller.selectedLine.value}');
     print(RegExp(r'leak', caseSensitive: false)
         .hasMatch(controller.selectedLine.value.toLowerCase()));
     const buttonWidth = 250.0;
@@ -132,7 +162,8 @@ class _MenuTwoViewState extends State<MenuTwoView> {
                 child: ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
-                    _buildFixedSizeButton("Production Status", buttonWidth, buttonHeight, () {
+                    _buildFixedSizeButton(
+                        "Production Status", buttonWidth, buttonHeight, () {
                       loadingController.showLoading();
                       Get.toNamed('/production-status')?.then((_) async {
                         await Future.delayed(const Duration(seconds: 1));
@@ -143,7 +174,8 @@ class _MenuTwoViewState extends State<MenuTwoView> {
                       });
                     }),
                     const SizedBox(height: 16),
-                    _buildFixedSizeButton("NG Records", buttonWidth, buttonHeight, () {
+                    _buildFixedSizeButton(
+                        "NG Records", buttonWidth, buttonHeight, () {
                       loadingController.showLoading();
                       Get.toNamed('/ng-information')?.then((_) async {
                         await Future.delayed(const Duration(seconds: 1));
@@ -154,7 +186,8 @@ class _MenuTwoViewState extends State<MenuTwoView> {
                       });
                     }),
                     const SizedBox(height: 16),
-                    _buildFixedSizeButton("Line Stop Records", buttonWidth, buttonHeight, () {
+                    _buildFixedSizeButton(
+                        "Line Stop Records", buttonWidth, buttonHeight, () {
                       loadingController.showLoading();
                       Get.toNamed('/line-stop-information')?.then((_) async {
                         await Future.delayed(const Duration(seconds: 1));
@@ -164,10 +197,12 @@ class _MenuTwoViewState extends State<MenuTwoView> {
                         scannerKey.currentState?.initSensorReader();
                       });
                     }),
-                    if (RegExp(r'leak', caseSensitive: false)
-                        .hasMatch(controller.selectedLine.value.toLowerCase())) ...[
+                    // if (RegExp(r'leak', caseSensitive: false)
+                    //     .hasMatch(controller.selectedLine.value.toLowerCase()))
+                    ...[
                       const SizedBox(height: 16),
-                      _buildFixedSizeButton("CYH Leak Test", buttonWidth, buttonHeight, () {
+                      _buildFixedSizeButton(
+                          "CYH Leak Test", buttonWidth, buttonHeight, () {
                         loadingController.showLoading();
                         Get.toNamed('/cyh-leak-test')?.then((_) async {
                           await Future.delayed(const Duration(seconds: 1));
@@ -189,7 +224,8 @@ class _MenuTwoViewState extends State<MenuTwoView> {
                       //   });
                       // }),
                       const SizedBox(height: 16),
-                      _buildFixedSizeButton("CYH No Plan", buttonWidth, buttonHeight, () {
+                      _buildFixedSizeButton(
+                          "CYH No Plan", buttonWidth, buttonHeight, () {
                         loadingController.showLoading();
                         Get.toNamed('/cyh-no-plan')?.then((_) async {
                           await Future.delayed(const Duration(seconds: 1));
@@ -209,10 +245,8 @@ class _MenuTwoViewState extends State<MenuTwoView> {
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      final box = Get.find<GetStorage>();
-                      box.erase();
-                      Get.offAllNamed('/login');
+                    onPressed: () async {
+                      await baseService.logout();
                     },
                     icon: const Icon(Icons.logout),
                     label: const Text('Logout'),
@@ -230,7 +264,8 @@ class _MenuTwoViewState extends State<MenuTwoView> {
     );
   }
 
-  Widget _buildFixedSizeButton(String text, double width, double height, VoidCallback onPressed) {
+  Widget _buildFixedSizeButton(
+      String text, double width, double height, VoidCallback onPressed) {
     return SizedBox(
       width: width,
       height: height,

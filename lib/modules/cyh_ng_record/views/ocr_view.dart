@@ -35,6 +35,20 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
   CameraController? _camera;
   bool _isReady = false;
   bool _torchOn = false;
+  bool _showProPanel = false;
+
+  // Tap-to-focus / metering
+  Offset? _tapIndicatorPoint;
+  Timer? _tapIndicatorTimer;
+  FocusMode _focusMode = FocusMode.auto;
+  bool _focusModeSupported = true;
+  bool _focusPointSupported = true;
+  bool _exposurePointSupported = true;
+  bool _exposureOffsetSupported = true;
+  double _minExposureOffset = 0.0;
+  double _maxExposureOffset = 0.0;
+  double _exposureOffset = 0.0;
+  double _exposureOffsetStep = 0.0;
 
   // แสดงผล
   String _detectedText = ''; // raw text จาก OCR
@@ -62,6 +76,7 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
   @override
   void dispose() {
     _scanTimer?.cancel();
+    _tapIndicatorTimer?.cancel();
     try {
       _camera?.setFlashMode(FlashMode.off);
     } catch (_) {}
@@ -101,6 +116,7 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
     );
 
     await _camera!.initialize();
+    await _setupCameraControls();
 
     if (mounted) setState(() => _isReady = true);
 
@@ -130,6 +146,147 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('สลับแฟลชไม่สำเร็จ: $e')),
       );
+    }
+  }
+
+  void _showMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _setupCameraControls() async {
+    if (_camera == null) return;
+
+    try {
+      await _camera!.setFocusMode(FocusMode.auto);
+      _focusMode = FocusMode.auto;
+    } catch (_) {
+      _focusModeSupported = false;
+    }
+
+    try {
+      await _camera!.setExposureMode(ExposureMode.auto);
+    } catch (_) {}
+
+    try {
+      _minExposureOffset = await _camera!.getMinExposureOffset();
+      _maxExposureOffset = await _camera!.getMaxExposureOffset();
+      _exposureOffsetStep = await _camera!.getExposureOffsetStepSize();
+      _exposureOffset = await _camera!.setExposureOffset(0.0);
+      _exposureOffsetSupported = true;
+    } catch (_) {
+      _exposureOffsetSupported = false;
+      _minExposureOffset = 0.0;
+      _maxExposureOffset = 0.0;
+      _exposureOffset = 0.0;
+      _exposureOffsetStep = 0.0;
+    }
+  }
+
+  Future<void> _onPreviewTap(TapDownDetails details, BoxConstraints box) async {
+    if (_camera == null || !_camera!.value.isInitialized) return;
+    final size = box.biggest;
+    if (size.width <= 0 || size.height <= 0) return;
+
+    final localPoint = details.localPosition;
+    final normalized = Offset(
+      (localPoint.dx / size.width).clamp(0.0, 1.0),
+      (localPoint.dy / size.height).clamp(0.0, 1.0),
+    );
+
+    if (mounted) {
+      setState(() => _tapIndicatorPoint = localPoint);
+    }
+    _tapIndicatorTimer?.cancel();
+    _tapIndicatorTimer = Timer(const Duration(milliseconds: 900), () {
+      if (mounted) setState(() => _tapIndicatorPoint = null);
+    });
+
+    if (_focusModeSupported && _focusMode != FocusMode.auto) {
+      try {
+        await _camera!.setFocusMode(FocusMode.auto);
+        if (mounted) setState(() => _focusMode = FocusMode.auto);
+      } catch (_) {
+        if (mounted) setState(() => _focusModeSupported = false);
+      }
+    }
+
+    if (_focusPointSupported) {
+      try {
+        await _camera!.setFocusPoint(normalized);
+      } catch (_) {
+        if (mounted) setState(() => _focusPointSupported = false);
+        _showMessage('อุปกรณ์นี้ไม่รองรับ Tap to Focus');
+      }
+    }
+
+    if (_exposurePointSupported) {
+      try {
+        await _camera!.setExposurePoint(normalized);
+      } catch (_) {
+        if (mounted) setState(() => _exposurePointSupported = false);
+      }
+    }
+  }
+
+  Future<void> _toggleFocusMode() async {
+    if (_camera == null || !_focusModeSupported) return;
+    final next =
+        _focusMode == FocusMode.auto ? FocusMode.locked : FocusMode.auto;
+    try {
+      await _camera!.setFocusMode(next);
+      if (mounted) setState(() => _focusMode = next);
+    } catch (_) {
+      if (mounted) setState(() => _focusModeSupported = false);
+      _showMessage('อุปกรณ์นี้ไม่รองรับการล็อกโฟกัส');
+    }
+  }
+
+  Future<void> _setExposureOffset(double value) async {
+    if (_camera == null || !_exposureOffsetSupported) return;
+    try {
+      final applied = await _camera!.setExposureOffset(value);
+      if (mounted) setState(() => _exposureOffset = applied);
+    } catch (_) {
+      if (mounted) setState(() => _exposureOffsetSupported = false);
+      _showMessage('อุปกรณ์นี้ไม่รองรับการปรับชดเชยแสง');
+    }
+  }
+
+  Future<void> _resetProControls() async {
+    if (_camera == null) return;
+
+    if (_focusModeSupported) {
+      try {
+        await _camera!.setFocusMode(FocusMode.auto);
+        if (mounted) setState(() => _focusMode = FocusMode.auto);
+      } catch (_) {
+        if (mounted) setState(() => _focusModeSupported = false);
+      }
+    }
+
+    if (_focusPointSupported) {
+      try {
+        await _camera!.setFocusPoint(null);
+      } catch (_) {
+        if (mounted) setState(() => _focusPointSupported = false);
+      }
+    }
+
+    if (_exposurePointSupported) {
+      try {
+        await _camera!.setExposureMode(ExposureMode.auto);
+        await _camera!.setExposurePoint(null);
+      } catch (_) {
+        if (mounted) setState(() => _exposurePointSupported = false);
+      }
+    }
+
+    if (_exposureOffsetSupported) {
+      await _setExposureOffset(0.0);
     }
   }
 
@@ -244,7 +401,16 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(title: Text(modeLabel)),
+      appBar: AppBar(
+        title: Text(modeLabel),
+        actions: [
+          IconButton(
+            tooltip: 'Pro Mode',
+            onPressed: () => setState(() => _showProPanel = !_showProPanel),
+            icon: Icon(_showProPanel ? Icons.tune : Icons.tune_outlined),
+          ),
+        ],
+      ),
 
       // ✅ จับ Enter / NumpadEnter จาก hardkey แล้วเรียก _finish()
       body: Focus(
@@ -268,7 +434,16 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
               Positioned.fill(
                 child: _camera == null
                     ? const SizedBox()
-                    : FullscreenCameraPreview(controller: _camera!),
+                    : LayoutBuilder(
+                        builder: (context, box) {
+                          return GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTapDown: (details) => _onPreviewTap(details, box),
+                            child:
+                                FullscreenCameraPreview(controller: _camera!),
+                          );
+                        },
+                      ),
               ),
 
               // มาส์กดำทึบ + กรอบแดง
@@ -280,6 +455,21 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
                   ),
                 ),
               ),
+
+              if (_tapIndicatorPoint != null)
+                Positioned(
+                  left: _tapIndicatorPoint!.dx - 22,
+                  top: _tapIndicatorPoint!.dy - 22,
+                  child: const _FocusIndicator(),
+                ),
+
+              if (_showProPanel)
+                Positioned(
+                  left: 12,
+                  right: 12,
+                  bottom: 192,
+                  child: _buildProPanel(),
+                ),
 
               // แผงผลลัพธ์ด้านล่าง
               Positioned(
@@ -306,8 +496,8 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
                       const SizedBox(height: 4),
                       Text(
                         _detectedText,
-                        style:
-                            const TextStyle(color: Colors.white70, fontSize: 12),
+                        style: const TextStyle(
+                            color: Colors.white70, fontSize: 12),
                       ),
                     ],
                   ),
@@ -344,6 +534,93 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
     );
   }
 
+  Widget _buildProPanel() {
+    final hasExposureRange = _exposureOffsetSupported &&
+        (_maxExposureOffset - _minExposureOffset).abs() > 0.0001;
+
+    int? exposureDivisions;
+    if (hasExposureRange && _exposureOffsetStep > 0) {
+      final count =
+          ((_maxExposureOffset - _minExposureOffset) / _exposureOffsetStep)
+              .round();
+      if (count > 0 && count <= 200) {
+        exposureDivisions = count;
+      }
+    }
+
+    final sliderValue = _exposureOffset.clamp(
+      _minExposureOffset,
+      _maxExposureOffset,
+    );
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.6),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white24),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Pro Mode',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _focusModeSupported ? _toggleFocusMode : null,
+                  icon: const Icon(Icons.center_focus_strong, size: 18),
+                  label: Text(
+                    _focusMode == FocusMode.auto ? 'AF: AUTO' : 'AF: LOCKED',
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton(
+                onPressed: _resetProControls,
+                child: const Text('Reset'),
+              ),
+            ],
+          ),
+          if (hasExposureRange) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Exposure: ${sliderValue.toStringAsFixed(1)} EV',
+              style: const TextStyle(color: Colors.white70),
+            ),
+            Slider(
+              min: _minExposureOffset,
+              max: _maxExposureOffset,
+              divisions: exposureDivisions,
+              value: sliderValue,
+              onChanged: (value) {
+                if (!mounted) return;
+                setState(() => _exposureOffset = value);
+              },
+              onChangeEnd: _setExposureOffset,
+            ),
+          ] else
+            const Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Text(
+                'Exposure compensation ไม่รองรับบนอุปกรณ์นี้',
+                style: TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   /// ===== กรองแพทเทิร์นตามงาน =====
   String? _extractPattern(OcrMode mode, String plain) {
     final text = plain.toUpperCase();
@@ -365,14 +642,10 @@ class _OcrViewState extends State<OcrView> with WidgetsBindingObserver {
             ?.group(0);
       case OcrMode.mold12:
         // ตัวอย่าง K9,3
-        return RegExp(r'\b[A-Z0-9][0-9],[0-9]\b')
-            .firstMatch(text)
-            ?.group(0);
+        return RegExp(r'\b[A-Z0-9][0-9],[0-9]\b').firstMatch(text)?.group(0);
       case OcrMode.machine5:
         // ตัวอย่าง KMT-7
-        return RegExp(r'\b[A-Z0-9]{3}-[A-Z0-9]\b')
-            .firstMatch(text)
-            ?.group(0);
+        return RegExp(r'\b[A-Z0-9]{3}-[A-Z0-9]\b').firstMatch(text)?.group(0);
     }
   }
 }
@@ -385,6 +658,24 @@ class FullscreenCameraPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CameraPreview(controller);
+  }
+}
+
+class _FocusIndicator extends StatelessWidget {
+  const _FocusIndicator();
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.yellowAccent, width: 2),
+          shape: BoxShape.circle,
+        ),
+      ),
+    );
   }
 }
 
@@ -419,7 +710,8 @@ class _OverlayPainter extends CustomPainter {
     canvas.drawRect(
         Rect.fromLTWH(0, rect.top, rect.left, rect.height), _maskPaint);
     canvas.drawRect(
-        Rect.fromLTWH(rect.right, rect.top, size.width - rect.right, rect.height),
+        Rect.fromLTWH(
+            rect.right, rect.top, size.width - rect.right, rect.height),
         _maskPaint);
     canvas.drawRect(
         Rect.fromLTWH(0, rect.bottom, size.width, size.height - rect.bottom),
